@@ -1,5 +1,6 @@
 "use client";
 
+import type { RefObject } from "react";
 import { PlayCircle } from "lucide-react";
 
 function toYouTubeEmbed(url: string): string | null {
@@ -20,7 +21,15 @@ function toYouTubeEmbed(url: string): string | null {
   }
 }
 
-export function LessonPlayer({ videoUrl }: { videoUrl: string | null }) {
+export function LessonPlayer({
+  videoUrl,
+  videoRef,
+  onTimeUpdate,
+}: {
+  videoUrl: string | null;
+  videoRef?: RefObject<HTMLVideoElement>;
+  onTimeUpdate?: (currentTime: number) => void;
+}) {
   if (!videoUrl) {
     return (
       <div className="flex aspect-video w-full flex-col items-center justify-center rounded-lg bg-[var(--bg-elevated)] text-text-muted">
@@ -48,7 +57,13 @@ export function LessonPlayer({ videoUrl }: { videoUrl: string | null }) {
 
   return (
     <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
-      <video src={videoUrl} controls className="h-full w-full">
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        controls
+        className="h-full w-full"
+        onTimeUpdate={(e) => onTimeUpdate?.(e.currentTarget.currentTime)}
+      >
         Twoja przeglądarka nie obsługuje odtwarzacza wideo.
       </video>
     </div>

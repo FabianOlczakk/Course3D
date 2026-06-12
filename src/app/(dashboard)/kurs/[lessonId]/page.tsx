@@ -1,9 +1,12 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { FileText, ArrowLeft } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { LessonPlayer } from "@/components/lessons/lesson-player";
+import {
+  LessonView,
+  type LessonTimestamp,
+  type LessonQuiz,
+} from "@/components/lessons/lesson-view";
 
 function contentToHtml(value: unknown): string {
   if (value == null) return "";
@@ -13,6 +16,48 @@ function contentToHtml(value: unknown): string {
   } catch {
     return "";
   }
+}
+
+function parseTimestamps(value: unknown): LessonTimestamp[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(
+      (t): t is LessonTimestamp =>
+        !!t &&
+        typeof t === "object" &&
+        typeof (t as LessonTimestamp).time === "number" &&
+        typeof (t as LessonTimestamp).elementId === "string"
+    )
+    .sort((a, b) => a.time - b.time);
+}
+
+function parseQuizzes(value: unknown): LessonQuiz[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(
+      (q): q is LessonQuiz =>
+        !!q &&
+        typeof q === "object" &&
+        typeof (q as LessonQuiz).triggersAt === "number" &&
+        typeof (q as LessonQuiz).question === "string" &&
+        Array.isArray((q as LessonQuiz).options) &&
+        typeof (q as LessonQuiz).correctIndex === "number"
+    )
+    .sort((a, b) => a.triggersAt - b.triggersAt);
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { lessonId: string };
+}): Promise<Metadata> {
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: params.lessonId },
+    select: { title: true },
+  });
+  return {
+    title: lesson ? `${lesson.title} | Course3D` : "Lekcja | Course3D",
+  };
 }
 
 export default async function LessonPage({
@@ -30,50 +75,27 @@ export default async function LessonPage({
 
   if (!lesson) notFound();
 
-  const html = contentToHtml(lesson.contentJson);
+  const progress = await prisma.lessonProgress.findUnique({
+    where: {
+      userId_lessonId: {
+        userId: session.user.id,
+        lessonId: lesson.id,
+      },
+    },
+    select: { completed: true },
+  });
 
   return (
-    <div className="space-y-4">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {lesson.chapter.title}
-      </Link>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3">
-          <LessonPlayer videoUrl={lesson.videoUrl} />
-          <div>
-            <h1 className="text-xl font-bold text-text-primary">
-              {lesson.title}
-            </h1>
-            {lesson.description && (
-              <p className="text-text-secondary">{lesson.description}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="glow-card p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[var(--accent)]" />
-            <h2 className="text-lg font-semibold text-text-primary">
-              Treść lekcji
-            </h2>
-          </div>
-          {html ? (
-            <div
-              className="lesson-content"
-              dangerouslySetInnerHTML={{ __html: html }}
-            />
-          ) : (
-            <p className="text-text-secondary">
-              Treść tej lekcji nie została jeszcze dodana.
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
+    <LessonView
+      lessonId={lesson.id}
+      title={lesson.title}
+      description={lesson.description}
+      videoUrl={lesson.videoUrl}
+      html={contentToHtml(lesson.contentJson)}
+      chapterTitle={lesson.chapter.title}
+      initialCompleted={progress?.completed ?? false}
+      timestamps={parseTimestamps(lesson.timestamps)}
+      quizzes={parseQuizzes(lesson.quizzes)}
+    />
   );
 }
