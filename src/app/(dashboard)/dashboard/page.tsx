@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const firstLesson = chapters.flatMap((c) => c.lessons)[0];
 
   return (
-    <div className="space-y-8">
+    <div className="p-4 md:p-6 space-y-8">
       <div className="glow-card glow-border relative overflow-hidden p-8">
         <h1 className="text-3xl font-bold text-text-primary">Witaj, {name}!</h1>
         <p className="mt-1 text-text-secondary">
