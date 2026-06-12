@@ -48,6 +48,22 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "bg-base": "var(--bg-base)",
+        "bg-card": "var(--bg-card)",
+        "bg-elevated": "var(--bg-elevated)",
+        "text-primary": "var(--text-primary)",
+        "text-secondary": "var(--text-secondary)",
+        "text-muted": "var(--text-muted)",
+        "accent-glow": "var(--accent-glow)",
+        glow: {
+          purple: "#a855f7",
+          violet: "#7c3aed",
+          blue: "#3b82f6",
+        },
+      },
+      boxShadow: {
+        glow: "0 0 20px rgba(124,58,237,0.4)",
+        "glow-lg": "0 0 30px rgba(124,58,237,0.6)",
       },
       borderRadius: {
         lg: "var(--radius)",

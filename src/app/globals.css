@@ -4,48 +4,61 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    /* Course3D dark design tokens */
+    --bg-base: #0a0a0f;
+    --bg-card: #111118;
+    --bg-elevated: #1a1a24;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-glow: rgba(139, 92, 246, 0.4);
+    --accent: #a855f7;
+    --accent-glow: rgba(168, 85, 247, 0.25);
+    --text-primary: #f1f0f5;
+    --text-secondary: #9ca3b0;
+    --text-muted: #6b7280;
+
+    /* shadcn HSL tokens mapped onto the dark glow palette */
+    --background: 240 27% 5%;
+    --foreground: 260 20% 95%;
+    --card: 240 22% 8%;
+    --card-foreground: 260 20% 95%;
+    --popover: 240 24% 11%;
+    --popover-foreground: 260 20% 95%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 22% 14%;
+    --secondary-foreground: 260 20% 95%;
+    --muted: 240 18% 16%;
+    --muted-foreground: 220 9% 68%;
+    --accent: 271 91% 65%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 15% 18%;
+    --input: 240 15% 18%;
+    --ring: 271 91% 65%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 240 27% 5%;
+    --foreground: 260 20% 95%;
+    --card: 240 22% 8%;
+    --card-foreground: 260 20% 95%;
+    --popover: 240 24% 11%;
+    --popover-foreground: 260 20% 95%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 22% 14%;
+    --secondary-foreground: 260 20% 95%;
+    --muted: 240 18% 16%;
+    --muted-foreground: 220 9% 68%;
+    --accent: 271 91% 65%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 15% 18%;
+    --input: 240 15% 18%;
+    --ring: 271 91% 65%;
   }
 }
 
@@ -55,5 +68,167 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 50% -20%,
+        rgba(124, 58, 237, 0.12),
+        transparent
+      ),
+      radial-gradient(
+        ellipse 60% 50% at 100% 0%,
+        rgba(59, 130, 246, 0.08),
+        transparent
+      );
+    background-attachment: fixed;
+    min-height: 100vh;
   }
+}
+
+@layer components {
+  .glow-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    box-shadow:
+      0 0 0 1px rgba(139, 92, 246, 0.1),
+      0 4px 24px rgba(0, 0, 0, 0.4);
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+  .glow-card:hover {
+    box-shadow:
+      0 0 0 1px rgba(139, 92, 246, 0.35),
+      0 0 20px rgba(139, 92, 246, 0.15),
+      0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .glow-border {
+    position: relative;
+  }
+  .glow-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(139, 92, 246, 0.5),
+      rgba(59, 130, 246, 0.3),
+      transparent
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glow-btn {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+    transition: box-shadow 0.2s ease;
+  }
+  .glow-btn:hover {
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.6);
+  }
+
+  .glow-icon-btn {
+    position: relative;
+    display: flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+  }
+  .glow-icon-btn:hover {
+    color: var(--text-primary);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.25);
+    border-color: var(--border-glow);
+  }
+}
+
+@layer utilities {
+  .skeleton-dark {
+    background: linear-gradient(
+      90deg,
+      var(--bg-elevated) 0%,
+      rgba(124, 58, 237, 0.08) 50%,
+      var(--bg-elevated) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* Rich-text content rendered from lesson contentJson */
+.lesson-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-primary);
+}
+.lesson-content h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-primary);
+}
+.lesson-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem;
+}
+.lesson-content p {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.lesson-content ul,
+.lesson-content ol {
+  margin: 0.5rem 0 0.5rem 1.25rem;
+  list-style: disc;
+  color: var(--text-secondary);
+}
+.lesson-content ol {
+  list-style: decimal;
+}
+.lesson-content li {
+  margin: 0.25rem 0;
+}
+.lesson-content a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.lesson-content img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+.lesson-content code {
+  background: var(--bg-elevated);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+  font-size: 0.9em;
+}
+.lesson-content strong {
+  color: var(--text-primary);
 }
