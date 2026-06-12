@@ -232,3 +232,13 @@
 .lesson-content strong {
   color: var(--text-primary);
 }
+
+/* Podświetlenie elementu treści zsynchronizowane z wideo */
+.lesson-highlight {
+  background: rgba(139, 92, 246, 0.15);
+  border-left: 3px solid #a855f7;
+  padding-left: 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
+}
