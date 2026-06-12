@@ -186,53 +186,101 @@ export function LessonView({
   }, []);
 
   return (
-    <div className="space-y-4">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {chapterTitle}
-      </Link>
+    <div className="flex h-[calc(100vh-56px)] flex-col">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-4 py-2">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {chapterTitle}
+        </Link>
+        <span className="text-text-muted">/</span>
+        <span className="text-sm font-medium text-text-primary truncate">{title}</span>
+      </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3">
+      {/* Split screen — pełna szerokość */}
+      <div className="grid flex-1 overflow-hidden lg:grid-cols-2">
+        {/* Lewa strona: wideo + info + przyciski */}
+        <div className="flex flex-col overflow-y-auto border-r border-[var(--border-subtle)] bg-[var(--bg-base)]">
           <LessonPlayer
             videoUrl={videoUrl}
             videoRef={videoRef}
             onTimeUpdate={handleTimeUpdate}
           />
-          <div>
-            <h1 className="text-xl font-bold text-text-primary">{title}</h1>
-            {description && (
-              <p className="text-text-secondary">{description}</p>
-            )}
+          <div className="flex-1 space-y-4 p-4">
+            <div>
+              <h1 className="text-xl font-bold text-text-primary">{title}</h1>
+              {description && (
+                <p className="mt-1 text-sm text-text-secondary">{description}</p>
+              )}
+            </div>
+
+            {/* Przyciski postępu i nawigacji */}
+            <div className="space-y-3 border-t border-[var(--border-subtle)] pt-4">
+              <button
+                type="button"
+                onClick={toggleComplete}
+                disabled={saving}
+                className={cn(
+                  "inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-60",
+                  completed
+                    ? "border border-green-500/50 bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(74,222,128,0.25)]"
+                    : "bg-green-600 text-white hover:bg-green-500"
+                )}
+              >
+                <Check className="h-4 w-4" />
+                {completed ? "Ukończono" : "Oznacz jako ukończone"}
+              </button>
+
+              <div className="flex items-center justify-between gap-2">
+                {nav.prev ? (
+                  <Link
+                    href={`/kurs/${nav.prev.id}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-[var(--bg-elevated)] hover:text-text-primary"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Poprzednia
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                {nav.next && (
+                  <Link
+                    href={`/kurs/${nav.next.id}`}
+                    className="glow-btn inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-white"
+                  >
+                    Następna
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="glow-card relative p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[var(--accent)]" />
-            <h2 className="text-lg font-semibold text-text-primary">
-              Treść lekcji
-            </h2>
-          </div>
-
+        {/* Prawa strona: treść lekcji w iframe (obsługuje JS, CSS, animacje) */}
+        <div className="relative flex flex-col overflow-hidden bg-[var(--bg-base)]">
           {html ? (
-            <div
-              ref={contentRef}
-              className="lesson-content"
-              dangerouslySetInnerHTML={{ __html: html }}
+            <iframe
+              srcDoc={html}
+              className="h-full w-full flex-1 border-0"
+              sandbox="allow-scripts allow-same-origin"
+              title="Treść lekcji"
             />
           ) : (
-            <p className="text-text-secondary">
-              Treść tej lekcji nie została jeszcze dodana.
-            </p>
+            <div className="flex h-full items-center justify-center p-8 text-center text-text-secondary">
+              <div>
+                <FileText className="mx-auto mb-3 h-10 w-10 opacity-40" />
+                <p>Treść tej lekcji nie została jeszcze dodana.</p>
+              </div>
+            </div>
           )}
 
-          {/* Quiz overlay */}
+          {/* Quiz overlay nad iframe */}
           {activeQuiz && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-[var(--bg-card)]/95 p-6 backdrop-blur-sm">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-card)]/95 p-6 backdrop-blur-sm">
               <QuizCard
                 quiz={activeQuiz}
                 answer={quizAnswer}
@@ -241,48 +289,6 @@ export function LessonView({
               />
             </div>
           )}
-
-          {/* Przyciski postępu i nawigacji */}
-          <div className="mt-6 space-y-4 border-t border-[var(--border-subtle)] pt-4">
-            <button
-              type="button"
-              onClick={toggleComplete}
-              disabled={saving}
-              className={cn(
-                "inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-60",
-                completed
-                  ? "border border-green-500/50 bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(74,222,128,0.25)]"
-                  : "bg-green-600 text-white hover:bg-green-500"
-              )}
-            >
-              <Check className="h-4 w-4" />
-              {completed ? "Ukończono" : "Oznacz jako ukończone"}
-            </button>
-
-            <div className="flex items-center justify-between gap-2">
-              {nav.prev ? (
-                <Link
-                  href={`/kurs/${nav.prev.id}`}
-                  className="inline-flex items-center gap-1 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-[var(--bg-elevated)] hover:text-text-primary"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Poprzednia lekcja
-                </Link>
-              ) : (
-                <span />
-              )}
-
-              {nav.next && (
-                <Link
-                  href={`/kurs/${nav.next.id}`}
-                  className="glow-btn inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-white"
-                >
-                  Następna lekcja
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>

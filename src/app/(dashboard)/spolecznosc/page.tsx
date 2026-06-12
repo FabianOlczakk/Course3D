@@ -11,7 +11,7 @@ export default async function CommunityPage() {
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="p-4 md:p-6 mx-auto max-w-2xl">
       <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold text-text-primary">
         👥 Społeczność
       </h1>
