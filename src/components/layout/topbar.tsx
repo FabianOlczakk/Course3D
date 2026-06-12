@@ -11,8 +11,10 @@ import {
   Printer,
   User as UserIcon,
   Shield,
+  Menu,
 } from "lucide-react";
 import { MessagesPanel } from "@/components/messages/messages-panel";
+import { PrinterPanel } from "@/components/printer/printer-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -30,12 +32,20 @@ interface TopbarProps {
   email: string;
   role: Role;
   avatarUrl?: string | null;
+  onMenuClick?: () => void;
 }
 
-export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
+export function Topbar({
+  username,
+  email,
+  role,
+  avatarUrl,
+  onMenuClick,
+}: TopbarProps) {
   const initials = (username || email).slice(0, 2).toUpperCase();
   const router = useRouter();
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const [printerOpen, setPrinterOpen] = useState(false);
   const [unread, setUnread] = useState(0);
 
   // Liczba nieprzeczytanych wiadomości: pobierz przy montażu i odświeżaj co 10 s.
@@ -62,9 +72,17 @@ export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
   return (
     <>
       <header className="flex h-16 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-6">
-        <h1 className="text-lg font-semibold text-text-primary md:hidden">
-          Course3D
-        </h1>
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            aria-label="Otwórz menu"
+            className="glow-icon-btn"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+          <h1 className="text-lg font-semibold text-text-primary">Course3D</h1>
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
@@ -91,9 +109,10 @@ export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
           </button>
           <button
             type="button"
-            title="Sterowanie drukarką — Wkrótce"
+            title="Sterowanie drukarką 3D"
             aria-label="Drukarka"
-            className="glow-icon-btn opacity-70"
+            className="glow-icon-btn"
+            onClick={() => setPrinterOpen(true)}
           >
             <Printer className="h-4 w-4" />
           </button>
@@ -154,6 +173,8 @@ export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
         open={messagesOpen}
         onClose={() => setMessagesOpen(false)}
       />
+
+      <PrinterPanel open={printerOpen} onClose={() => setPrinterOpen(false)} />
     </>
   );
 }

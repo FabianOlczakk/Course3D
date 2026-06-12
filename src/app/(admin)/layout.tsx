@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { AppShell } from "@/components/dashboard/app-shell";
+
+export const metadata: Metadata = {
+  title: "Panel Admina | Course3D",
+};
 
 export default function AdminLayout({
   children,

@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PlayCircle, BookOpen } from "lucide-react";
 import { auth } from "@/lib/auth";
+import {
+  ProgressOverview,
+  ChapterProgressBar,
+} from "@/components/dashboard/progress-overview";
+
+export const metadata: Metadata = {
+  title: "Kurs Druku 3D",
+};
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
@@ -37,13 +46,15 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      <ProgressOverview />
+
       <div>
         <h2 className="mb-4 text-xl font-bold text-text-primary">Twój kurs</h2>
 
         {chapters.length === 0 ? (
           <div className="glow-card p-8 text-center text-text-secondary">
             <BookOpen className="mx-auto mb-3 h-10 w-10 text-text-muted" />
-            Lekcje pojawią się tutaj wkrótce.
+            Brak rozdziałów. Administrator wkrótce doda kurs.
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -65,7 +76,8 @@ export default async function DashboardPage() {
                     {chapter.description}
                   </p>
                 )}
-                <ul className="space-y-1">
+                <ChapterProgressBar chapterId={chapter.id} />
+                <ul className="mt-3 space-y-1">
                   {chapter.lessons.map((lesson) => (
                     <li key={lesson.id}>
                       <Link
