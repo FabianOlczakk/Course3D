@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LogOut,
@@ -10,8 +11,8 @@ import {
   Printer,
   User as UserIcon,
   Shield,
-  X,
 } from "lucide-react";
+import { MessagesPanel } from "@/components/messages/messages-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -31,11 +32,32 @@ interface TopbarProps {
   avatarUrl?: string | null;
 }
 
-type PanelKind = "messages" | "community" | null;
-
 export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
   const initials = (username || email).slice(0, 2).toUpperCase();
-  const [panel, setPanel] = useState<PanelKind>(null);
+  const router = useRouter();
+  const [messagesOpen, setMessagesOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+
+  // Liczba nieprzeczytanych wiadomości: pobierz przy montażu i odświeżaj co 10 s.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUnread() {
+      try {
+        const res = await fetch("/api/messages/unread-count");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setUnread(data.count ?? 0);
+      } catch {
+        /* ignore */
+      }
+    }
+    void loadUnread();
+    const id = setInterval(loadUnread, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [messagesOpen]);
 
   return (
     <>
@@ -48,17 +70,22 @@ export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
             type="button"
             title="Wiadomości"
             aria-label="Wiadomości"
-            className="glow-icon-btn"
-            onClick={() => setPanel("messages")}
+            className="glow-icon-btn relative"
+            onClick={() => setMessagesOpen(true)}
           >
             <MessageSquare className="h-4 w-4" />
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
           </button>
           <button
             type="button"
             title="Społeczność"
             aria-label="Społeczność"
             className="glow-icon-btn"
-            onClick={() => setPanel("community")}
+            onClick={() => router.push("/spolecznosc")}
           >
             <Users2 className="h-4 w-4" />
           </button>
@@ -123,39 +150,10 @@ export function Topbar({ username, email, role, avatarUrl }: TopbarProps) {
         </div>
       </header>
 
-      {panel && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setPanel(null)}
-          />
-          <div className="glow-card relative z-10 m-4 flex h-[calc(100%-2rem)] w-full max-w-sm flex-col rounded-xl p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-text-primary">
-                {panel === "messages" ? "Wiadomości" : "Społeczność"}
-              </h2>
-              <button
-                type="button"
-                aria-label="Zamknij"
-                className="glow-icon-btn"
-                onClick={() => setPanel(null)}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
-              {panel === "messages" ? (
-                <MessageSquare className="mb-3 h-10 w-10 text-text-muted" />
-              ) : (
-                <Users2 className="mb-3 h-10 w-10 text-text-muted" />
-              )}
-              <p className="text-text-secondary">
-                Ta funkcja będzie dostępna wkrótce (Faza 3).
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <MessagesPanel
+        open={messagesOpen}
+        onClose={() => setMessagesOpen(false)}
+      />
     </>
   );
 }
