@@ -5,10 +5,12 @@ const nextConfig = {
       { protocol: "https", hostname: "**" },
     ],
   },
-  // Hostinger: wyłącz standalone output żeby uniknąć problemów ze startem
-  // output: 'standalone',
   experimental: {
     serverComponentsExternalPackages: ["bcryptjs", "@prisma/client", "prisma"],
+  },
+  // Wyłącz telemetrię
+  env: {
+    NEXT_TELEMETRY_DISABLED: "1",
   },
 };
 
