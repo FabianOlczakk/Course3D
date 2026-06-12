@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lekcja 1: Podstawy Druku 3D</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card: #111118;
+      --elevated: #1a1a24;
+      --accent: #a855f7;
+      --accent-glow: rgba(168,85,247,0.25);
+      --text: #f1f0f5;
+      --muted: #9ca3b0;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.7;
+      padding: 2rem 1.5rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Nagłówki ── */
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: .5rem;
+         background: linear-gradient(135deg, #fff, var(--accent));
+         -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h2 { font-size: 1.3rem; font-weight: 600; margin: 2.5rem 0 1rem;
+         color: var(--accent); display: flex; align-items: center; gap: .5rem; }
+    h3 { font-size: 1rem; font-weight: 600; margin-bottom: .5rem; }
+
+    p { color: var(--muted); margin-bottom: 1rem; }
+    strong { color: var(--text); }
+
+    /* ── Karta z glow ── */
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 0 1px rgba(139,92,246,0.08), 0 4px 24px rgba(0,0,0,0.4);
+      transition: box-shadow .2s;
+    }
+    .card:hover {
+      box-shadow: 0 0 0 1px rgba(139,92,246,0.3), 0 0 20px rgba(139,92,246,0.12), 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    /* ── Highlight (synchronizacja z filmem) ── */
+    [data-ts] {
+      border-radius: 6px;
+      padding: 2px 4px;
+      transition: background .3s, border-left .3s, box-shadow .3s;
+    }
+    [data-ts].active {
+      background: rgba(139,92,246,0.15);
+      border-left: 3px solid var(--accent);
+      padding-left: 10px;
+      box-shadow: 0 0 12px rgba(139,92,246,0.2);
+    }
+
+    /* ── Animacja Drukarki ── */
+    .printer-anim {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem;
+      background: var(--elevated);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .printer-body {
+      width: 180px; height: 120px;
+      background: #1e1e30;
+      border: 2px solid rgba(139,92,246,0.4);
+      border-radius: 8px;
+      position: relative;
+      box-shadow: 0 0 20px rgba(139,92,246,0.2);
+    }
+    .printer-head {
+      width: 60px; height: 16px;
+      background: var(--accent);
+      border-radius: 4px;
+      position: absolute;
+      top: 20px; left: 20px;
+      box-shadow: 0 0 10px var(--accent-glow);
+      animation: print-head 3s ease-in-out infinite;
+    }
+    @keyframes print-head {
+      0%,100% { left: 20px; }
+      50%      { left: 100px; }
+    }
+    .printer-layer {
+      width: 100px; height: 8px;
+      background: linear-gradient(90deg, var(--accent), #3b82f6);
+      border-radius: 2px;
+      position: absolute;
+      bottom: 30px; left: 40px;
+      animation: grow-layer 3s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(168,85,247,0.5);
+    }
+    @keyframes grow-layer {
+      0%  { width: 0; opacity: 0; }
+      20% { opacity: 1; }
+      60% { width: 100px; }
+      100%{ width: 100px; }
+    }
+    .print-label {
+      font-size: .85rem; color: var(--muted);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+    /* ── Filament animation ── */
+    .filament-chart {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      height: 120px;
+      padding: 1rem;
+      background: var(--elevated);
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .filament-bar {
+      flex: 1;
+      border-radius: 4px 4px 0 0;
+      position: relative;
+      cursor: pointer;
+      transition: filter .2s;
+    }
+    .filament-bar:hover { filter: brightness(1.3); }
+    .filament-bar span {
+      position: absolute;
+      bottom: -24px;
+      left: 50%; transform: translateX(-50%);
+      font-size: .7rem; color: var(--muted); white-space: nowrap;
+    }
+    .filament-bar .val {
+      position: absolute;
+      top: -24px;
+      left: 50%; transform: translateX(-50%);
+      font-size: .75rem; font-weight: 600; color: var(--text);
+    }
+    @keyframes bar-grow {
+      from { height: 0; }
+    }
+
+    /* ── Quiz ── */
+    .quiz {
+      background: var(--elevated);
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .quiz h3 { color: var(--text); font-size: 1rem; margin-bottom: 1rem; }
+    .quiz-options { display: flex; flex-direction: column; gap: .6rem; }
+    .quiz-option {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      cursor: pointer;
+      transition: all .15s;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+    .quiz-option:hover { border-color: var(--accent); color: var(--text); }
+    .quiz-option.correct {
+      border-color: var(--green);
+      background: rgba(34,197,94,.1);
+      color: var(--green);
+    }
+    .quiz-option.wrong {
+      border-color: var(--red);
+      background: rgba(239,68,68,.1);
+      color: var(--red);
+    }
+    .quiz-option:disabled { cursor: default; }
+    .quiz-feedback {
+      margin-top: 1rem;
+      padding: .75rem 1rem;
+      border-radius: 8px;
+      font-size: .9rem;
+      display: none;
+    }
+    .quiz-feedback.show { display: block; }
+    .quiz-feedback.ok { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+    .quiz-feedback.err { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+
+    /* ── Zadanie interaktywne: Suwak temperatury ── */
+    .task-card {
+      background: var(--elevated);
+      border: 1px solid rgba(59,130,246,0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .task-title {
+      font-size: .8rem; font-weight: 600; letter-spacing: .1em;
+      color: #3b82f6; text-transform: uppercase; margin-bottom: .75rem;
+    }
+    input[type=range] {
+      width: 100%; accent-color: var(--accent); margin: 1rem 0;
+      cursor: pointer; height: 6px;
+    }
+    .temp-display {
+      font-size: 2.5rem; font-weight: 700; text-align: center;
+      font-variant-numeric: tabular-nums;
+      transition: color .2s;
+    }
+    .temp-info {
+      text-align: center; font-size: .85rem; color: var(--muted);
+      min-height: 1.5rem; transition: all .3s;
+      margin-top: .25rem;
+    }
+    .temp-bar {
+      height: 8px; border-radius: 4px; margin: .5rem 0;
+      background: linear-gradient(90deg, #3b82f6, #a855f7, #ef4444);
+      position: relative;
+    }
+    .temp-cursor {
+      position: absolute; top: -4px;
+      width: 16px; height: 16px;
+      background: #fff; border-radius: 50%;
+      border: 2px solid var(--accent);
+      transform: translateX(-50%);
+      transition: left .1s;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* ── Zadanie: Przeciągnij warstwy ── */
+    .layers-task { margin-bottom: 1.5rem; }
+    .layer-list {
+      display: flex; flex-direction: column; gap: .5rem;
+      min-height: 200px;
+    }
+    .layer-item {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      cursor: grab;
+      display: flex; align-items: center; gap: .75rem;
+      font-size: .9rem; color: var(--muted);
+      user-select: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .layer-item:active { cursor: grabbing; }
+    .layer-item.dragging { opacity: .4; }
+    .layer-item.over { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+    .layer-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .check-btn {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      box-shadow: 0 0 16px rgba(124,58,237,.4);
+      color: #fff; border: none; border-radius: 8px;
+      padding: .6rem 1.4rem; font-size: .9rem; font-weight: 600;
+      cursor: pointer; margin-top: 1rem;
+      transition: box-shadow .2s;
+    }
+    .check-btn:hover { box-shadow: 0 0 24px rgba(124,58,237,.6); }
+    .result-msg {
+      margin-top: .75rem; padding: .6rem 1rem; border-radius: 8px;
+      font-size: .9rem; display: none;
+    }
+    .result-msg.show { display: block; }
+
+    /* ── Pasek postępu lekcji ── */
+    .progress-bar-wrap {
+      background: var(--card); border-radius: 8px; height: 6px;
+      margin-bottom: 2rem; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #3b82f6);
+      border-radius: 8px;
+      box-shadow: 0 0 10px var(--accent-glow);
+      transition: width .5s ease;
+    }
+
+    /* ── Info box ── */
+    .info-box {
+      background: rgba(59,130,246,.1);
+      border: 1px solid rgba(59,130,246,.3);
+      border-radius: 8px; padding: 1rem 1.25rem;
+      margin-bottom: 1rem; font-size: .9rem; color: #93c5fd;
+    }
+    .warn-box {
+      background: rgba(234,179,8,.1);
+      border: 1px solid rgba(234,179,8,.3);
+      border-radius: 8px; padding: 1rem 1.25rem;
+      margin-bottom: 1rem; font-size: .9rem; color: #fde68a;
+    }
+
+    /* ── Kod inline ── */
+    code {
+      background: rgba(139,92,246,.15);
+      color: #c4b5fd;
+      border-radius: 4px; padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: .85em;
+    }
+
+    .section-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-glow); border: 1px solid var(--accent);
+      font-size: .85rem; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Lekcja 1: Podstawy Druku 3D</h1>
+  <p>Czas trwania: 18 minut &nbsp;·&nbsp; 4 zadania interaktywne</p>
+
+  <!-- Pasek postępu -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="lessonProgress" style="width:0%"></div>
+  </div>
+
+  <!-- ═══ SEKCJA 1: Co to jest druk 3D ═══ -->
+  <h2><span class="section-number">1</span> Czym jest druk 3D?</h2>
+
+  <div class="card">
+    <p data-ts="0:10" id="ts-intro">
+      <strong>Druk 3D</strong> (addytywne wytwarzanie) to proces tworzenia trójwymiarowych obiektów poprzez nakładanie kolejnych warstw materiału na podstawie cyfrowego modelu.
+    </p>
+    <p data-ts="0:30">
+      Technologia ta zrewolucjonizowała prototypowanie, produkcję małoseryjną i hobbystyczne tworzenie — dziś drukarkę 3D może mieć każdy w domu.
+    </p>
+  </div>
+
+  <!-- Animacja drukarki -->
+  <div class="printer-anim">
+    <div class="printer-body">
+      <div class="printer-head"></div>
+      <div class="printer-layer"></div>
+    </div>
+    <p class="print-label">🖨️ Głowica nakłada kolejne warstwy filamentu...</p>
+  </div>
+
+  <!-- ═══ SEKCJA 2: Rodzaje filamentów ═══ -->
+  <h2><span class="section-number">2</span> Rodzaje filamentów</h2>
+
+  <p data-ts="2:00">
+    Filament to materiał w postaci żyłki nawiniętej na szpulę. Wybór materiału wpływa na wytrzymałość, elastyczność i temperaturę druku.
+  </p>
+
+  <!-- Wykres słupkowy filamentów -->
+  <div class="card">
+    <h3>Temperatury druku popularnych filamentów</h3>
+    <div class="filament-chart" id="filChart">
+      <div class="filament-bar" style="height:55%; background:linear-gradient(180deg,#3b82f6,#1d4ed8); animation:bar-grow .8s ease .1s both" data-mat="PLA" data-temp="200°C">
+        <span class="val">200°C</span><span>PLA</span>
+      </div>
+      <div class="filament-bar" style="height:70%; background:linear-gradient(180deg,#a855f7,#7c3aed); animation:bar-grow .8s ease .2s both" data-mat="PETG" data-temp="235°C">
+        <span class="val">235°C</span><span>PETG</span>
+      </div>
+      <div class="filament-bar" style="height:85%; background:linear-gradient(180deg,#ef4444,#b91c1c); animation:bar-grow .8s ease .3s both" data-mat="ABS" data-temp="250°C">
+        <span class="val">250°C</span><span>ABS</span>
+      </div>
+      <div class="filament-bar" style="height:45%; background:linear-gradient(180deg,#22c55e,#15803d); animation:bar-grow .8s ease .4s both" data-mat="TPU" data-temp="220°C">
+        <span class="val">220°C</span><span>TPU</span>
+      </div>
+      <div class="filament-bar" style="height:95%; background:linear-gradient(180deg,#f97316,#c2410c); animation:bar-grow .8s ease .5s both" data-mat="PA" data-temp="260°C">
+        <span class="val">260°C</span><span>PA (Nylon)</span>
+      </div>
+    </div>
+    <p id="matInfo" style="margin-top:2rem;text-align:center;font-size:.85rem">
+      👆 Kliknij słupek, aby poznać właściwości materiału
+    </p>
+  </div>
+
+  <!-- ═══ QUIZ 1 ═══ -->
+  <div class="quiz" id="quiz1">
+    <div class="task-title">🧠 Quiz — sprawdź wiedzę</div>
+    <h3>Który filament jest najłatwiejszy w druku i polecany dla początkujących?</h3>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz1',false)">ABS — wytrzymały i odporny na ciepło</button>
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz1',true)">PLA — łatwy w druku, niska temperatura</button>
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz1',false)">Nylon — elastyczny i mocny</button>
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz1',false)">PETG — odporny na chemikalia</button>
+    </div>
+    <div class="quiz-feedback ok" id="quiz1-ok">✅ Świetnie! PLA jest najpopularniejszym filamentem dla hobbystów — drukuje się w niskiej temperaturze i nie wymaga ogrzewanego stołu.</div>
+    <div class="quiz-feedback err" id="quiz1-err">❌ Niedobrze. PLA to strzał w dziesiątkę dla początkujących — niska temperatura (190–220°C) i prosta obsługa.</div>
+  </div>
+
+  <!-- ═══ SEKCJA 3: Parametry druku ═══ -->
+  <h2><span class="section-number">3</span> Kluczowe parametry druku</h2>
+
+  <div class="info-box">
+    💡 Parametry druku mają ogromny wpływ na jakość i czas wydruku. Zrozumienie ich to podstawa świadomego użytkownika drukarki.
+  </div>
+
+  <div class="card">
+    <p data-ts="5:00"><strong>Wysokość warstwy</strong> (<code>layer height</code>) — im niższa, tym gładszy wydruk, ale dłuższy czas. Standardowo <code>0.2 mm</code>.</p>
+    <p data-ts="5:30"><strong>Wypełnienie</strong> (<code>infill</code>) — procent wypełnienia wnętrza obiektu. <code>15%</code> dla dekoracji, <code>40%+</code> dla części funkcjonalnych.</p>
+    <p data-ts="6:00"><strong>Prędkość druku</strong> — Bambu Lab A1 Mini drukuje do <code>500 mm/s</code> dzięki algorytmom kompensacji.</p>
+  </div>
+
+  <!-- ═══ ZADANIE: Suwak temperatury ═══ -->
+  <div class="task-card">
+    <div class="task-title">⚙️ Zadanie interaktywne</div>
+    <h3>Ustaw temperaturę dla filamentu PETG (235°C)</h3>
+    <p>Przesuń suwak tak, aby ustawić prawidłową temperaturę dyszy dla PETG.</p>
+
+    <div class="temp-bar">
+      <div class="temp-cursor" id="tempCursor" style="left:0%"></div>
+    </div>
+    <input type="range" id="tempSlider" min="160" max="280" value="160"
+           oninput="updateTemp(this.value)" />
+
+    <div class="temp-display" id="tempDisplay">160°C</div>
+    <div class="temp-info" id="tempInfo">Zbyt zimno — filament nie będzie płynął.</div>
+
+    <div class="result-msg" id="tempResult"></div>
+  </div>
+
+  <!-- ═══ SEKCJA 4: Etapy wydruku ═══ -->
+  <h2><span class="section-number">4</span> Etapy przygotowania wydruku</h2>
+
+  <p data-ts="8:00">Każdy wydruk przechodzi przez cztery etapy — od modelu cyfrowego, przez krojenie (<em>slicing</em>), aż do gotowego obiektu.</p>
+
+  <!-- ═══ ZADANIE: Przeciągnij i upuść ═══ -->
+  <div class="task-card layers-task">
+    <div class="task-title">🔀 Zadanie — Ułóż etapy w kolejności</div>
+    <h3>Przeciągnij etapy produkcji w prawidłowej kolejności:</h3>
+    <div class="layer-list" id="layerList">
+      <div class="layer-item" draggable="true" data-order="3">
+        <div class="layer-dot" style="background:#a855f7"></div>
+        Krojenie modelu w slicerze (Bambu Studio)
+      </div>
+      <div class="layer-item" draggable="true" data-order="1">
+        <div class="layer-dot" style="background:#3b82f6"></div>
+        Zaprojektowanie lub pobranie modelu 3D
+      </div>
+      <div class="layer-item" draggable="true" data-order="4">
+        <div class="layer-dot" style="background:#22c55e"></div>
+        Drukowanie na drukarce
+      </div>
+      <div class="layer-item" draggable="true" data-order="2">
+        <div class="layer-dot" style="background:#f97316"></div>
+        Sprawdzenie i naprawa siatki modelu
+      </div>
+    </div>
+    <button class="check-btn" onclick="checkOrder()">Sprawdź kolejność</button>
+    <div class="result-msg" id="orderResult"></div>
+  </div>
+
+  <!-- ═══ QUIZ 2 ═══ -->
+  <div class="quiz" id="quiz2">
+    <div class="task-title">🧠 Quiz końcowy</div>
+    <h3>Co to jest "layer height" i jak wpływa na wydruk?</h3>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz2',false)">Wysokość całego wydruku w milimetrach</button>
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz2',false)">Prędkość nakładania kolejnych warstw</button>
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz2',true)">Grubość pojedynczej warstwy — im mniejsza, tym gładszy wydruk</button>
+      <button class="quiz-option" onclick="checkQuiz(this,'quiz2',false)">Temperatura pierwszej warstwy wydruku</button>
+    </div>
+    <div class="quiz-feedback ok" id="quiz2-ok">✅ Dokładnie! Mniejszy layer height = gładszy wydruk, ale wolniejszy. Standardowe <code>0.2 mm</code> to dobry kompromis.</div>
+    <div class="quiz-feedback err" id="quiz2-err">❌ Niezupełnie. Layer height to grubość jednej warstwy materiału. Im cieńsza warstwa, tym wydruk jest dokładniejszy i gładszy.</div>
+  </div>
+
+  <div class="warn-box">
+    ⚠️ Pamiętaj: każda drukarka może wymagać innych ustawień. Zaczynaj od profilów domyślnych w Bambu Studio i dostrajaj stopniowo.
+  </div>
+
+  <div class="card" style="text-align:center; border-color: rgba(34,197,94,0.3)">
+    <p style="color: var(--green); font-weight: 600; font-size: 1.1rem">
+      🎉 Ukończyłeś lekcję 1!
+    </p>
+    <p>Rozumiesz już podstawy technologii FDM, rodzaje filamentów i kluczowe parametry druku. W kolejnej lekcji skonfigurujemy Bambu Studio.</p>
+  </div>
+
+  <script>
+    /* ── Postęp lekcji ── */
+    let score = 0;
+    const totalTasks = 4; // 2 quizy + temp + order
+    function updateProgress() {
+      const pct = Math.round((score / totalTasks) * 100);
+      document.getElementById('lessonProgress').style.width = pct + '%';
+    }
+
+    /* ── Wykres: kliknięcie słupka ── */
+    const matDescriptions = {
+      PLA:  'PLA: Najpopularniejszy filament. Temperatura 190–220°C, łatwy w druku, biodegradowalny. Idealny dla początkujących.',
+      PETG: 'PETG: Świetna wytrzymałość i odporność na wodę. Temperatura 230–250°C. Dobry do części funkcjonalnych.',
+      ABS:  'ABS: Odporny na ciepło i uderzenia. Temperatura 240–260°C. Wymaga zamkniętej komory drukarki.',
+      TPU:  'TPU: Elastyczny filament "gumowy". Temperatura 210–230°C. Trudniejszy w druku, ale daje elastyczne wyniki.',
+      PA:   'PA (Nylon): Bardzo wytrzymały i twardy. Temperatura 250–270°C. Wymaga suszenia filamentu przed drukiem.'
+    };
+    document.querySelectorAll('.filament-bar').forEach(bar => {
+      bar.addEventListener('click', () => {
+        const mat = bar.dataset.mat;
+        document.getElementById('matInfo').textContent = matDescriptions[mat] || '';
+      });
+    });
+
+    /* ── Quiz ── */
+    function checkQuiz(btn, quizId, correct) {
+      const quiz = document.getElementById(quizId);
+      quiz.querySelectorAll('.quiz-option').forEach(b => {
+        b.setAttribute('disabled', 'true');
+        b.style.cursor = 'default';
+      });
+      if (correct) {
+        btn.classList.add('correct');
+        quiz.querySelector(`#${quizId}-ok`).classList.add('show');
+        score++; updateProgress();
+      } else {
+        btn.classList.add('wrong');
+        quiz.querySelector(`#${quizId}-err`).classList.add('show');
+        // Pokaż poprawną
+        quiz.querySelectorAll('.quiz-option').forEach(b => {
+          if (b.onclick?.toString().includes('true')) b.classList.add('correct');
+        });
+      }
+    }
+
+    /* ── Suwak temperatury ── */
+    function updateTemp(val) {
+      val = parseInt(val);
+      const pct = ((val - 160) / (280 - 160)) * 100;
+      document.getElementById('tempCursor').style.left = pct + '%';
+      document.getElementById('tempDisplay').textContent = val + '°C';
+
+      let info = '', color = '#9ca3b0';
+      if      (val < 185) { info = 'Zbyt zimno — filament nie będzie płynął.'; color = '#60a5fa'; }
+      else if (val < 220) { info = '✅ Temperatura PLA — dobra dla podstawowego filamentu.'; color = '#22c55e'; }
+      else if (val >= 230 && val <= 245) { info = '✅ Temperatura PETG — to właśnie tu!'; color = '#a855f7'; }
+      else if (val > 245 && val < 260)   { info = 'Temperatura ABS — za wysoka dla PETG.'; color = '#f97316'; }
+      else if (val >= 260) { info = '🔥 Za wysoko! Grozi korkoczągiem i uszkodzeniem dyszy.'; color = '#ef4444'; }
+      else { info = 'Zbliżasz się...'; color = '#eab308'; }
+
+      const disp = document.getElementById('tempDisplay');
+      disp.style.color = color;
+      document.getElementById('tempInfo').textContent = info;
+
+      const resultEl = document.getElementById('tempResult');
+      if (val >= 230 && val <= 245) {
+        resultEl.textContent = '🎉 Idealnie! ' + val + '°C to właściwa temperatura dla PETG.';
+        resultEl.className = 'result-msg show';
+        resultEl.style.background = 'rgba(34,197,94,.15)';
+        resultEl.style.color = '#22c55e';
+        resultEl.style.border = '1px solid rgba(34,197,94,.3)';
+        if (!resultEl.dataset.counted) { resultEl.dataset.counted = '1'; score++; updateProgress(); }
+      } else {
+        resultEl.className = 'result-msg';
+      }
+    }
+
+    /* ── Drag & Drop kolejność ── */
+    let dragged = null;
+    const list = document.getElementById('layerList');
+
+    list.addEventListener('dragstart', e => {
+      dragged = e.target.closest('.layer-item');
+      setTimeout(() => dragged?.classList.add('dragging'), 0);
+    });
+    list.addEventListener('dragend', e => {
+      dragged?.classList.remove('dragging');
+      document.querySelectorAll('.layer-item').forEach(i => i.classList.remove('over'));
+    });
+    list.addEventListener('dragover', e => {
+      e.preventDefault();
+      const over = e.target.closest('.layer-item');
+      if (!over || over === dragged) return;
+      document.querySelectorAll('.layer-item').forEach(i => i.classList.remove('over'));
+      over.classList.add('over');
+      const rect = over.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      list.insertBefore(dragged, after ? over.nextSibling : over);
+    });
+
+    function checkOrder() {
+      const items = [...list.querySelectorAll('.layer-item')];
+      const orders = items.map(i => parseInt(i.dataset.order));
+      const correct = [1,2,3,4];
+      const ok = orders.every((v,i) => v === correct[i]);
+      const el = document.getElementById('orderResult');
+      if (ok) {
+        el.textContent = '✅ Doskonale! Kolejność jest prawidłowa. Zaprojektuj → sprawdź siatkę → pokrój → drukuj.';
+        el.style.cssText = 'display:block;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:.6rem 1rem';
+        if (!el.dataset.counted) { el.dataset.counted = '1'; score++; updateProgress(); }
+      } else {
+        el.textContent = '❌ Nie całkiem. Prawidłowa kolejność: 1) Projekt 2) Naprawa siatki 3) Slicing 4) Drukowanie. Spróbuj ponownie!';
+        el.style.cssText = 'display:block;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.6rem 1rem';
+      }
+    }
+
+    /* ── Timestamp highlight simulation ── */
+    const timestamps = [
+      { time: 0,   id: 'ts-intro' },
+    ];
+    // W prawdziwej aplikacji this.videoRef.addEventListener('timeupdate', ...) zastępuje poniższe
+    let tsIndex = 0;
+    function simulateTimestamps() {
+      if (tsIndex >= timestamps.length) return;
+      const el = document.getElementById(timestamps[tsIndex].id);
+      if (el) {
+        document.querySelectorAll('[data-ts]').forEach(e => e.classList.remove('active'));
+        el.classList.add('active');
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        tsIndex++;
+      }
+    }
+    setInterval(simulateTimestamps, 4000);
+  </script>
+</body>
+</html>

@@ -54,13 +54,13 @@ export async function POST(req: Request) {
 
   try {
     const result = await createInvitedUser(parsed.data);
-    // Link zwracamy tylko w trybie deweloperskim (brak klucza Resend).
-    const exposeUrl = !process.env.RESEND_API_KEY;
+    // Zawsze zwracamy link zaproszenia — admin może go skopiować
+    // jeśli Resend nie dostarczył maila (np. brak własnej domeny).
     return NextResponse.json(
       {
         id: result.id,
         email: result.email,
-        inviteUrl: exposeUrl ? result.inviteUrl : undefined,
+        inviteUrl: result.inviteUrl,
       },
       { status: 201 }
     );
