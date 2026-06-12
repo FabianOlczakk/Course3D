@@ -1,83 +1,95 @@
+import Link from "next/link";
+import { PlayCircle, BookOpen } from "lucide-react";
 import { auth } from "@/lib/auth";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Package, PlayCircle, Trophy } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const session = await auth();
   const name = session?.user?.username || "Kursancie";
 
+  const chapters = await prisma.chapter.findMany({
+    orderBy: { order: "asc" },
+    include: {
+      lessons: {
+        orderBy: { order: "asc" },
+        select: { id: true, title: true, description: true },
+      },
+    },
+  });
+
+  const firstLesson = chapters.flatMap((c) => c.lessons)[0];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Witaj, {name}!</h1>
-        <p className="text-muted-foreground">
-          To Twój pulpit kursu druku 3D. Wkrótce pojawią się tutaj lekcje.
+    <div className="space-y-8">
+      <div className="glow-card glow-border relative overflow-hidden p-8">
+        <h1 className="text-3xl font-bold text-text-primary">Witaj, {name}!</h1>
+        <p className="mt-1 text-text-secondary">
+          Kontynuuj naukę druku 3D z drukarką Bambu Lab A1 Mini.
         </p>
+        {firstLesson && (
+          <Link
+            href={`/kurs/${firstLesson.id}`}
+            className="glow-btn mt-4 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white"
+          >
+            <PlayCircle className="h-4 w-4" />
+            Kontynuuj naukę
+          </Link>
+        )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Twój kurs</CardTitle>
-            <PlayCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Druk 3D od podstaw</div>
-            <p className="text-xs text-muted-foreground">
-              Kurs z drukarką Bambu Lab A1 Mini
-            </p>
-          </CardContent>
-        </Card>
+      <div>
+        <h2 className="mb-4 text-xl font-bold text-text-primary">Twój kurs</h2>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Postęp</CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0%</div>
-            <p className="text-xs text-muted-foreground">
-              Lekcje dostępne wkrótce (Faza 2)
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Twój zestaw</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Bambu Lab A1 Mini</div>
-            <p className="text-xs text-muted-foreground">
-              Drukarka w cenie kursu (999 PLN)
-            </p>
-          </CardContent>
-        </Card>
+        {chapters.length === 0 ? (
+          <div className="glow-card p-8 text-center text-text-secondary">
+            <BookOpen className="mx-auto mb-3 h-10 w-10 text-text-muted" />
+            Lekcje pojawią się tutaj wkrótce.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {chapters.map((chapter) => (
+              <div key={chapter.id} className="glow-card p-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="text-2xl">{chapter.iconUrl || "📘"}</span>
+                  <div className="min-w-0">
+                    <h3 className="truncate font-semibold text-text-primary">
+                      {chapter.title}
+                    </h3>
+                    <p className="text-xs text-text-muted">
+                      {chapter.lessons.length} lekcji
+                    </p>
+                  </div>
+                </div>
+                {chapter.description && (
+                  <p className="mb-3 text-sm text-text-secondary">
+                    {chapter.description}
+                  </p>
+                )}
+                <ul className="space-y-1">
+                  {chapter.lessons.map((lesson) => (
+                    <li key={lesson.id}>
+                      <Link
+                        href={`/kurs/${lesson.id}`}
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text-secondary transition-colors hover:bg-[var(--bg-elevated)] hover:text-text-primary"
+                      >
+                        <PlayCircle className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+                        <span className="min-w-0 flex-1 truncate">
+                          {lesson.title}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                  {chapter.lessons.length === 0 && (
+                    <li className="px-2 py-1.5 text-sm text-text-muted">
+                      Brak lekcji w tym rozdziale.
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Co dalej?</CardTitle>
-          <CardDescription>
-            Platforma jest w trakcie budowy. Faza 1 (konta i panel
-            administracyjny) jest gotowa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li>Faza 2 — System lekcji i odtwarzacz wideo</li>
-            <li>Faza 3 — Społeczność i wiadomości</li>
-            <li>Faza 4 — Quizy, zadania i certyfikaty</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 }
