@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@prisma/client";
+import type { JWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
@@ -33,6 +34,8 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -78,10 +81,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      const t = token as JWT;
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.username = token.username;
+        session.user.id = t.id;
+        session.user.role = t.role;
+        session.user.username = t.username;
       }
       return session;
     },
