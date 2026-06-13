@@ -123,10 +123,16 @@ export async function POST(req: Request) {
 
     // Tryb: bezpośredni token JWT
     if (parsed.data.mode === "token") {
-      const t = parsed.data.accessToken.trim();
-      if (!t.startsWith("eyJ")) {
+      let t = parsed.data.accessToken.trim();
+      // Usuń prefix "Bearer " jeśli ktoś wkleił całą linię nagłówka
+      if (t.toLowerCase().startsWith("bearer ")) {
+        t = t.slice(7).trim();
+      }
+      // Token BambuLab może mieć prefix "TC " przed JWT — zostawiamy go
+      // bo jest wymagany w nagłówku Authorization
+      if (!t.includes("eyJ")) {
         return NextResponse.json(
-          { error: "To nie jest token JWT BambuLab. Token powinien zaczynać się od 'eyJ'. Sprawdź instrukcję." },
+          { error: "Nieprawidłowy token. Skopiuj wartość z nagłówka Authorization po słowie 'Bearer ' (powinna zawierać 'eyJ')." },
           { status: 400 }
         );
       }
