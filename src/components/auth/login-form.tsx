@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,14 @@ export function LoginForm() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Logowanie..." : "Zaloguj się"}
           </Button>
+          <p className="text-center text-sm">
+            <Link
+              href="/forgot-password"
+              className="text-primary underline"
+            >
+              Zapomniałeś hasła?
+            </Link>
+          </p>
         </form>
       </CardContent>
     </Card>

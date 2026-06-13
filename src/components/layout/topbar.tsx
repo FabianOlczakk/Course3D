@@ -12,8 +12,10 @@ import {
   User as UserIcon,
   Shield,
   Menu,
+  Megaphone,
 } from "lucide-react";
 import { MessagesPanel } from "@/components/messages/messages-panel";
+import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
 import { PrinterPanel } from "@/components/printer/printer-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -45,8 +47,63 @@ export function Topbar({
   const initials = (username || email).slice(0, 2).toUpperCase();
   const router = useRouter();
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const [messagesTarget, setMessagesTarget] = useState<{
+    id: string;
+    username: string | null;
+    email: string;
+    avatarUrl: string | null;
+  } | null>(null);
   const [printerOpen, setPrinterOpen] = useState(false);
+  const [announcementsOpen, setAnnouncementsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [annUnread, setAnnUnread] = useState(0);
+
+  // Globalny event: otwórz wiadomości (opcjonalnie z wybranym użytkownikiem).
+  useEffect(() => {
+    function onOpen(e: Event) {
+      const detail = (e as CustomEvent).detail as
+        | { id: string; username: string | null; email: string; avatarUrl: string | null }
+        | undefined;
+      setMessagesTarget(detail ?? null);
+      setMessagesOpen(true);
+    }
+    window.addEventListener("open-messages", onOpen);
+    return () => window.removeEventListener("open-messages", onOpen);
+  }, []);
+
+  // Liczba nieprzeczytanych ogłoszeń (porównanie dat z localStorage).
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAnn() {
+      try {
+        const res = await fetch("/api/announcements");
+        if (!res.ok) return;
+        const data = await res.json();
+        const list: { createdAt: string }[] = data.announcements ?? [];
+        const lastSeen = Number(
+          localStorage.getItem("announcements-last-seen") || 0
+        );
+        const count = list.filter(
+          (a) => new Date(a.createdAt).getTime() > lastSeen
+        ).length;
+        if (!cancelled) setAnnUnread(count);
+      } catch {
+        /* ignore */
+      }
+    }
+    void loadAnn();
+    const id = setInterval(loadAnn, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [announcementsOpen]);
+
+  function openAnnouncements() {
+    localStorage.setItem("announcements-last-seen", String(Date.now()));
+    setAnnUnread(0);
+    setAnnouncementsOpen(true);
+  }
 
   // Liczba nieprzeczytanych wiadomości: pobierz przy montażu i odświeżaj co 10 s.
   useEffect(() => {
@@ -95,6 +152,20 @@ export function Topbar({
             {unread > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
                 {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            title="Ogłoszenia"
+            aria-label="Ogłoszenia"
+            className="glow-icon-btn relative"
+            onClick={openAnnouncements}
+          >
+            <Megaphone className="h-4 w-4" />
+            {annUnread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+                {annUnread > 99 ? "99+" : annUnread}
               </span>
             )}
           </button>
@@ -171,7 +242,16 @@ export function Topbar({
 
       <MessagesPanel
         open={messagesOpen}
-        onClose={() => setMessagesOpen(false)}
+        onClose={() => {
+          setMessagesOpen(false);
+          setMessagesTarget(null);
+        }}
+        initialUser={messagesTarget}
+      />
+
+      <AnnouncementsPanel
+        open={announcementsOpen}
+        onClose={() => setAnnouncementsOpen(false)}
       />
 
       <PrinterPanel open={printerOpen} onClose={() => setPrinterOpen(false)} />

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { ArrowLeft, Loader2, Paperclip, Search, Send, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
+import { AdminBadge } from "@/components/shared/admin-badge";
 import { readAttachments, formatFileSize, type Attachment } from "@/lib/attachments-client";
 import { shortTime, timeAgo } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ interface UserMini {
   username: string | null;
   email: string;
   avatarUrl: string | null;
+  role?: string;
 }
 
 interface Conversation {
@@ -24,6 +26,7 @@ interface Conversation {
   username: string | null;
   email: string;
   avatarUrl: string | null;
+  role?: string;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
@@ -51,9 +54,11 @@ function initials(u: { username: string | null; email: string }) {
 export function MessagesPanel({
   open,
   onClose,
+  initialUser,
 }: {
   open: boolean;
   onClose: () => void;
+  initialUser?: UserMini | null;
 }) {
   const { data: session } = useSession();
   const meId = session?.user?.id ?? "";
@@ -115,6 +120,12 @@ export function MessagesPanel({
     if (active) void loadMessages(active.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
+
+  // Gdy panel otwierany jest z wskazanym użytkownikiem (np. z profilu).
+  useEffect(() => {
+    if (open && initialUser) setActive(initialUser);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialUser?.id]);
 
   // Wyszukiwanie użytkowników (debounce).
   useEffect(() => {
@@ -274,6 +285,7 @@ export function MessagesPanel({
                         username: c.username,
                         email: c.email,
                         avatarUrl: c.avatarUrl,
+                        role: c.role,
                       })
                     }
                   />
@@ -304,9 +316,13 @@ export function MessagesPanel({
                       {initials(active)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium text-text-primary">
+                  <a
+                    href={`/profil/${active.id}`}
+                    className="font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
+                  >
                     {displayName(active)}
-                  </span>
+                  </a>
+                  <AdminBadge role={active.role} />
                 </div>
 
                 <div

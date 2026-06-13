@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Trash2, Pencil } from "lucide-react";
+import { MoreHorizontal, Trash2, Pencil, User as UserIcon, MessageSquare } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -109,9 +110,12 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
                           {(u.username || u.email).slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">
+                      <Link
+                        href={`/profil/${u.id}`}
+                        className="font-medium hover:text-[var(--accent)] hover:underline"
+                      >
                         {u.username || "—"}
-                      </span>
+                      </Link>
                     </div>
                   </TableCell>
                   <TableCell>{u.email}</TableCell>
@@ -139,6 +143,18 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
                         <DropdownMenuItem onClick={() => setEditing(u)}>
                           <Pencil className="h-4 w-4" />
                           Edytuj
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/profil/${u.id}`}>
+                            <UserIcon className="h-4 w-4" />
+                            Profil
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/uzytkownik/${u.id}/wiadomosci`}>
+                            <MessageSquare className="h-4 w-4" />
+                            Wiadomości
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"

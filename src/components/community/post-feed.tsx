@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { NewPostForm } from "@/components/community/new-post-form";
 import { PostCard } from "@/components/community/post-card";
 import type { PostItem } from "@/components/community/types";
@@ -19,6 +19,11 @@ export function PostFeed({
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
+
+  const [query, setQuery] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchResults, setSearchResults] = useState<PostItem[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const loadMore = useCallback(
     async (reset = false) => {
@@ -47,8 +52,80 @@ export function PostFeed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Wyszukiwanie z debounce.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setSearchActive(false);
+      setSearchResults([]);
+      return;
+    }
+    setSearchActive(true);
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/posts/search?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.posts ?? []);
+        }
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
   return (
     <div className="space-y-4">
+      {/* Pasek wyszukiwania */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Szukaj w postach i komentarzach..."
+          className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-2.5 pl-9 pr-9 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        {query && (
+          <button
+            type="button"
+            aria-label="Wyczyść"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+            onClick={() => setQuery("")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {searchActive ? (
+        <div className="space-y-4">
+          {searching ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
+            </div>
+          ) : searchResults.length === 0 ? (
+            <p className="py-8 text-center text-sm text-text-muted">
+              Brak wyników dla „{query}”.
+            </p>
+          ) : (
+            searchResults.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                highlight={query}
+                onDeleted={(id) =>
+                  setSearchResults((prev) => prev.filter((p) => p.id !== id))
+                }
+              />
+            ))
+          )}
+        </div>
+      ) : (
+        <>
       <NewPostForm onCreated={(p) => setPosts((prev) => [p, ...prev])} />
 
       {posts.map((post) => (
@@ -83,6 +160,8 @@ export function PostFeed({
             Załaduj więcej
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );

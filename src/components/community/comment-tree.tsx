@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
+import { AdminBadge } from "@/components/shared/admin-badge";
 import { CommentForm } from "@/components/community/comment-form";
 import {
   authorInitials,
@@ -96,19 +98,25 @@ function CommentNode({
       style={{ marginLeft: indent > 0 ? `${indent * 0.5}rem` : 0 }}
     >
       <div className="flex items-start gap-2">
-        <Avatar className="h-7 w-7 shrink-0">
-          {node.author.avatarUrl && (
-            <AvatarImage src={node.author.avatarUrl} alt={authorName(node.author)} />
-          )}
-          <AvatarFallback className="text-[10px]">
-            {authorInitials(node.author)}
-          </AvatarFallback>
-        </Avatar>
+        <Link href={`/profil/${node.author.id}`}>
+          <Avatar className="h-7 w-7 shrink-0">
+            {node.author.avatarUrl && (
+              <AvatarImage src={node.author.avatarUrl} alt={authorName(node.author)} />
+            )}
+            <AvatarFallback className="text-[10px]">
+              {authorInitials(node.author)}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-text-primary">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/profil/${node.author.id}`}
+              className="text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
+            >
               {authorName(node.author)}
-            </span>
+            </Link>
+            <AdminBadge role={node.author.role} />
             <span className="text-xs text-text-muted">
               {timeAgo(node.createdAt)}
             </span>
