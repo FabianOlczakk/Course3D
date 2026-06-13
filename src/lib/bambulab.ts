@@ -43,8 +43,14 @@ export async function bambulabLogin(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ account, password }),
   });
-  if (!res.ok) throw new Error("Błąd logowania do BambuLab");
-  return res.json();
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Błąd logowania do BambuLab (${res.status}): ${text}`);
+  }
+  const data = await res.json();
+  // BambuLab może zwrócić "token" lub "accessToken" — normalizujemy.
+  if (data.token && !data.accessToken) data.accessToken = data.token;
+  return data;
 }
 
 export async function getBambulabDevices(

@@ -48,14 +48,17 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
-    if (!login.accessToken) {
+    // BambuLab zwraca "token" lub "accessToken" w zależności od wersji API.
+    const rawToken = (login as Record<string, unknown>).token ?? login.accessToken;
+    if (!rawToken) {
       return NextResponse.json(
         { error: "BambuLab nie zwróciło tokenu dostępu." },
         { status: 401 }
       );
     }
-    accessToken = login.accessToken as string;
-    refreshToken = (login.refreshToken as string) ?? null;
+    accessToken = rawToken as string;
+    const rawRefresh = (login as Record<string, unknown>).refreshToken;
+    refreshToken = (rawRefresh as string) ?? null;
   } else {
     accessToken = parsed.data.accessToken;
   }
