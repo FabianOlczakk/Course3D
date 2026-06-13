@@ -43,6 +43,22 @@ model User {
 
   // Progress
   progress LessonProgress[]
+
+  // BambuLab
+  bambulabConnection BambulabConnection?
+}
+
+model BambulabConnection {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  accessToken      String
+  refreshToken     String?
+  deviceList       Json? // cached device list
+  selectedDeviceId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {

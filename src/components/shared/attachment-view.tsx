@@ -21,7 +21,8 @@ export function AttachmentView({ attachments }: { attachments: Attachment[] }) {
             key={i}
             src={att.url}
             alt={att.name}
-            className="max-h-64 max-w-full cursor-zoom-in rounded-lg border border-[var(--border-subtle)]"
+            className="max-w-full cursor-zoom-in rounded-lg border border-[var(--border-subtle)] object-contain"
+            style={{ maxHeight: "400px" }}
             onClick={() => setLightbox({ url: att.url, name: att.name })}
           />
         ) : (
