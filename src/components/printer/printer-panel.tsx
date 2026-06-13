@@ -10,6 +10,10 @@ import {
   Check,
   Camera,
   AlertTriangle,
+  LogOut,
+  RefreshCw,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { useToast } from "@/lib/toast";
 import {
@@ -443,6 +447,115 @@ function DeviceSelect({
   );
 }
 
+interface CameraInfo {
+  available: boolean;
+  rtspUrl?: string;
+  region?: string;
+}
+
+function CameraSection() {
+  const [info, setInfo] = useState<CameraInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const fetchCamera = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/bambulab/camera");
+      if (!res.ok) { setInfo({ available: false }); return; }
+      const data = await res.json() as CameraInfo;
+      setInfo(data);
+    } catch {
+      setInfo({ available: false });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyUrl = async () => {
+    if (!info?.rtspUrl) return;
+    try {
+      await navigator.clipboard.writeText(info.rtspUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => { void fetchCamera(); }, []);
+
+  return (
+    <div className="space-y-2 border-t border-[var(--border-subtle)] pt-4">
+      <div className="flex items-center justify-between">
+        <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+          <Camera className="h-4 w-4 text-[var(--accent)]" />
+          Kamera
+        </h4>
+        <button
+          type="button"
+          onClick={fetchCamera}
+          disabled={loading}
+          className="glow-icon-btn"
+          aria-label="Odśwież"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)]">
+          <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
+        </div>
+      )}
+
+      {!loading && info?.available && info.rtspUrl && (
+        <div className="space-y-2">
+          <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
+            <div className="flex items-center gap-2 text-xs text-green-300">
+              <Wifi className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-medium">Strumień dostępny (RTSP)</span>
+            </div>
+            <p className="mt-1.5 text-xs text-green-200/70">
+              Strumień RTSP wymaga aplikacji obsługującej ten protokół (VLC, Bambu Handy, OBS).
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] p-2">
+            <code className="flex-1 truncate text-xs text-text-secondary">
+              {info.rtspUrl}
+            </code>
+            <button
+              type="button"
+              onClick={copyUrl}
+              className="glow-icon-btn shrink-0"
+              aria-label="Kopiuj URL"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+          <p className="text-xs text-text-muted">
+            Wklej URL do <strong>VLC</strong> (Media → Otwórz strumień) lub <strong>OBS</strong> (Źródło → Przechwytywanie mediów).
+          </p>
+        </div>
+      )}
+
+      {!loading && info && !info.available && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)] p-3">
+          <WifiOff className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+          <div className="text-xs text-text-muted space-y-1">
+            <p>Podgląd kamery niedostępny przez chmurę.</p>
+            <p>Użyj aplikacji <strong className="text-text-secondary">Bambu Handy</strong> lub podłącz się lokalnie przez VPN do sieci drukarki.</p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !info && (
+        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)]">
+          <span className="text-xs text-text-muted">Kliknij odśwież, aby sprawdzić kamerę</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Dashboard({
   status,
   setStatus,
@@ -454,6 +567,7 @@ function Dashboard({
 }) {
   const toast = useToast();
   const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const poll = useCallback(async () => {
@@ -467,7 +581,6 @@ function Dashboard({
     }
   }, [setStatus]);
 
-  // Odpytywanie statusu co 10 sekund, gdy panel otwarty.
   useEffect(() => {
     void poll();
     timerRef.current = setInterval(() => void poll(), 10000);
@@ -485,128 +598,148 @@ function Dashboard({
         toast.error("Nie udało się rozłączyć.");
         return;
       }
-      toast.success("Rozłączono drukarkę.");
+      toast.success("Rozłączono z BambuLab.");
       onDisconnect();
     } catch {
       toast.error("Błąd połączenia.");
     } finally {
       setDisconnecting(false);
+      setConfirmDisconnect(false);
     }
   };
 
-  const isPrinting =
-    status?.printStatus?.toUpperCase() === "RUNNING";
+  const isPrinting = status?.printStatus?.toUpperCase() === "RUNNING";
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-text-primary">
-          {status?.deviceName ?? "Drukarka BambuLab"}
-        </h3>
+      {/* Nagłówek z nazwą i statusem online */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-bold text-text-primary">
+            {status?.deviceName ?? "Drukarka BambuLab"}
+          </h3>
+          <p className="flex items-center gap-1.5 text-xs text-text-muted mt-0.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${status?.online ? "bg-green-400" : "bg-text-muted"}`} />
+            {status?.online ? "Online" : "Offline"}
+          </p>
+        </div>
         <button
           type="button"
-          onClick={disconnect}
-          disabled={disconnecting}
-          aria-label="Rozłącz"
-          className="glow-icon-btn"
+          onClick={() => void poll()}
+          className="glow-icon-btn shrink-0"
+          aria-label="Odśwież"
+          title="Odśwież status"
         >
-          {disconnecting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <X className="h-4 w-4" />
-          )}
+          <RefreshCw className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-text-secondary">Status:</span>
-        <span
-          className={`inline-flex items-center gap-1.5 font-medium ${
-            isPrinting ? "text-green-400" : "text-text-primary"
-          }`}
-        >
-          <span
-            className={`h-2 w-2 rounded-full ${
-              isPrinting ? "bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]" : "bg-text-muted"
-            }`}
-          />
-          {status ? printStatusLabel(status.printStatus) : "—"}
-        </span>
-      </div>
-
-      {status?.fileName && (
-        <div className="text-sm">
-          <span className="text-text-secondary">Plik: </span>
-          <span className="text-text-primary">{status.fileName}</span>
-        </div>
-      )}
-
-      {status?.progressPercent != null && (
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-text-secondary">Postęp</span>
-            <span className="font-medium text-text-primary">
-              {Math.round(status.progressPercent)}%
-            </span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--bg-base)]">
-            <div
-              className="h-full rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent-glow)] transition-all"
-              style={{ width: `${Math.min(100, Math.max(0, status.progressPercent))}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {status?.remainingMinutes != null && (
-        <div className="text-sm">
-          <span className="text-text-secondary">Pozostały czas: </span>
-          <span className="text-text-primary">
-            {status.remainingMinutes} min
+      {/* Status druku */}
+      <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-text-secondary">Status druku</span>
+          <span className={`inline-flex items-center gap-1.5 font-medium ${isPrinting ? "text-green-400" : "text-text-primary"}`}>
+            <span className={`h-2 w-2 rounded-full ${isPrinting ? "bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]" : "bg-text-muted"}`} />
+            {status ? printStatusLabel(status.printStatus) : "—"}
           </span>
         </div>
-      )}
 
-      <div className="space-y-2 border-t border-[var(--border-subtle)] pt-4">
-        <h4 className="text-sm font-semibold text-text-primary">Temperatury</h4>
-        <div className="flex items-center gap-2 text-sm text-text-secondary">
-          <Thermometer className="h-4 w-4 text-[var(--accent)]" />
-          Dysza: {fmtTemp(status?.nozzleTemp)} / {fmtTemp(status?.nozzleTarget)}
-        </div>
-        <div className="flex items-center gap-2 text-sm text-text-secondary">
-          <Thermometer className="h-4 w-4 text-[var(--accent)]" />
-          Stół: {fmtTemp(status?.bedTemp)} / {fmtTemp(status?.bedTarget)}
+        {status?.fileName && (
+          <div className="flex items-start justify-between gap-2 text-sm">
+            <span className="text-text-secondary shrink-0">Plik</span>
+            <span className="text-text-primary text-right truncate max-w-[200px]" title={status.fileName}>{status.fileName}</span>
+          </div>
+        )}
+
+        {status?.progressPercent != null && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Postęp</span>
+              <span className="font-medium text-text-primary">{Math.round(status.progressPercent)}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--bg-card)]">
+              <div
+                className="h-full rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent-glow)] transition-all duration-500"
+                style={{ width: `${Math.min(100, Math.max(0, status.progressPercent))}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {status?.remainingMinutes != null && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-text-secondary">Pozostały czas</span>
+            <span className="text-text-primary font-medium">
+              {status.remainingMinutes >= 60
+                ? `${Math.floor(status.remainingMinutes / 60)}h ${status.remainingMinutes % 60}min`
+                : `${status.remainingMinutes} min`}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Temperatury */}
+      <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Temperatury</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <TempCard label="Dysza" current={status?.nozzleTemp} target={status?.nozzleTarget} />
+          <TempCard label="Stół" current={status?.bedTemp} target={status?.bedTarget} />
         </div>
       </div>
 
-      <div className="space-y-2 border-t border-[var(--border-subtle)] pt-4">
-        <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-          <Camera className="h-4 w-4 text-[var(--accent)]" />
-          Kamera
-        </h4>
-        <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)] p-4 text-center text-xs text-text-muted">
-          Podgląd niedostępny — otwórz aplikację Bambu Handy
-        </div>
-      </div>
+      {/* Kamera */}
+      <CameraSection />
 
-      <div className="flex gap-2 border-t border-[var(--border-subtle)] pt-4">
-        <button
-          type="button"
-          disabled
-          title="Sterowanie wkrótce"
-          className="flex-1 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-muted disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Wstrzymaj
-        </button>
-        <button
-          type="button"
-          disabled
-          title="Sterowanie wkrótce"
-          className="flex-1 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-muted disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Zatrzymaj
-        </button>
+      {/* Wylogowanie */}
+      <div className="border-t border-[var(--border-subtle)] pt-4">
+        {confirmDisconnect ? (
+          <div className="space-y-2">
+            <p className="text-sm text-text-secondary text-center">
+              Na pewno rozłączyć konto BambuLab?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDisconnect(false)}
+                className="flex-1 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                onClick={disconnect}
+                disabled={disconnecting}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-60"
+              >
+                {disconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
+                Rozłącz
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmDisconnect(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-muted hover:border-red-500/40 hover:text-red-400 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Wyloguj z BambuLab
+          </button>
+        )}
       </div>
+    </div>
+  );
+}
+
+function TempCard({ label, current, target }: { label: string; current: number | null | undefined; target: number | null | undefined }) {
+  const isHot = current != null && current > 50;
+  return (
+    <div className="rounded-md border border-[var(--border-subtle)] p-2.5 text-center">
+      <p className="text-xs text-text-muted mb-1">{label}</p>
+      <p className={`text-lg font-bold ${isHot ? "text-orange-400" : "text-text-primary"}`}>
+        {fmtTemp(current)}
+      </p>
+      <p className="text-xs text-text-muted">cel: {fmtTemp(target)}</p>
     </div>
   );
 }
