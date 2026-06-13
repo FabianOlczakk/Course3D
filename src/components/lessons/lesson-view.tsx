@@ -14,6 +14,7 @@ import { LessonPlayer } from "@/components/lessons/lesson-player";
 import { useToast } from "@/lib/toast";
 import { broadcastProgressUpdate } from "@/lib/use-progress";
 import { cn } from "@/lib/utils";
+import { injectDarkBackground } from "@/lib/inject-dark-bg";
 
 interface NavLesson {
   id: string;
@@ -110,10 +111,14 @@ export function LessonView({
     next: null,
   });
 
-  const enrichedHtml = useMemo(
-    () => (html ? injectTimestampScript(html) : ""),
-    [html]
-  );
+  const enrichedHtml = useMemo(() => {
+    if (!html) return "";
+    // Wstrzykuj ciemne tło tylko jeśli HTML nie ma już naszych ciemnych stylów.
+    const base = html.includes("background: #0a0a")
+      ? html
+      : injectDarkBackground(html);
+    return injectTimestampScript(base);
+  }, [html]);
   const dataTsList = useMemo(() => extractDataTs(html || ""), [html]);
 
   const [activeElementId, setActiveElementId] = useState<string | null>(null);

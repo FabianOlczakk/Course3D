@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Megaphone, X } from "lucide-react";
 import { timeAgo } from "@/lib/format-time";
+import { injectDarkBackground } from "@/lib/inject-dark-bg";
 
 interface Announcement {
   id: string;
@@ -89,9 +90,9 @@ export function AnnouncementsPanel({
                 </p>
               </div>
               <iframe
-                srcDoc={a.content}
+                srcDoc={injectDarkBackground(a.content)}
                 sandbox="allow-scripts allow-same-origin"
-                className="h-64 w-full border-0 bg-white"
+                className="h-64 w-full border-0 bg-[#0a0a0f]"
                 title={a.title || "Ogłoszenie"}
               />
             </article>
