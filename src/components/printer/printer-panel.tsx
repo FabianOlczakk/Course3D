@@ -171,49 +171,126 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
+  // Krok 2FA
+  const [tfaKey, setTfaKey] = useState<string | null>(null);
+  const [code, setCode] = useState("");
 
-  const submit = async (e: React.FormEvent) => {
+  const inputCls = "w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-text-primary outline-none focus:border-[var(--border-glow)]";
+
+  const handleError = (data: Record<string, unknown>, status: number) => {
+    if (status === 503 || data.error === "MISSING_TABLE") {
+      toast.error("Tabela nie istnieje — uruchom migrację SQL.");
+      onConnected();
+      return true;
+    }
+    return false;
+  };
+
+  const submitCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
     try {
-      const body =
-        tab === "credentials"
-          ? { mode: "credentials", account, password }
-          : { mode: "token", accessToken: token };
-
       const res = await fetch("/api/bambulab/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ mode: "credentials", account, password }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 503 || data.error === "MISSING_TABLE") {
-        toast.error("Tabela nie istnieje — uruchom migrację SQL.");
-        onConnected();
+      if (handleError(data, res.status)) return;
+      if (data.requiresCode) {
+        setTfaKey(data.tfaKey ?? "");
+        toast.success("Kod weryfikacyjny wysłany na Twój email.");
         return;
       }
-      if (!res.ok) {
-        toast.error(data.error ?? "Błąd połączenia z BambuLab.");
-        return;
-      }
+      if (!res.ok) { toast.error(data.error ?? "Błąd połączenia."); return; }
       toast.success("Połączono z BambuLab.");
       setPassword("");
-      setToken("");
       onConnected();
-    } catch {
-      toast.error("Błąd połączenia.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error("Błąd połączenia."); }
+    finally { setLoading(false); }
   };
 
-  const inputCls = "w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-text-primary outline-none focus:border-[var(--border-glow)]";
+  const submitCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/bambulab/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "verify", tfaKey, code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (handleError(data, res.status)) return;
+      if (!res.ok) { toast.error(data.error ?? "Nieprawidłowy kod."); return; }
+      toast.success("Połączono z BambuLab.");
+      onConnected();
+    } catch { toast.error("Błąd połączenia."); }
+    finally { setLoading(false); }
+  };
+
+  const submitToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/bambulab/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "token", accessToken: token.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (handleError(data, res.status)) return;
+      if (!res.ok) { toast.error(data.error ?? "Błąd."); return; }
+      toast.success("Połączono z BambuLab.");
+      setToken("");
+      onConnected();
+    } catch { toast.error("Błąd połączenia."); }
+    finally { setLoading(false); }
+  };
+
+  // Krok 2: wpisz kod weryfikacyjny z maila
+  if (tfaKey !== null) {
+    return (
+      <form onSubmit={submitCode} className="space-y-4">
+        <div className="flex flex-col items-center gap-2 py-2 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-glow)]">
+            <Printer className="h-8 w-8 text-[var(--accent)]" />
+          </div>
+          <h3 className="text-lg font-bold text-text-primary">Weryfikacja emailem</h3>
+          <p className="text-sm text-text-secondary">BambuLab wysłał 6-cyfrowy kod na Twój email. Wpisz go poniżej.</p>
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm text-text-secondary">Kod weryfikacyjny</label>
+          <input
+            type="text"
+            required
+            maxLength={8}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            className={`${inputCls} text-center text-2xl tracking-[0.5em] font-mono`}
+            placeholder="000000"
+            autoFocus
+          />
+        </div>
+        <button type="submit" disabled={loading || code.length < 4}
+          className="glow-btn inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Potwierdź kod
+        </button>
+        <button type="button" onClick={() => { setTfaKey(null); setCode(""); }}
+          className="w-full text-center text-xs text-text-muted hover:text-text-secondary">
+          ← Wróć
+        </button>
+      </form>
+    );
+  }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-col items-center gap-2 py-2 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-glow)] shadow-glow">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-glow)]">
           <Printer className="h-8 w-8 text-[var(--accent)]" />
         </div>
         <h3 className="text-lg font-bold text-text-primary">Połącz drukarkę BambuLab</h3>
@@ -221,24 +298,16 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
 
       {/* Zakładki */}
       <div className="flex rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-1 text-sm">
-        <button
-          type="button"
-          onClick={() => setTab("credentials")}
-          className={`flex-1 rounded-md px-3 py-1.5 transition-colors ${tab === "credentials" ? "bg-[var(--accent)] text-white" : "text-text-secondary hover:text-text-primary"}`}
-        >
-          Email i hasło
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("token")}
-          className={`flex-1 rounded-md px-3 py-1.5 transition-colors ${tab === "token" ? "bg-[var(--accent)] text-white" : "text-text-secondary hover:text-text-primary"}`}
-        >
-          Token dostępu
-        </button>
+        {(["credentials", "token"] as const).map((t) => (
+          <button key={t} type="button" onClick={() => setTab(t)}
+            className={`flex-1 rounded-md px-3 py-1.5 transition-colors ${tab === t ? "bg-[var(--accent)] text-white" : "text-text-secondary hover:text-text-primary"}`}>
+            {t === "credentials" ? "Email i hasło" : "Token JWT"}
+          </button>
+        ))}
       </div>
 
       {tab === "credentials" ? (
-        <>
+        <form onSubmit={submitCredentials} className="space-y-3">
           <div className="space-y-1">
             <label className="text-sm text-text-secondary">Email BambuLab</label>
             <input type="email" required value={account} onChange={(e) => setAccount(e.target.value)} className={inputCls} placeholder="email@example.com" />
@@ -248,44 +317,44 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
             <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="••••••••" />
           </div>
           <p className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 text-xs text-text-muted">
-            ⚠️ Hasło nie jest przechowywane — zapisujemy wyłącznie token dostępu.
+            ⚠️ Hasło nie jest przechowywane. BambuLab może wysłać kod 2FA na Twój email.
           </p>
-        </>
+          <button type="submit" disabled={loading}
+            className="glow-btn inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Połącz
+          </button>
+        </form>
       ) : (
-        <>
+        <form onSubmit={submitToken} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-sm text-text-secondary">Token dostępu</label>
-            <textarea
-              required
-              rows={4}
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
+            <label className="text-sm text-text-secondary">Token JWT</label>
+            <textarea required rows={3} value={token} onChange={(e) => setToken(e.target.value)}
               className={`${inputCls} resize-none font-mono text-xs`}
-              placeholder="Wklej token JWT z BambuLab..."
-            />
+              placeholder="eyJhbGciOiJSUzI1NiJ9..." />
           </div>
           <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-300 space-y-2">
-            <p className="font-semibold">Jak pobrać token (konto Google)?</p>
-            <ol className="list-decimal list-inside space-y-1 text-blue-200">
-              <li>Otwórz <strong>Bambu Studio</strong> → Zaloguj się przez Google</li>
-              <li>Menu → <strong>Pomoc → Otwórz folder danych</strong></li>
-              <li>Otwórz plik <code className="bg-blue-900/40 px-1 rounded">user_data.json</code></li>
-              <li>Skopiuj wartość pola <code className="bg-blue-900/40 px-1 rounded">access_token</code></li>
+            <p className="font-semibold">📋 Jak znaleźć token JWT BambuLab?</p>
+            <ol className="list-decimal list-inside space-y-1.5 text-blue-200">
+              <li>Zaloguj się na <strong>bambulab.com</strong> przez Google</li>
+              <li>Naciśnij <strong>F12</strong> (DevTools) → zakładka <strong>Network</strong></li>
+              <li>Odśwież stronę (F5)</li>
+              <li>W liście zapytań kliknij dowolne do <code className="bg-blue-900/40 px-1 rounded">api.bambulab.com</code></li>
+              <li>Otwórz zakładkę <strong>Headers</strong> → znajdź <strong>Authorization</strong></li>
+              <li>Skopiuj wszystko <strong>po słowie Bearer</strong> (zaczyna się od <code className="bg-blue-900/40 px-1 rounded">eyJ</code>)</li>
             </ol>
-            <p className="text-blue-300/70 text-xs">Alternatywnie: zaloguj się na <strong>bambulab.com</strong>, otwórz DevTools → Application → Local Storage → skopiuj <code className="bg-blue-900/40 px-1 rounded">token</code>.</p>
           </div>
-        </>
+          <button type="submit" disabled={loading || !token.trim().startsWith("eyJ")}
+            className="glow-btn inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Połącz tokenem
+          </button>
+          {token && !token.trim().startsWith("eyJ") && (
+            <p className="text-xs text-red-400">Token musi zaczynać się od &quot;eyJ&quot; — to nie jest prawidłowy token JWT.</p>
+          )}
+        </form>
       )}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="glow-btn inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-      >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Połącz
-      </button>
-    </form>
+    </div>
   );
 }
 
