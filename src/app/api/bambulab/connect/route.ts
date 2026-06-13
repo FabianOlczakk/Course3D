@@ -8,12 +8,18 @@ import {
   isMissingTableError,
 } from "@/lib/bambulab";
 
-const connectSchema = z.object({
-  account: z.string().min(1, "Podaj email."),
-  password: z.string().min(1, "Podaj hasło."),
-});
+const connectSchema = z.union([
+  z.object({
+    mode: z.literal("credentials"),
+    account: z.string().min(1, "Podaj email."),
+    password: z.string().min(1, "Podaj hasło."),
+  }),
+  z.object({
+    mode: z.literal("token"),
+    accessToken: z.string().min(10, "Token jest za krótki."),
+  }),
+]);
 
-// POST: logowanie do chmury BambuLab i zapis tokenu dostępu (NIE hasła) w DB.
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -29,29 +35,35 @@ export async function POST(req: Request) {
     );
   }
 
-  const { account, password } = parsed.data;
+  let accessToken: string;
+  let refreshToken: string | null = null;
 
-  let login;
-  try {
-    login = await bambulabLogin(account, password);
-  } catch {
-    return NextResponse.json(
-      { error: "Błąd logowania do BambuLab. Sprawdź email i hasło." },
-      { status: 401 }
-    );
+  if (parsed.data.mode === "credentials") {
+    let login;
+    try {
+      login = await bambulabLogin(parsed.data.account, parsed.data.password);
+    } catch {
+      return NextResponse.json(
+        { error: "Błąd logowania do BambuLab. Sprawdź email i hasło." },
+        { status: 401 }
+      );
+    }
+    if (!login.accessToken) {
+      return NextResponse.json(
+        { error: "BambuLab nie zwróciło tokenu dostępu." },
+        { status: 401 }
+      );
+    }
+    accessToken = login.accessToken as string;
+    refreshToken = (login.refreshToken as string) ?? null;
+  } else {
+    accessToken = parsed.data.accessToken;
   }
 
-  if (!login.accessToken) {
-    return NextResponse.json(
-      { error: "BambuLab nie zwróciło tokenu dostępu." },
-      { status: 401 }
-    );
-  }
-
-  // Pobierz listę urządzeń (best-effort) do cache'a.
+  // Pobierz listę urządzeń (best-effort).
   let deviceList: unknown = null;
   try {
-    const devices = await getBambulabDevices(login.accessToken);
+    const devices = await getBambulabDevices(accessToken);
     deviceList = devices.devices ?? devices ?? null;
   } catch {
     deviceList = null;
@@ -62,13 +74,13 @@ export async function POST(req: Request) {
       where: { userId: session.user.id },
       create: {
         userId: session.user.id,
-        accessToken: login.accessToken,
-        refreshToken: login.refreshToken ?? null,
+        accessToken,
+        refreshToken,
         deviceList: deviceList ?? undefined,
       },
       update: {
-        accessToken: login.accessToken,
-        refreshToken: login.refreshToken ?? null,
+        accessToken,
+        refreshToken,
         deviceList: deviceList ?? undefined,
         selectedDeviceId: null,
       },
@@ -83,7 +95,6 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true });
 }
 
-// DELETE: usuń połączenie BambuLab.
 export async function DELETE() {
   const session = await auth();
   if (!session?.user) {

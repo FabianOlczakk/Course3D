@@ -166,8 +166,10 @@ function MissingTable() {
 
 function ConnectForm({ onConnected }: { onConnected: () => void }) {
   const toast = useToast();
+  const [tab, setTab] = useState<"credentials" | "token">("credentials");
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -175,10 +177,15 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
     if (loading) return;
     setLoading(true);
     try {
+      const body =
+        tab === "credentials"
+          ? { mode: "credentials", account, password }
+          : { mode: "token", accessToken: token };
+
       const res = await fetch("/api/bambulab/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account, password }),
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 503 || data.error === "MISSING_TABLE") {
@@ -187,11 +194,12 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
         return;
       }
       if (!res.ok) {
-        toast.error(data.error ?? "Błąd logowania do BambuLab.");
+        toast.error(data.error ?? "Błąd połączenia z BambuLab.");
         return;
       }
       toast.success("Połączono z BambuLab.");
       setPassword("");
+      setToken("");
       onConnected();
     } catch {
       toast.error("Błąd połączenia.");
@@ -200,39 +208,74 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
     }
   };
 
+  const inputCls = "w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-text-primary outline-none focus:border-[var(--border-glow)]";
+
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="flex flex-col items-center gap-2 py-2 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-glow)] shadow-glow">
           <Printer className="h-8 w-8 text-[var(--accent)]" />
         </div>
-        <h3 className="text-lg font-bold text-text-primary">
-          Połącz drukarkę BambuLab
-        </h3>
+        <h3 className="text-lg font-bold text-text-primary">Połącz drukarkę BambuLab</h3>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm text-text-secondary">Email</label>
-        <input
-          type="email"
-          required
-          value={account}
-          onChange={(e) => setAccount(e.target.value)}
-          className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-text-primary outline-none focus:border-[var(--border-glow)]"
-          placeholder="email@example.com"
-        />
+      {/* Zakładki */}
+      <div className="flex rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => setTab("credentials")}
+          className={`flex-1 rounded-md px-3 py-1.5 transition-colors ${tab === "credentials" ? "bg-[var(--accent)] text-white" : "text-text-secondary hover:text-text-primary"}`}
+        >
+          Email i hasło
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("token")}
+          className={`flex-1 rounded-md px-3 py-1.5 transition-colors ${tab === "token" ? "bg-[var(--accent)] text-white" : "text-text-secondary hover:text-text-primary"}`}
+        >
+          Token dostępu
+        </button>
       </div>
-      <div className="space-y-1">
-        <label className="text-sm text-text-secondary">Hasło</label>
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-3 py-2 text-sm text-text-primary outline-none focus:border-[var(--border-glow)]"
-          placeholder="••••••••"
-        />
-      </div>
+
+      {tab === "credentials" ? (
+        <>
+          <div className="space-y-1">
+            <label className="text-sm text-text-secondary">Email BambuLab</label>
+            <input type="email" required value={account} onChange={(e) => setAccount(e.target.value)} className={inputCls} placeholder="email@example.com" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm text-text-secondary">Hasło</label>
+            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="••••••••" />
+          </div>
+          <p className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 text-xs text-text-muted">
+            ⚠️ Hasło nie jest przechowywane — zapisujemy wyłącznie token dostępu.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <label className="text-sm text-text-secondary">Token dostępu</label>
+            <textarea
+              required
+              rows={4}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className={`${inputCls} resize-none font-mono text-xs`}
+              placeholder="Wklej token JWT z BambuLab..."
+            />
+          </div>
+          <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-300 space-y-2">
+            <p className="font-semibold">Jak pobrać token (konto Google)?</p>
+            <ol className="list-decimal list-inside space-y-1 text-blue-200">
+              <li>Otwórz <strong>Bambu Studio</strong> → Zaloguj się przez Google</li>
+              <li>Menu → <strong>Pomoc → Otwórz folder danych</strong></li>
+              <li>Otwórz plik <code className="bg-blue-900/40 px-1 rounded">user_data.json</code></li>
+              <li>Skopiuj wartość pola <code className="bg-blue-900/40 px-1 rounded">access_token</code></li>
+            </ol>
+            <p className="text-blue-300/70 text-xs">Alternatywnie: zaloguj się na <strong>bambulab.com</strong>, otwórz DevTools → Application → Local Storage → skopiuj <code className="bg-blue-900/40 px-1 rounded">token</code>.</p>
+          </div>
+        </>
+      )}
 
       <button
         type="submit"
@@ -242,11 +285,6 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Połącz
       </button>
-
-      <p className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-base)] p-3 text-xs text-text-muted">
-        ⚠️ Dane logowania są używane tylko do połączenia z chmurą BambuLab i nie
-        są przechowywane (zapisujemy wyłącznie token dostępu).
-      </p>
     </form>
   );
 }
