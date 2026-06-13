@@ -344,13 +344,13 @@ function ConnectForm({ onConnected }: { onConnected: () => void }) {
               <li>Skopiuj wszystko <strong>po słowie Bearer</strong> (zaczyna się od <code className="bg-blue-900/40 px-1 rounded">eyJ</code>)</li>
             </ol>
           </div>
-          <button type="submit" disabled={loading || !token.trim().startsWith("eyJ")}
+          <button type="submit" disabled={loading || !token.trim().includes("eyJ")}
             className="glow-btn inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Połącz tokenem
           </button>
-          {token && !token.trim().startsWith("eyJ") && (
-            <p className="text-xs text-red-400">Token musi zaczynać się od &quot;eyJ&quot; — to nie jest prawidłowy token JWT.</p>
+          {token && !token.trim().includes("eyJ") && (
+            <p className="text-xs text-red-400">Token musi zawierać &quot;eyJ&quot; — skopiuj wartość z nagłówka Authorization po słowie &quot;Bearer &quot;.</p>
           )}
         </form>
       )}
