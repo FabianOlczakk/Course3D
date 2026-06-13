@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
 
 const authorSelect = {
-  select: { id: true, username: true, email: true, avatarUrl: true },
+  select: { id: true, username: true, email: true, avatarUrl: true, role: true },
 } as const;
 
 // Wszystkie komentarze posta (płaska lista z parentId — drzewo budowane po stronie klienta).

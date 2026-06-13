@@ -4,14 +4,21 @@ import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_PATHS = ["/login", "/set-password"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/set-password",
+  "/forgot-password",
+  "/reset-password",
+];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth?.user;
   const role = (req.auth?.user as { role?: string } | undefined)?.role;
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  // Strona główna (landing) jest publiczna.
+  const isPublic =
+    pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   if (!isLoggedIn && !isPublic) {
     const loginUrl = new URL("/login", req.nextUrl.origin);

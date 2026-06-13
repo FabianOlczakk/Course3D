@@ -6,6 +6,8 @@ import { requireAdmin } from "@/lib/admin-guard";
 const patchSchema = z.object({
   role: z.enum(["ADMIN", "STUDENT"]).optional(),
   username: z.string().min(3).nullable().optional(),
+  email: z.string().email("Nieprawidłowy adres e-mail.").optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
 export async function PATCH(
@@ -43,19 +45,22 @@ export async function PATCH(
     }
   }
 
+  const data = { ...parsed.data };
+  if (data.email) data.email = data.email.trim().toLowerCase();
+
   try {
     const user = await prisma.user.update({
       where: { id: params.id },
-      data: parsed.data,
-      select: { id: true, role: true, username: true },
+      data,
+      select: { id: true, role: true, username: true, email: true, avatarUrl: true },
     });
     return NextResponse.json({ user });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Błąd aktualizacji.";
-    // Najczęstszy przypadek: zajęta nazwa użytkownika.
+    // Najczęstszy przypadek: zajęta nazwa użytkownika lub e-mail.
     if (msg.includes("Unique") || msg.includes("unique")) {
       return NextResponse.json(
-        { error: "Ta nazwa użytkownika jest już zajęta." },
+        { error: "Ta nazwa użytkownika lub e-mail są już zajęte." },
         { status: 400 }
       );
     }

@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Menu,
   FolderCog,
+  Megaphone,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
 const ADMIN_ITEMS: NavItem[] = [
   { href: "/admin/users", label: "Użytkownicy", icon: Users },
   { href: "/admin/chapters", label: "Rozdziały", icon: FolderCog },
+  { href: "/admin/ogloszenia", label: "Ogłoszenia", icon: Megaphone },
 ];
 
 export function Sidebar({

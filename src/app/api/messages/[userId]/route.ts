@@ -26,7 +26,7 @@ export async function GET(
     orderBy: { createdAt: "asc" },
     include: {
       sender: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
+        select: { id: true, username: true, email: true, avatarUrl: true, role: true },
       },
     },
   });
@@ -98,7 +98,7 @@ export async function POST(
     },
     include: {
       sender: {
-        select: { id: true, username: true, email: true, avatarUrl: true },
+        select: { id: true, username: true, email: true, avatarUrl: true, role: true },
       },
     },
   });

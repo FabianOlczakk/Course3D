@@ -33,9 +33,13 @@ export function EditUserDialog({
 }) {
   const router = useRouter();
   const [username, setUsername] = useState(user.username ?? "");
+  const [email, setEmail] = useState(user.email);
   const [role, setRole] = useState<string>(user.role);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarUrl);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetInfo, setResetInfo] = useState<string | null>(null);
+  const [resetLink, setResetLink] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,7 +51,9 @@ export function EditUserDialog({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: username || null,
+        email,
         role,
+        avatarUrl,
       }),
     });
     const data = await res.json();
@@ -60,6 +66,25 @@ export function EditUserDialog({
 
     onOpenChange(false);
     router.refresh();
+  }
+
+  async function handleSendReset() {
+    setResetInfo(null);
+    setResetLink(null);
+    const res = await fetch(`/api/users/${user.id}/send-reset`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Nie udało się wygenerować linku.");
+      return;
+    }
+    setResetInfo(
+      data.emailSent
+        ? "Link do resetu hasła został wysłany na e-mail."
+        : "Nie udało się wysłać e-maila. Skopiuj link poniżej:"
+    );
+    setResetLink(data.resetUrl);
   }
 
   return (
@@ -80,6 +105,40 @@ export function EditUserDialog({
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="edit-email">Adres e-mail</Label>
+            <Input
+              id="edit-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Awatar</Label>
+            <div className="flex items-center gap-3">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt="awatar"
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-sm text-muted-foreground">Brak awatara</span>
+              )}
+              {avatarUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAvatarUrl(null)}
+                >
+                  Usuń awatar
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
             <Label>Rola</Label>
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger>
@@ -92,6 +151,26 @@ export function EditUserDialog({
             </Select>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="space-y-2 rounded-md border border-[var(--border-subtle)] p-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleSendReset}
+            >
+              Wyślij link do resetu hasła
+            </Button>
+            {resetInfo && (
+              <p className="text-xs text-muted-foreground">{resetInfo}</p>
+            )}
+            {resetLink && (
+              <p className="break-all rounded bg-[var(--bg-elevated)] p-2 text-xs text-text-secondary">
+                {resetLink}
+              </p>
+            )}
+          </div>
+
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading ? "Zapisywanie..." : "Zapisz zmiany"}

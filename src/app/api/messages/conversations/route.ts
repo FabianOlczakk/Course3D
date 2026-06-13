@@ -14,8 +14,8 @@ export async function GET() {
     where: { OR: [{ senderId: me }, { receiverId: me }] },
     orderBy: { createdAt: "desc" },
     include: {
-      sender: { select: { id: true, username: true, email: true, avatarUrl: true } },
-      receiver: { select: { id: true, username: true, email: true, avatarUrl: true } },
+      sender: { select: { id: true, username: true, email: true, avatarUrl: true, role: true } },
+      receiver: { select: { id: true, username: true, email: true, avatarUrl: true, role: true } },
     },
   });
 
@@ -24,6 +24,7 @@ export async function GET() {
     username: string | null;
     email: string;
     avatarUrl: string | null;
+    role: string;
     lastMessage: string;
     lastMessageAt: Date;
     unreadCount: number;
@@ -40,6 +41,7 @@ export async function GET() {
         username: other.username,
         email: other.email,
         avatarUrl: other.avatarUrl,
+        role: other.role,
         lastMessage: m.content,
         lastMessageAt: m.createdAt,
         unreadCount: 0,

@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Loader2, MessageCircle, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
+import { AdminBadge } from "@/components/shared/admin-badge";
+import { Highlight } from "@/components/shared/highlight";
 import { CommentForm } from "@/components/community/comment-form";
 import { CommentTree } from "@/components/community/comment-tree";
 import {
@@ -18,11 +21,13 @@ export function PostCard({
   post,
   currentUserId,
   isAdmin,
+  highlight,
   onDeleted,
 }: {
   post: PostItem;
   currentUserId: string;
   isAdmin: boolean;
+  highlight?: string;
   onDeleted: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -59,19 +64,25 @@ export function PostCard({
   return (
     <article className="glow-card p-4">
       <div className="flex items-center gap-3">
-        <Avatar className="h-9 w-9 shrink-0">
-          {post.author.avatarUrl && (
-            <AvatarImage src={post.author.avatarUrl} alt={authorName(post.author)} />
-          )}
-          <AvatarFallback className="text-xs">
-            {authorInitials(post.author)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0">
-          <span className="text-sm font-medium text-text-primary">
+        <Link href={`/profil/${post.author.id}`}>
+          <Avatar className="h-9 w-9 shrink-0">
+            {post.author.avatarUrl && (
+              <AvatarImage src={post.author.avatarUrl} alt={authorName(post.author)} />
+            )}
+            <AvatarFallback className="text-xs">
+              {authorInitials(post.author)}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <Link
+            href={`/profil/${post.author.id}`}
+            className="text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
+          >
             {authorName(post.author)}
-          </span>
-          <span className="text-text-muted"> · </span>
+          </Link>
+          <AdminBadge role={post.author.role} />
+          <span className="text-text-muted">·</span>
           <span className="text-xs text-text-muted">{timeAgo(post.createdAt)}</span>
         </div>
         {canDelete && (
@@ -88,11 +99,11 @@ export function PostCard({
 
       {post.title && (
         <h3 className="mt-3 text-base font-semibold text-text-primary">
-          {post.title}
+          <Highlight text={post.title} query={highlight} />
         </h3>
       )}
       <p className="mt-2 whitespace-pre-wrap break-words text-sm text-text-secondary">
-        {post.content}
+        <Highlight text={post.content} query={highlight} />
       </p>
       {post.attachments && <AttachmentView attachments={post.attachments} />}
 

@@ -1,10 +1,12 @@
 import type { Attachment } from "@/lib/attachments-client";
+import type { Role } from "@prisma/client";
 
 export interface AuthorMini {
   id: string;
   username: string | null;
   email: string;
   avatarUrl: string | null;
+  role?: Role;
 }
 
 export interface PostItem {

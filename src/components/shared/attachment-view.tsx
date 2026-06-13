@@ -1,23 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { Download, FileText } from "lucide-react";
 import { isImage, formatFileSize, type Attachment } from "@/lib/attachments-client";
+import { ImageLightbox } from "@/components/shared/image-lightbox";
 
-// Wyświetlanie listy załączników: obrazy inline, pozostałe jako link do pobrania.
+// Wyświetlanie listy załączników: obrazy inline (klik = lightbox), pozostałe jako link do pobrania.
 export function AttachmentView({ attachments }: { attachments: Attachment[] }) {
+  const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(
+    null
+  );
+
   if (!attachments?.length) return null;
   return (
     <div className="mt-2 flex flex-col gap-2">
       {attachments.map((att, i) =>
         isImage(att) ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <a key={i} href={att.url} download={att.name} target="_blank" rel="noreferrer">
-            <img
-              src={att.url}
-              alt={att.name}
-              className="max-h-64 max-w-full rounded-lg border border-[var(--border-subtle)]"
-            />
-          </a>
+          <img
+            key={i}
+            src={att.url}
+            alt={att.name}
+            className="max-h-64 max-w-full cursor-zoom-in rounded-lg border border-[var(--border-subtle)]"
+            onClick={() => setLightbox({ url: att.url, name: att.name })}
+          />
         ) : (
           <a
             key={i}
@@ -35,6 +41,13 @@ export function AttachmentView({ attachments }: { attachments: Attachment[] }) {
             <Download className="h-4 w-4 shrink-0" />
           </a>
         )
+      )}
+      {lightbox && (
+        <ImageLightbox
+          src={lightbox.url}
+          alt={lightbox.name}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </div>
   );

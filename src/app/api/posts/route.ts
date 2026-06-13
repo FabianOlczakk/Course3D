@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
 
+import { isAnnouncement } from "@/lib/announcements";
+
 const authorSelect = {
-  select: { id: true, username: true, email: true, avatarUrl: true },
+  select: { id: true, username: true, email: true, avatarUrl: true, role: true },
 } as const;
 
 // Posty z paginacją kursorową (najnowsze pierwsze).
@@ -32,8 +34,10 @@ export async function GET(req: Request) {
     },
   });
 
-  const hasMore = posts.length > limit;
-  const items = hasMore ? posts.slice(0, limit) : posts;
+  // Odfiltruj ogłoszenia z normalnego feedu społeczności.
+  const visible = posts.filter((p) => !isAnnouncement(p.attachments));
+  const hasMore = visible.length > limit;
+  const items = hasMore ? visible.slice(0, limit) : visible;
   const nextCursor = hasMore ? items[items.length - 1]?.id : null;
 
   return NextResponse.json({ posts: items, nextCursor });
