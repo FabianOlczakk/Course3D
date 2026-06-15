@@ -1,5 +1,13 @@
 import type { NextAuthConfig } from "next-auth";
 import type { Role } from "@prisma/client";
+import fs from "fs";
+import path from "path";
+
+function log(msg: string) {
+  const line = `[${new Date().toISOString()}] ${msg}\n`;
+  try { fs.appendFileSync(path.join(process.cwd(), "auth-debug.log"), line); } catch {}
+  console.log(msg);
+}
 
 declare module "next-auth/jwt" {
   interface JWT {
@@ -30,13 +38,20 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as { role: Role }).role = token.role as Role;
-        (session.user as { username: string | null }).username = token.username as string | null;
-        session.user.image = token.picture ?? null;
+      log("[session] start");
+      try {
+        if (session.user) {
+          session.user.id = token.id as string;
+          (session.user as { role: Role }).role = token.role as Role;
+          (session.user as { username: string | null }).username = token.username as string | null;
+          session.user.image = token.picture ?? null;
+        }
+        log("[session] done");
+        return session;
+      } catch (err) {
+        log(`[session] ERROR: ${err}`);
+        throw err;
       }
-      return session;
     },
   },
 };
