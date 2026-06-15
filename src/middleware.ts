@@ -1,73 +1,47 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { decode } from "next-auth/jwt";
 
-const PUBLIC_PATHS = [
-  "/login",
-  "/set-password",
-  "/forgot-password",
-  "/reset-password",
-];
-
-// NextAuth v5 używa tych nazw ciasteczek
-const SECURE_COOKIE = "__Secure-authjs.session-token";
-const DEV_COOKIE = "authjs.session-token";
+const PUBLIC = ["/login", "/set-password", "/forgot-password", "/reset-password"];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isPublic =
-    pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isPublic = pathname === "/" || PUBLIC.some((p) => pathname.startsWith(p));
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+  const secure = req.nextUrl.protocol === "https:";
+  const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
+  const cookieValue = req.cookies.get(cookieName)?.value
+    ?? req.cookies.get("authjs.session-token")?.value
+    ?? req.cookies.get("__Secure-authjs.session-token")?.value;
 
-  const secret =
-    process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+  let role: string | undefined;
+  let isLoggedIn = false;
 
-  const isSecure = req.nextUrl.protocol === "https:";
-  const cookieName = isSecure ? SECURE_COOKIE : DEV_COOKIE;
-  const cookieValue =
-    req.cookies.get(cookieName)?.value ??
-    req.cookies.get(DEV_COOKIE)?.value ??
-    req.cookies.get(SECURE_COOKIE)?.value;
-
-  let token: { id?: string; role?: string } | null = null;
-
-  if (cookieValue) {
+  if (cookieValue && secret) {
     try {
-      token = await decode({
-        token: cookieValue,
-        secret,
-        salt: cookieName,
-      }) as { id?: string; role?: string } | null;
+      const token = await decode({ token: cookieValue, secret, salt: cookieName });
+      if (token?.sub || (token as Record<string, unknown>)?.id) {
+        isLoggedIn = true;
+        role = (token as Record<string, unknown>)?.role as string | undefined;
+      }
     } catch {
-      // Uszkodzone/przedawnione ciasteczko — wyczyść i traktuj jako niezalogowany
-      const destination = isPublic
-        ? NextResponse.next()
-        : (() => {
-            const loginUrl = new URL("/login", req.nextUrl.origin);
-            loginUrl.searchParams.set("callbackUrl", pathname);
-            return NextResponse.redirect(loginUrl);
-          })();
-      destination.cookies.delete(SECURE_COOKIE);
-      destination.cookies.delete(DEV_COOKIE);
-      return destination;
+      const res = isPublic ? NextResponse.next() : NextResponse.redirect(new URL("/login", req.nextUrl.origin));
+      res.cookies.delete("__Secure-authjs.session-token");
+      res.cookies.delete("authjs.session-token");
+      return res;
     }
   }
 
-  const isLoggedIn = !!token?.id;
-  const role = token?.role;
-
   if (!isLoggedIn && !isPublic) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    const url = new URL("/login", req.nextUrl.origin);
+    url.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(url);
   }
-
   if (isLoggedIn && pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }
-
   if (pathname.startsWith("/admin") && role !== "ADMIN") {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }
-
   return NextResponse.next();
 }
 
