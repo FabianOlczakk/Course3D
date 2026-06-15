@@ -3,6 +3,8 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { encode } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
+import fs from "fs";
+import path from "path";
 
 const schema = z.object({
   email: z.string().email(),
@@ -14,6 +16,14 @@ const COOKIE_NAME = IS_SECURE
   ? "__Secure-authjs.session-token"
   : "authjs.session-token";
 
+function writeLog(msg: string) {
+  try {
+    const logPath = path.join(process.cwd(), "login-debug.log");
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch {}
+  console.log(msg);
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -24,7 +34,7 @@ export async function POST(req: Request) {
 
     const { email, password } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
-    console.log("[login] attempt:", normalizedEmail);
+    writeLog(`[login] attempt: ${normalizedEmail}`);
 
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -38,18 +48,23 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("[login] user found:", !!user, "| hasHash:", !!user?.passwordHash);
+    writeLog(`[login] user found: ${!!user} | hasHash: ${!!user?.passwordHash}`);
 
     if (!user || !user.passwordHash) {
+      writeLog(`[login] FAILED: user not found or no password`);
       return NextResponse.json({ error: "Nieprawidłowy e-mail lub hasło." }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    console.log("[login] password valid:", valid);
+    writeLog(`[login] password valid: ${valid}`);
+
+    if (!valid) {
+      writeLog(`[login] FAILED: wrong password`);
       return NextResponse.json({ error: "Nieprawidłowy e-mail lub hasło." }, { status: 401 });
     }
 
     const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+    writeLog(`[login] secret length: ${secret.length}`);
 
     const token = await encode({
       token: {
@@ -65,17 +80,19 @@ export async function POST(req: Request) {
       salt: COOKIE_NAME,
     });
 
+    writeLog(`[login] SUCCESS for ${normalizedEmail}`);
+
     const response = NextResponse.json({ ok: true });
     response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
       secure: IS_SECURE,
       sameSite: "lax",
       path: "/",
-      maxAge: 30 * 24 * 60 * 60, // 30 dni
+      maxAge: 30 * 24 * 60 * 60,
     });
     return response;
   } catch (err) {
-    console.error("[login]", err);
-    return NextResponse.json({ error: "Błąd serwera." }, { status: 500 });
+    writeLog(`[login] ERROR: ${err}`);
+    return NextResponse.json({ error: "Błąd serwera.", detail: String(err) }, { status: 500 });
   }
 }
