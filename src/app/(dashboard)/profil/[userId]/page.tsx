@@ -7,6 +7,8 @@ import { AdminBadge } from "@/components/shared/admin-badge";
 import { ProfileActions } from "@/components/profile/profile-actions";
 import { isAnnouncement } from "@/lib/announcements";
 import { timeAgo } from "@/lib/format-time";
+import { OnlineDot } from "@/components/shared/online-dot";
+import { isOnline } from "@/lib/online-status";
 
 export default async function ProfilePage({
   params,
@@ -26,6 +28,7 @@ export default async function ProfilePage({
       email: true,
       role: true,
       avatarUrl: true,
+      lastActiveAt: true,
       createdAt: true,
     },
   });
@@ -59,7 +62,10 @@ export default async function ProfilePage({
           </Avatar>
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              <h1 className="text-2xl font-bold text-text-primary">{name}</h1>
+              <h1 className="flex items-center gap-2 text-2xl font-bold text-text-primary">
+                <OnlineDot lastActiveAt={user.lastActiveAt} />
+                {name}
+              </h1>
               {user.role === "ADMIN" ? (
                 <AdminBadge role="ADMIN" />
               ) : (
@@ -69,7 +75,13 @@ export default async function ProfilePage({
               )}
             </div>
             <p className="mt-1 text-sm text-text-muted">
-              Dołączył(a) {timeAgo(user.createdAt.toISOString())}
+              {isOnline(user.lastActiveAt) ? (
+                <span className="text-green-400">● Aktywny teraz</span>
+              ) : user.lastActiveAt ? (
+                <>Ostatnio aktywny {timeAgo(user.lastActiveAt.toISOString())}</>
+              ) : (
+                <>Dołączył(a) {timeAgo(user.createdAt.toISOString())}</>
+              )}
             </p>
           </div>
           {!isSelf && (

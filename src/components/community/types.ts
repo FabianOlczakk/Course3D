@@ -7,6 +7,7 @@ export interface AuthorMini {
   email: string;
   avatarUrl: string | null;
   role?: Role;
+  lastActiveAt?: string | Date | null;
 }
 
 export interface PostItem {

@@ -16,6 +16,7 @@ import {
   type PostItem,
 } from "@/components/community/types";
 import { timeAgo } from "@/lib/format-time";
+import { OnlineDot } from "@/components/shared/online-dot";
 
 export function PostCard({
   post,
@@ -77,8 +78,9 @@ export function PostCard({
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <Link
             href={`/profil/${post.author.id}`}
-            className="text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
+            className="flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
           >
+            <OnlineDot lastActiveAt={post.author.lastActiveAt} />
             {authorName(post.author)}
           </Link>
           <AdminBadge role={post.author.role} />
