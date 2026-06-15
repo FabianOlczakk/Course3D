@@ -1,8 +1,5 @@
-import NextAuth from "next-auth";
-import { authConfig } from "@/lib/auth.config";
 import { NextResponse, type NextRequest } from "next/server";
-
-const { auth } = NextAuth(authConfig);
+import { decode } from "next-auth/jwt";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -11,13 +8,51 @@ const PUBLIC_PATHS = [
   "/reset-password",
 ];
 
-const handler = auth((req) => {
-  const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth?.user;
-  const role = (req.auth?.user as { role?: string } | undefined)?.role;
+// NextAuth v5 używa tych nazw ciasteczek
+const SECURE_COOKIE = "__Secure-authjs.session-token";
+const DEV_COOKIE = "authjs.session-token";
 
+export default async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
   const isPublic =
     pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+
+  const secret =
+    process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+
+  const isSecure = req.nextUrl.protocol === "https:";
+  const cookieName = isSecure ? SECURE_COOKIE : DEV_COOKIE;
+  const cookieValue =
+    req.cookies.get(cookieName)?.value ??
+    req.cookies.get(DEV_COOKIE)?.value ??
+    req.cookies.get(SECURE_COOKIE)?.value;
+
+  let token: { id?: string; role?: string } | null = null;
+
+  if (cookieValue) {
+    try {
+      token = await decode({
+        token: cookieValue,
+        secret,
+        salt: cookieName,
+      }) as { id?: string; role?: string } | null;
+    } catch {
+      // Uszkodzone/przedawnione ciasteczko — wyczyść i traktuj jako niezalogowany
+      const destination = isPublic
+        ? NextResponse.next()
+        : (() => {
+            const loginUrl = new URL("/login", req.nextUrl.origin);
+            loginUrl.searchParams.set("callbackUrl", pathname);
+            return NextResponse.redirect(loginUrl);
+          })();
+      destination.cookies.delete(SECURE_COOKIE);
+      destination.cookies.delete(DEV_COOKIE);
+      return destination;
+    }
+  }
+
+  const isLoggedIn = !!token?.id;
+  const role = token?.role;
 
   if (!isLoggedIn && !isPublic) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -34,25 +69,6 @@ const handler = auth((req) => {
   }
 
   return NextResponse.next();
-});
-
-export default async function middleware(req: NextRequest) {
-  try {
-    return await (handler as (req: NextRequest) => Promise<NextResponse>)(req);
-  } catch (e) {
-    // Uszkodzone/przedawnione ciasteczko sesji (np. zły AUTH_SECRET) —
-    // czyścimy je i traktujemy użytkownika jako niezalogowanego.
-    console.error("[middleware] session error, clearing cookie:", e);
-    const { pathname } = req.nextUrl;
-    const isPublic =
-      pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-    const response = isPublic
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL("/login", req.nextUrl.origin));
-    response.cookies.delete("authjs.session-token");
-    response.cookies.delete("__Secure-authjs.session-token");
-    return response;
-  }
 }
 
 export const config = {
