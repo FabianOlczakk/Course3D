@@ -1,5 +1,6 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { encode, decode } from "next-auth/jwt";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -35,19 +36,42 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
+const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  jwt: {
+    async encode(params) {
+      log("[encode] start");
+      try {
+        const token = await encode({ ...params, secret });
+        log("[encode] success");
+        return token;
+      } catch (err) {
+        log(`[encode] ERROR: ${err}`);
+        throw err;
+      }
+    },
+    async decode(params) {
+      log("[decode] start");
+      try {
+        const token = await decode({ ...params, secret });
+        log("[decode] success");
+        return token;
+      } catch (err) {
+        log(`[decode] ERROR: ${err}`);
+        return null;
+      }
+    },
+  },
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         log("[jwt] first login start");
         token.id = user.id as string;
-        log("[jwt] id set");
         token.role = (user as { role: Role }).role;
-        log("[jwt] role set");
         token.username = (user as { username: string | null }).username;
-        log("[jwt] username set");
         token.picture = (user as { image?: string | null }).image ?? null;
         log("[jwt] all fields set, returning token");
         return token;
