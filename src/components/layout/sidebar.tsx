@@ -11,6 +11,7 @@ import {
   FolderCog,
   Megaphone,
   X,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
@@ -27,12 +28,14 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Pulpit", icon: LayoutDashboard },
+  { href: "/wiki", label: "Wiki", icon: BookOpen },
 ];
 
 const ADMIN_ITEMS: NavItem[] = [
   { href: "/admin/users", label: "Użytkownicy", icon: Users },
   { href: "/admin/chapters", label: "Rozdziały", icon: FolderCog },
   { href: "/admin/ogloszenia", label: "Ogłoszenia", icon: Megaphone },
+  { href: "/admin/wiki/new", label: "Nowy art. Wiki", icon: BookOpen },
 ];
 
 export function Sidebar({
@@ -106,18 +109,21 @@ export function Sidebar({
       </div>
 
       {!collapsed ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <nav className="space-y-1 p-3">{NAV_ITEMS.map(navLink)}</nav>
-
-          <div className="px-3 pb-4">
-            <p className="px-3 pb-2 pt-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
-              Kurs
-            </p>
-            <ChapterList chapters={chapters} onNavigate={onMobileClose} />
+        <div className="flex min-h-0 flex-1 flex-col">
+          {/* Scrollowalny obszar z kursem */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <nav className="space-y-1 p-3">{NAV_ITEMS.map(navLink)}</nav>
+            <div className="px-3 pb-4">
+              <p className="px-3 pb-2 pt-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Kurs
+              </p>
+              <ChapterList chapters={chapters} onNavigate={onMobileClose} />
+            </div>
           </div>
 
+          {/* Narzędzia admina zawsze widoczne na dole */}
           {role === "ADMIN" && (
-            <div className="mt-auto border-t border-[var(--border-subtle)] p-3">
+            <div className="shrink-0 border-t border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
               <p className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
                 Admin
               </p>
