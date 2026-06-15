@@ -70,7 +70,7 @@ export function AnnouncementsManager() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="p-4 md:p-6 space-y-8">
       <form onSubmit={handleCreate} className="glow-card space-y-4 p-6">
         <h2 className="text-lg font-semibold">Nowe ogłoszenie</h2>
         <div className="space-y-2">

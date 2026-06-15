@@ -21,14 +21,6 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: Role;
-    username: string | null;
-  }
-}
-
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -36,6 +28,37 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    // Nadpisujemy jwt: po pierwszym logowaniu zawsze odświeżamy rolę/avatar z DB.
+    async jwt({ token, user }) {
+      // Pierwsze logowanie — user jest dostępny
+      if (user) {
+        token.id = user.id as string;
+        token.role = (user as { role: Role }).role;
+        token.username = (user as { username: string | null }).username;
+        token.picture = (user as { image?: string | null }).image ?? null;
+        return token;
+      }
+      // Każde kolejne żądanie — odświeżamy dane z DB żeby rola/avatar były aktualne
+      if (token.id) {
+        try {
+          const fresh = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { role: true, username: true, avatarUrl: true },
+          });
+          if (fresh) {
+            token.role = fresh.role;
+            token.username = fresh.username;
+            token.picture = fresh.avatarUrl ?? null;
+          }
+        } catch {
+          // Ignoruj błędy DB — zostają dane z tokenu
+        }
+      }
+      return token;
+    },
+  },
   providers: [
     Credentials({
       credentials: {
