@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,21 +29,26 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setLoading(false);
+      if (res.ok) {
+        router.push(callbackUrl);
+        router.refresh();
+        return;
+      }
 
-    if (res?.error) {
-      setError("Nieprawidłowy e-mail lub hasło.");
-      return;
+      const data = await res.json().catch(() => null);
+      setError(data?.error || "Nieprawidłowy e-mail lub hasło.");
+    } catch {
+      setError("Błąd połączenia z serwerem.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push(callbackUrl);
-    router.refresh();
   }
 
   return (
@@ -87,10 +91,7 @@ export function LoginForm() {
             {loading ? "Logowanie..." : "Zaloguj się"}
           </Button>
           <p className="text-center text-sm">
-            <Link
-              href="/forgot-password"
-              className="text-primary underline"
-            >
+            <Link href="/forgot-password" className="text-primary underline">
               Zapomniałeś hasła?
             </Link>
           </p>
