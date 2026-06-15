@@ -66,35 +66,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Hasło", type: "password" },
       },
       async authorize(rawCredentials) {
-        const parsed = credentialsSchema.safeParse(rawCredentials);
-        if (!parsed.success) return null;
+        try {
+          const parsed = credentialsSchema.safeParse(rawCredentials);
+          if (!parsed.success) return null;
 
-        const { email, password } = parsed.data;
-        const user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() },
-          select: {
-            id: true,
-            email: true,
-            passwordHash: true,
-            username: true,
-            role: true,
-            avatarUrl: true,
-          },
-        });
+          const { email, password } = parsed.data;
+          const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+            select: {
+              id: true,
+              email: true,
+              passwordHash: true,
+              username: true,
+              role: true,
+              avatarUrl: true,
+            },
+          });
 
-        if (!user || !user.passwordHash) return null;
+          if (!user || !user.passwordHash) return null;
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+          const valid = await bcrypt.compare(password, user.passwordHash);
+          if (!valid) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.username,
-          username: user.username,
-          role: user.role,
-          image: user.avatarUrl,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.username,
+            username: user.username,
+            role: user.role,
+            image: user.avatarUrl,
+          };
+        } catch (err) {
+          console.error("[auth] authorize error:", err);
+          return null;
+        }
       },
     }),
   ],
