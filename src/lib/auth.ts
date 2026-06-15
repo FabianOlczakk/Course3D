@@ -41,10 +41,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
+        log("[jwt] first login start");
         token.id = user.id as string;
+        log("[jwt] id set");
         token.role = (user as { role: Role }).role;
+        log("[jwt] role set");
         token.username = (user as { username: string | null }).username;
+        log("[jwt] username set");
         token.picture = (user as { image?: string | null }).image ?? null;
+        log("[jwt] all fields set, returning token");
         return token;
       }
       if (token.id) {
