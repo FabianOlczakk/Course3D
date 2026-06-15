@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { encode } from "next-auth/jwt";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import fs from "fs";
 import path from "path";
@@ -11,37 +10,33 @@ function log(msg: string) {
   try { fs.appendFileSync(path.join(process.cwd(), "auth-debug.log"), line); } catch {}
 }
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
-
 export async function POST(req: NextRequest) {
   log("[login] start");
   try {
-    const body = await req.json();
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    const formData = await req.formData();
+    const email = (formData.get("email") as string | null)?.toLowerCase() ?? "";
+    const password = (formData.get("password") as string | null) ?? "";
+    const callbackUrl = (formData.get("callbackUrl") as string | null) || "/dashboard";
+
+    if (!email || !password) {
+      return NextResponse.redirect(new URL(`/login?error=invalid`, req.nextUrl.origin));
     }
 
-    const { email, password } = parsed.data;
-    log(`[login] looking up: ${email.toLowerCase()}`);
-
+    log(`[login] looking up: ${email}`);
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
       select: { id: true, email: true, passwordHash: true, username: true, role: true, avatarUrl: true },
     });
 
     log(`[login] user found: ${!!user}`);
     if (!user || !user.passwordHash) {
-      return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
+      return NextResponse.redirect(new URL(`/login?error=invalid`, req.nextUrl.origin));
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     log(`[login] password valid: ${valid}`);
     if (!valid) {
-      return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
+      return NextResponse.redirect(new URL(`/login?error=invalid`, req.nextUrl.origin));
     }
 
     const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
@@ -64,20 +59,19 @@ export async function POST(req: NextRequest) {
     });
     log("[login] token encoded");
 
-    const res = NextResponse.json({ ok: true });
-    const maxAge = 30 * 24 * 60 * 60; // 30 dni
+    const res = NextResponse.redirect(new URL(callbackUrl, req.nextUrl.origin));
     res.cookies.set(cookieName, token, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      maxAge,
+      maxAge: 30 * 24 * 60 * 60,
       secure,
     });
 
-    log("[login] cookie set, returning ok");
+    log("[login] redirect with cookie set");
     return res;
   } catch (err) {
     log(`[login] ERROR: ${err}`);
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+    return NextResponse.redirect(new URL(`/login?error=server`, req.nextUrl.origin));
   }
 }
