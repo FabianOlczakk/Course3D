@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
@@ -11,12 +11,11 @@ const PUBLIC_PATHS = [
   "/reset-password",
 ];
 
-export default auth((req) => {
+const handler = auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth?.user;
   const role = (req.auth?.user as { role?: string } | undefined)?.role;
 
-  // Strona główna (landing) jest publiczna.
   const isPublic =
     pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
@@ -36,6 +35,25 @@ export default auth((req) => {
 
   return NextResponse.next();
 });
+
+export default async function middleware(req: NextRequest) {
+  try {
+    return await (handler as (req: NextRequest) => Promise<NextResponse>)(req);
+  } catch (e) {
+    // Uszkodzone/przedawnione ciasteczko sesji (np. zły AUTH_SECRET) —
+    // czyścimy je i traktujemy użytkownika jako niezalogowanego.
+    console.error("[middleware] session error, clearing cookie:", e);
+    const { pathname } = req.nextUrl;
+    const isPublic =
+      pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+    const response = isPublic
+      ? NextResponse.next()
+      : NextResponse.redirect(new URL("/login", req.nextUrl.origin));
+    response.cookies.delete("authjs.session-token");
+    response.cookies.delete("__Secure-authjs.session-token");
+    return response;
+  }
+}
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
