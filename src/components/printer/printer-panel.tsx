@@ -374,6 +374,7 @@ function DeviceSelect({
     devices[0]?.dev_id ?? null
   );
   const [loading, setLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   const confirm = async () => {
     if (!selected || loading) return;
@@ -396,11 +397,39 @@ function DeviceSelect({
     }
   };
 
+  const disconnect = async () => {
+    if (disconnecting) return;
+    setDisconnecting(true);
+    try {
+      const res = await fetch("/api/bambulab/connect", { method: "DELETE" });
+      if (!res.ok) { toast.error("Nie udało się rozłączyć."); return; }
+      toast.success("Rozłączono z BambuLab.");
+      onSelected();
+    } catch {
+      toast.error("Błąd połączenia.");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   if (devices.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-text-muted">
-        Brak drukarek na koncie BambuLab.
-      </p>
+      <div className="space-y-6 py-4">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Printer className="h-10 w-10 text-text-muted" />
+          <p className="text-sm text-text-muted">Brak drukarek na koncie BambuLab.</p>
+          <p className="text-xs text-text-muted">Upewnij się, że drukarka jest zarejestrowana w aplikacji Bambu Studio lub Bambu Handy.</p>
+        </div>
+        <button
+          type="button"
+          onClick={disconnect}
+          disabled={disconnecting}
+          className="flex w-full items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-muted hover:border-red-500/40 hover:text-red-400 transition-colors"
+        >
+          {disconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          Wyloguj z BambuLab
+        </button>
+      </div>
     );
   }
 
@@ -442,6 +471,15 @@ function DeviceSelect({
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Wybierz
+      </button>
+      <button
+        type="button"
+        onClick={disconnect}
+        disabled={disconnecting}
+        className="flex w-full items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-sm text-text-muted hover:border-red-500/40 hover:text-red-400 transition-colors"
+      >
+        {disconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+        Wyloguj z BambuLab
       </button>
     </div>
   );

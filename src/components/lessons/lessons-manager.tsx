@@ -70,7 +70,7 @@ export function LessonsManager({ chapterId, chapterTitle, initial }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <Link
         href="/admin/chapters"
         className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary"

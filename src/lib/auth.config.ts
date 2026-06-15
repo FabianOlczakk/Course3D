@@ -1,6 +1,15 @@
 import type { NextAuthConfig } from "next-auth";
 import type { Role } from "@prisma/client";
 
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: Role;
+    username: string | null;
+    picture?: string | null;
+  }
+}
+
 export const authConfig: NextAuthConfig = {
   trustHost: true,
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
@@ -12,9 +21,11 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // Pierwsze logowanie — zapisz dane z authorize()
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
         token.username = (user as { username: string | null }).username;
+        token.picture = (user as { image?: string | null }).image ?? null;
       }
       return token;
     },
@@ -23,6 +34,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         (session.user as { role: Role }).role = token.role as Role;
         (session.user as { username: string | null }).username = token.username as string | null;
+        session.user.image = token.picture ?? null;
       }
       return session;
     },
