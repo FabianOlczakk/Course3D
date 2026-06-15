@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,19 +31,18 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       });
 
-      if (res.ok) {
+      if (!res?.error) {
         window.location.href = callbackUrl;
         return;
       }
 
-      const data = await res.json().catch(() => null);
-      setError(data?.error || "Nieprawidłowy e-mail lub hasło.");
+      setError("Nieprawidłowy e-mail lub hasło.");
     } catch {
       setError("Błąd połączenia z serwerem.");
     } finally {
