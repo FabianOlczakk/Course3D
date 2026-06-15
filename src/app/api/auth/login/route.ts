@@ -23,9 +23,11 @@ export async function POST(req: Request) {
     }
 
     const { email, password } = parsed.data;
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log("[login] attempt:", normalizedEmail);
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
       select: {
         id: true,
         email: true,
@@ -36,12 +38,14 @@ export async function POST(req: Request) {
       },
     });
 
+    console.log("[login] user found:", !!user, "| hasHash:", !!user?.passwordHash);
+
     if (!user || !user.passwordHash) {
       return NextResponse.json({ error: "Nieprawidłowy e-mail lub hasło." }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
+    console.log("[login] password valid:", valid);
       return NextResponse.json({ error: "Nieprawidłowy e-mail lub hasło." }, { status: 401 });
     }
 
