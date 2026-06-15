@@ -13,6 +13,7 @@ import {
   type CommentItem,
 } from "@/components/community/types";
 import { timeAgo } from "@/lib/format-time";
+import { OnlineDot } from "@/components/shared/online-dot";
 
 const MAX_INDENT = 4;
 
@@ -112,8 +113,9 @@ function CommentNode({
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={`/profil/${node.author.id}`}
-              className="text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
+              className="flex items-center gap-1 text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
             >
+              <OnlineDot lastActiveAt={node.author.lastActiveAt} />
               {authorName(node.author)}
             </Link>
             <AdminBadge role={node.author.role} />

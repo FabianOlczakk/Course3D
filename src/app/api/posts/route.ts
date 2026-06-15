@@ -7,7 +7,7 @@ import { attachmentsSchema } from "@/lib/attachments";
 import { isAnnouncement } from "@/lib/announcements";
 
 const authorSelect = {
-  select: { id: true, username: true, email: true, avatarUrl: true, role: true },
+  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
 } as const;
 
 // Posty z paginacją kursorową (najnowsze pierwsze).
