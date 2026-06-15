@@ -10,16 +10,39 @@ function log(msg: string) {
   try { fs.appendFileSync(path.join(process.cwd(), "auth-debug.log"), line); } catch {}
 }
 
+async function parseBody(req: NextRequest): Promise<{ email: string; password: string; callbackUrl: string }> {
+  const ct = req.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    const body = await req.json();
+    return {
+      email: (body.email as string | undefined)?.toLowerCase() ?? "",
+      password: (body.password as string | undefined) ?? "",
+      callbackUrl: (body.callbackUrl as string | undefined) || "/dashboard",
+    };
+  }
+  const fd = await req.formData();
+  return {
+    email: ((fd.get("email") as string | null) ?? "").toLowerCase(),
+    password: (fd.get("password") as string | null) ?? "",
+    callbackUrl: (fd.get("callbackUrl") as string | null) || "/dashboard",
+  };
+}
+
+function htmlRedirect(url: string, cookie: string): Response {
+  const html = `<!DOCTYPE html><html><head><script>document.cookie=${JSON.stringify(cookie)};window.location.replace(${JSON.stringify(url)});</script></head><body></body></html>`;
+  return new Response(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
 export async function POST(req: NextRequest) {
   log("[login] start");
   try {
-    const formData = await req.formData();
-    const email = (formData.get("email") as string | null)?.toLowerCase() ?? "";
-    const password = (formData.get("password") as string | null) ?? "";
-    const callbackUrl = (formData.get("callbackUrl") as string | null) || "/dashboard";
+    const { email, password, callbackUrl } = await parseBody(req);
 
     if (!email || !password) {
-      return NextResponse.redirect(new URL(`/login?error=invalid`, req.nextUrl.origin));
+      return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
     }
 
     log(`[login] looking up: ${email}`);
@@ -30,13 +53,13 @@ export async function POST(req: NextRequest) {
 
     log(`[login] user found: ${!!user}`);
     if (!user || !user.passwordHash) {
-      return NextResponse.redirect(new URL(`/login?error=invalid`, req.nextUrl.origin));
+      return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     log(`[login] password valid: ${valid}`);
     if (!valid) {
-      return NextResponse.redirect(new URL(`/login?error=invalid`, req.nextUrl.origin));
+      return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
     }
 
     const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
@@ -59,19 +82,20 @@ export async function POST(req: NextRequest) {
     });
     log("[login] token encoded");
 
-    const res = NextResponse.redirect(new URL(callbackUrl, req.nextUrl.origin));
-    res.cookies.set(cookieName, token, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-      secure,
-    });
+    const maxAge = 30 * 24 * 60 * 60;
+    const cookieHeader = [
+      `${cookieName}=${token}`,
+      "HttpOnly",
+      "SameSite=Lax",
+      "Path=/",
+      `Max-Age=${maxAge}`,
+      ...(secure ? ["Secure"] : []),
+    ].join("; ");
 
-    log("[login] redirect with cookie set");
-    return res;
+    log("[login] returning html redirect");
+    return htmlRedirect(callbackUrl, cookieHeader);
   } catch (err) {
     log(`[login] ERROR: ${err}`);
-    return NextResponse.redirect(new URL(`/login?error=server`, req.nextUrl.origin));
+    return NextResponse.redirect(new URL("/login?error=server", req.nextUrl.origin));
   }
 }
