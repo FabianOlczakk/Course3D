@@ -1,6 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { encode, decode } from "next-auth/jwt";
+import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -54,13 +55,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async decode(params) {
       log("[decode] start");
+      if (!params.token) return null;
       try {
-        const token = await decode({ ...params, secret });
-        log("[decode] success");
-        return token;
-      } catch (err) {
-        log(`[decode] ERROR: ${err}`);
-        return null;
+        const secretKey = new TextEncoder().encode(secret);
+        const { payload } = await jwtVerify(params.token, secretKey);
+        log("[decode] success via jose HS256");
+        return payload as Record<string, unknown>;
+      } catch {
+        try {
+          const token = await decode({ ...params, secret });
+          log("[decode] success via nextauth");
+          return token;
+        } catch (err) {
+          log(`[decode] ERROR: ${err}`);
+          return null;
+        }
       }
     },
   },
