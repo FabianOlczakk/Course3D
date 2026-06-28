@@ -81,7 +81,7 @@ użytkownika oraz hasło.
 | Ikony              | lucide-react                         |
 | ORM                | Prisma                               |
 | Baza danych        | PostgreSQL (Supabase)                |
-| Uwierzytelnianie   | NextAuth.js v5 (Auth.js)             |
+| Uwierzytelnianie   | Własny JWT (jose, HS256) + Auth.js   |
 | Hashowanie haseł   | bcryptjs                             |
 | E-mail             | Resend + React Email                 |
 | Walidacja          | Zod                                  |
@@ -94,10 +94,9 @@ użytkownika oraz hasło.
 ```
 .
 ├── prisma/
-│   ├── schema.prisma              # Pełny schemat bazy danych
+│   ├── schema.prisma              # Pełny schemat bazy danych (źródło prawdy)
 │   ├── seed.ts                    # Konto administratora startowego
-│   ├── migrations-manual.sql      # SQL do uruchomienia w Supabase (lastActiveAt, WikiArticle)
-│   └── course-structure.sql       # SQL wstawiający 16 modułów i 108 lekcji
+│   └── sql-archive/               # Historyczne, jednorazowe skrypty SQL (już zaaplikowane)
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/
@@ -188,8 +187,8 @@ Aplikacja będzie dostępna pod `http://localhost:3000`.
 | ------------------------ | ----------------------------------------------------------- |
 | `DATABASE_URL`           | Połączenie z PostgreSQL (pooler dla Supabase)               |
 | `DIRECT_URL`             | Bezpośrednie połączenie (migracje Prisma)                   |
-| `AUTH_SECRET`            | Sekret NextAuth v5 (`openssl rand -base64 32`)              |
-| `NEXTAUTH_SECRET`        | Alias sekretu (kompatybilność wsteczna)                     |
+| `AUTH_SECRET`            | **Wymagany**, min. 32 znaki — podpis JWT (`openssl rand -base64 32`) |
+| `NEXTAUTH_SECRET`        | Alias `AUTH_SECRET` (kompatybilność wsteczna)               |
 | `NEXTAUTH_URL`           | Bazowy URL aplikacji                                        |
 | `RESEND_API_KEY`         | Klucz API Resend (opcjonalny w dev)                         |
 | `RESEND_FROM_EMAIL`      | Adres nadawcy zaproszeń                                     |
@@ -197,6 +196,30 @@ Aplikacja będzie dostępna pod `http://localhost:3000`.
 | `BAMBULAB_CLIENT_ID`     | Client ID aplikacji BambuLab Cloud                          |
 | `BAMBULAB_CLIENT_SECRET` | Client Secret aplikacji BambuLab Cloud                      |
 | `BAMBULAB_REDIRECT_URI`  | URI przekierowania OAuth BambuLab                           |
+
+---
+
+## Uwierzytelnianie
+
+Logowanie korzysta z **własnego, lekkiego mechanizmu JWT** opartego o bibliotekę
+[`jose`](https://github.com/panva/jose) (algorytm **HS256**), a nie ze standardowego
+przepływu NextAuth/Auth.js (który domyślnie tworzy szyfrowany token JWE niekompatybilny
+z weryfikacją w edge-middleware).
+
+- **Logowanie** — formularz wysyła `POST /api/auth/login`. Endpoint weryfikuje hasło
+  (`bcrypt.compare`), podpisuje token HS256 (payload: `id`, `username`, `role` — bez
+  danych wrażliwych, bo token jest jedynie podpisany, nie szyfrowany) i ustawia cookie
+  `authjs.session-token` (`httpOnly`, `sameSite=lax`, `secure` przy HTTPS, ważność 30 dni).
+- **Ochrona tras** — `src/middleware.ts` weryfikuje token (`jwtVerify`) przy każdym żądaniu;
+  przekierowuje niezalogowanych na `/login`, a trasy `/admin/*` wymagają roli `ADMIN`.
+- **Odczyt sesji po stronie serwera** — `auth()` z `src/lib/auth.ts`; `encode`/`decode`
+  NextAuth są nadpisane na ten sam format HS256, aby format tokenu był spójny wszędzie.
+- **Sekret** — `AUTH_SECRET` jest **wymagany** (min. 32 znaki); jego brak zatrzymuje
+  aplikację na starcie (`src/lib/auth-secret.ts`) — bez cichego fallbacku.
+- **Ochrona przed brute-force** — `POST /api/auth/login` ma rate limiting per IP
+  (`src/lib/rate-limit.ts`).
+- Avatar użytkownika (base64) **nie** jest zapisywany w tokenie — jest dociągany z bazy
+  przy budowaniu sesji (token musi zmieścić się w limicie ~4 KB cookie).
 
 ---
 

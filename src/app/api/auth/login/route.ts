@@ -1,70 +1,104 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import fs from "fs";
-import path from "path";
+import { SECRET_KEY } from "@/lib/auth-secret";
+import { checkLoginRateLimit } from "@/lib/rate-limit";
 
-function log(msg: string) {
-  const line = `[${new Date().toISOString()}] ${msg}\n`;
-  try { fs.appendFileSync(path.join(process.cwd(), "auth-debug.log"), line); } catch {}
+const bodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+  callbackUrl: z.string().optional(),
+});
+
+/** Akceptuje tylko ścieżki względne, blokuje open redirect (//evil.com, ://). */
+function safeCallback(url: string | undefined): string {
+  if (!url) return "/dashboard";
+  if (!url.startsWith("/") || url.startsWith("//") || url.includes("://")) {
+    return "/dashboard";
+  }
+  return url;
 }
 
-async function parseBody(req: NextRequest): Promise<{ email: string; password: string; callbackUrl: string }> {
-  const qcb = req.nextUrl.searchParams.get("callbackUrl") || "/dashboard";
+async function parseBody(
+  req: NextRequest
+): Promise<{ email: string; password: string; callbackUrl?: string } | null> {
+  const qcb = req.nextUrl.searchParams.get("callbackUrl") ?? undefined;
   const ct = req.headers.get("content-type") || "";
+
+  let raw: Record<string, unknown>;
   if (ct.includes("application/json")) {
-    const body = await req.json();
-    return {
-      email: (body.email as string | undefined)?.toLowerCase() ?? "",
-      password: (body.password as string | undefined) ?? "",
-      callbackUrl: (body.callbackUrl as string | undefined) || qcb,
+    raw = await req.json();
+  } else {
+    const fd = await req.formData();
+    raw = {
+      email: fd.get("email"),
+      password: fd.get("password"),
+      callbackUrl: fd.get("callbackUrl") ?? undefined,
     };
   }
-  const fd = await req.formData();
+
+  const parsed = bodySchema.safeParse({
+    email: raw.email,
+    password: raw.password,
+    callbackUrl: raw.callbackUrl ?? qcb,
+  });
+  if (!parsed.success) return null;
+
   return {
-    email: ((fd.get("email") as string | null) ?? "").toLowerCase(),
-    password: (fd.get("password") as string | null) ?? "",
-    callbackUrl: (fd.get("callbackUrl") as string | null) || qcb,
+    email: parsed.data.email.toLowerCase(),
+    password: parsed.data.password,
+    callbackUrl: parsed.data.callbackUrl ?? qcb,
   };
 }
 
 export async function POST(req: NextRequest) {
-  log("[login] start");
-  try {
-    const { email, password, callbackUrl } = await parseBody(req);
+  const host = req.headers.get("host") || req.nextUrl.host;
+  const proto =
+    req.headers.get("x-forwarded-proto") ||
+    req.nextUrl.protocol.replace(":", "") ||
+    "http";
+  const origin = `${proto}://${host}`;
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "invalid" }, { status: 401 });
+  const fail = (code: string) =>
+    NextResponse.redirect(new URL(`/login?error=${code}`, origin), 302);
+
+  try {
+    // Rate limiting per IP — ochrona przed brute-force.
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "unknown";
+    if (!checkLoginRateLimit(ip)) {
+      return fail("rate_limit");
     }
 
-    log(`[login] looking up: ${email}`);
+    const body = await parseBody(req);
+    if (!body) return fail("invalid");
+    const { email, password, callbackUrl } = body;
+
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, passwordHash: true, username: true, role: true, avatarUrl: true },
+      select: { id: true, passwordHash: true, username: true, role: true },
     });
 
-    log(`[login] user found: ${!!user}`);
-    if (!user || !user.passwordHash) {
-      return NextResponse.json({ error: "invalid" }, { status: 401 });
-    }
+    if (!user || !user.passwordHash) return fail("invalid");
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    log(`[login] password valid: ${valid}`);
-    if (!valid) {
-      return NextResponse.json({ error: "invalid" }, { status: 401 });
-    }
+    if (!valid) return fail("invalid");
 
-    const rawSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
-    const secretKey = new TextEncoder().encode(rawSecret);
-    const secure = req.nextUrl.protocol === "https:";
-    const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
+    const secure = origin.startsWith("https:");
+    const cookieName = secure
+      ? "__Secure-authjs.session-token"
+      : "authjs.session-token";
 
-    log("[login] signing token");
+    // Token jest tylko PODPISANY (HS256), więc nie umieszczamy w nim
+    // wrażliwych danych (np. email) — payload jest czytelny dla każdego,
+    // kto ma cookie.
     const token = await new SignJWT({
       sub: user.id,
       id: user.id,
-      email: user.email,
       name: user.username,
       username: user.username,
       role: user.role,
@@ -72,14 +106,12 @@ export async function POST(req: NextRequest) {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("30d")
-      .sign(secretKey);
+      .sign(SECRET_KEY);
 
-    log("[login] token signed, redirecting");
-    const safeUrl = callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
-    const host = req.headers.get("host") || "localhost:3000";
-    const proto = req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "") || "http";
-    const origin = `${proto}://${host}`;
-    const res = NextResponse.redirect(new URL(safeUrl, origin), 302);
+    const res = NextResponse.redirect(
+      new URL(safeCallback(callbackUrl), origin),
+      302
+    );
     res.cookies.set(cookieName, token, {
       httpOnly: true,
       sameSite: "lax",
@@ -88,8 +120,7 @@ export async function POST(req: NextRequest) {
       secure,
     });
     return res;
-  } catch (err) {
-    log(`[login] ERROR: ${err}`);
-    return NextResponse.json({ error: "server_error" }, { status: 500 });
+  } catch {
+    return fail("server");
   }
 }

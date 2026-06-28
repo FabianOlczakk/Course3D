@@ -10,6 +10,8 @@ declare module "next-auth/jwt" {
   }
 }
 
+// Konfiguracja współdzielona. Callbacki jwt/session są zdefiniowane w
+// auth.ts (wymagają Prismy = Node runtime), dlatego tu ich nie ma.
 export const authConfig: NextAuthConfig = {
   trustHost: true,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
@@ -18,24 +20,4 @@ export const authConfig: NextAuthConfig = {
     signIn: "/login",
   },
   providers: [],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id as string;
-        token.role = (user as { role: Role }).role;
-        token.username = (user as { username: string | null }).username;
-        token.picture = null;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as { role: Role }).role = token.role as Role;
-        (session.user as { username: string | null }).username = token.username as string | null;
-        session.user.image = token.picture ?? null;
-      }
-      return session;
-    },
-  },
 };

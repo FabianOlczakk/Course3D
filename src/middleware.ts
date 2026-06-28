@@ -1,13 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { SECRET_KEY } from "@/lib/auth-secret";
 
 const PUBLIC = ["/login", "/set-password", "/forgot-password", "/reset-password"];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isPublic = pathname === "/" || PUBLIC.some((p) => pathname.startsWith(p));
-  const rawSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
-  const secretKey = new TextEncoder().encode(rawSecret);
   const secure = req.nextUrl.protocol === "https:";
   const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
   const cookieValue =
@@ -18,9 +17,9 @@ export default async function middleware(req: NextRequest) {
   let role: string | undefined;
   let isLoggedIn = false;
 
-  if (cookieValue && rawSecret) {
+  if (cookieValue) {
     try {
-      const { payload } = await jwtVerify(cookieValue, secretKey);
+      const { payload } = await jwtVerify(cookieValue, SECRET_KEY);
       if (payload.sub || (payload as Record<string, unknown>).id) {
         isLoggedIn = true;
         role = (payload as Record<string, unknown>).role as string | undefined;

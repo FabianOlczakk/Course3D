@@ -21,6 +21,8 @@ export function LoginForm() {
   const errorMessage =
     error === "invalid"
       ? "Nieprawidłowy e-mail lub hasło."
+      : error === "rate_limit"
+      ? "Zbyt wiele prób logowania. Spróbuj ponownie za kilka minut."
       : error === "server"
       ? "Błąd połączenia z serwerem."
       : null;

@@ -20,7 +20,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <div className="fixed bottom-2 right-2 text-xs text-muted-foreground/40 select-none pointer-events-none">
-          v0.1.8
+          v0.2.0
         </div>
       </body>
     </html>

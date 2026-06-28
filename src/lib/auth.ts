@@ -7,8 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@prisma/client";
 import { authConfig } from "./auth.config";
-import fs from "fs";
-import path from "path";
+import { AUTH_SECRET, SECRET_KEY } from "./auth-secret";
 
 declare module "next-auth" {
   interface Session {
@@ -24,59 +23,35 @@ declare module "next-auth" {
   }
 }
 
-function log(msg: string) {
-  const line = `[${new Date().toISOString()}] ${msg}\n`;
-  try {
-    fs.appendFileSync(path.join(process.cwd(), "auth-debug.log"), line);
-  } catch {}
-  console.log(msg);
-}
-
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
-const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   jwt: {
+    // Token sesji jest podpisywany HS256 (jose) — TEN SAM format co
+    // /api/auth/login i middleware. Domyślny encode NextAuth tworzy JWE,
+    // którego edge-middleware nie weryfikuje → ciągłe wylogowywanie.
     async encode(params) {
-      log("[encode] start");
-      try {
-        // Podpisujemy HS256 (jose) — TEN SAM format co /api/auth/login
-        // i middleware. Domyślny encode NextAuth tworzy JWE, którego
-        // middleware nie umie zweryfikować → ciągłe wylogowywanie.
-        const secretKey = new TextEncoder().encode(secret);
-        const t = (params.token ?? {}) as Record<string, unknown>;
-        const token = await new SignJWT(t)
-          .setProtectedHeader({ alg: "HS256" })
-          .setIssuedAt()
-          .setExpirationTime("30d")
-          .sign(secretKey);
-        log("[encode] success (jose HS256)");
-        return token;
-      } catch (err) {
-        log(`[encode] ERROR: ${err}`);
-        throw err;
-      }
+      const t = (params.token ?? {}) as Record<string, unknown>;
+      return new SignJWT(t)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("30d")
+        .sign(SECRET_KEY);
     },
     async decode(params) {
-      log("[decode] start");
       if (!params.token) return null;
       try {
-        const secretKey = new TextEncoder().encode(secret);
-        const { payload } = await jwtVerify(params.token, secretKey);
-        log("[decode] success via jose HS256");
+        const { payload } = await jwtVerify(params.token, SECRET_KEY);
         return payload as unknown as JWT;
       } catch {
+        // Zgodność wsteczna ze starymi tokenami NextAuth (JWE).
         try {
-          const token = await decode({ ...params, secret });
-          log("[decode] success via nextauth");
-          return token;
-        } catch (err) {
-          log(`[decode] ERROR: ${err}`);
+          return await decode({ ...params, secret: AUTH_SECRET });
+        } catch {
           return null;
         }
       }
@@ -86,14 +61,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
-        log("[jwt] first login start");
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
         token.username = (user as { username: string | null }).username;
-        // NIE zapisujemy obrazka (avatarUrl) w tokenie — base64 obrazek
-        // powodował ogromne, dzielone na kawałki cookie (HTTP 431).
+        // Avatar (base64) NIE trafia do tokenu — powodował ogromne,
+        // dzielone na kawałki cookie (HTTP 431).
         token.picture = null;
-        log("[jwt] all fields set, returning token");
         return token;
       }
       if (token.id) {
@@ -106,10 +79,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.role = fresh.role;
             token.username = fresh.username;
           }
-          token.picture = null;
-        } catch (e) {
-          log(`[jwt] db refresh error: ${e}`);
+        } catch {
+          // Brak odświeżenia z DB nie powinien wylogowywać użytkownika.
         }
+        token.picture = null;
       }
       return token;
     },
@@ -142,51 +115,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Hasło", type: "password" },
       },
       async authorize(rawCredentials) {
-        log("[authorize] start");
-        try {
-          const parsed = credentialsSchema.safeParse(rawCredentials);
-          if (!parsed.success) {
-            log("[authorize] invalid schema");
-            return null;
-          }
+        const parsed = credentialsSchema.safeParse(rawCredentials);
+        if (!parsed.success) return null;
 
-          const { email, password } = parsed.data;
-          log(`[authorize] looking up: ${email.toLowerCase()}`);
+        const { email, password } = parsed.data;
+        const user = await prisma.user.findUnique({
+          where: { email: email.toLowerCase() },
+          select: {
+            id: true,
+            email: true,
+            passwordHash: true,
+            username: true,
+            role: true,
+            avatarUrl: true,
+          },
+        });
 
-          const user = await prisma.user.findUnique({
-            where: { email: email.toLowerCase() },
-            select: {
-              id: true,
-              email: true,
-              passwordHash: true,
-              username: true,
-              role: true,
-              avatarUrl: true,
-            },
-          });
+        if (!user || !user.passwordHash) return null;
 
-          log(`[authorize] user found: ${!!user}`);
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid) return null;
 
-          if (!user || !user.passwordHash) return null;
-
-          const valid = await bcrypt.compare(password, user.passwordHash);
-          log(`[authorize] password valid: ${valid}`);
-
-          if (!valid) return null;
-
-          log(`[authorize] SUCCESS: ${email}`);
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.username,
-            username: user.username,
-            role: user.role,
-            image: user.avatarUrl,
-          };
-        } catch (err) {
-          log(`[authorize] ERROR: ${err}`);
-          return null;
-        }
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.username,
+          username: user.username,
+          role: user.role,
+          image: user.avatarUrl,
+        };
       },
     }),
   ],
