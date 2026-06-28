@@ -1,223 +1,421 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PlayCircle, BookOpen, MessageSquare, Users2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { auth } from "@/lib/auth";
-import {
-  ProgressOverview,
-  ChapterProgressBar,
-} from "@/components/dashboard/progress-overview";
+import { prisma } from "@/lib/prisma";
+import { getLearnerStats } from "@/lib/stats";
+import { timeAgo } from "@/lib/format-time";
+import { isAnnouncement, ANNOUNCEMENT_MARKER } from "@/lib/announcements";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DashboardMessagesButton } from "@/components/dashboard/dashboard-widgets";
-import { timeAgo } from "@/lib/format-time";
-import { isAnnouncement } from "@/lib/announcements";
 
 export const metadata: Metadata = {
-  title: "Kurs Druku 3D",
+  title: "Pulpit — Kurs druku 3D",
 };
-import { prisma } from "@/lib/prisma";
+
+function initialsOf(s: string) {
+  return s.slice(0, 2).toUpperCase();
+}
+
+function colorFromString(str: string): string {
+  const palette = ["#9d6bff", "#5b8def", "#3ecf8e", "#e0944a", "#d9536a"];
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
+}
 
 export default async function DashboardPage() {
   const session = await auth();
   const name = session?.user?.username || "Kursancie";
   const meId = session?.user?.id ?? "";
 
-  const [unreadMessages, recentPostsRaw] = await Promise.all([
-    prisma.message.findMany({
-      where: { receiverId: meId, readAt: null },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      include: {
-        sender: { select: { id: true, username: true, email: true, avatarUrl: true } },
-      },
-    }),
-    prisma.post.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      include: {
-        author: { select: { id: true, username: true, email: true, avatarUrl: true } },
-      },
-    }),
-  ]);
+  const [unreadMessages, recentPostsRaw, chapters, completedRows, stats] =
+    await Promise.all([
+      prisma.message.findMany({
+        where: { receiverId: meId, readAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+        include: {
+          sender: {
+            select: { id: true, username: true, email: true, avatarUrl: true },
+          },
+        },
+      }),
+      prisma.post.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 12,
+        include: {
+          author: {
+            select: { id: true, username: true, email: true, avatarUrl: true },
+          },
+          _count: { select: { comments: true } },
+        },
+      }),
+      prisma.chapter.findMany({
+        orderBy: { order: "asc" },
+        include: {
+          lessons: { orderBy: { order: "asc" }, select: { id: true, title: true } },
+        },
+      }),
+      prisma.lessonProgress.findMany({
+        where: { userId: meId, completed: true },
+        select: { lessonId: true },
+      }),
+      getLearnerStats(meId),
+    ]);
 
+  const completedSet = new Set(completedRows.map((r) => r.lessonId));
+
+  const announcements = recentPostsRaw
+    .filter((p) => isAnnouncement(p.attachments))
+    .slice(0, 3);
   const recentPosts = recentPostsRaw
     .filter((p) => !isAnnouncement(p.attachments))
     .slice(0, 3);
 
-  const chapters = await prisma.chapter.findMany({
-    orderBy: { order: "asc" },
-    include: {
-      lessons: {
-        orderBy: { order: "asc" },
-        select: { id: true, title: true, description: true },
-      },
-    },
+  // Aktualna lekcja (pierwsza nieukończona) + numer rozdziału
+  let currentLessonId: string | null = null;
+  let currentChapterIdx = 0;
+  let currentChapterTitle = "";
+  let currentLessonTitle = "";
+  for (let i = 0; i < chapters.length; i++) {
+    const lesson = chapters[i].lessons.find((l) => !completedSet.has(l.id));
+    if (lesson) {
+      currentLessonId = lesson.id;
+      currentChapterIdx = i;
+      currentChapterTitle = chapters[i].title;
+      currentLessonTitle = lesson.title;
+      break;
+    }
+  }
+  const overallPct =
+    stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+  // Postęp per rozdział
+  const modules = chapters.map((c, i) => {
+    const total = c.lessons.length;
+    const done = c.lessons.filter((l) => completedSet.has(l.id)).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const full = total > 0 && done === total;
+    return {
+      n: String(i + 1).padStart(2, "0"),
+      title: c.title,
+      pct,
+      color: full ? "#3ecf8e" : pct > 0 ? "#9d6bff" : "#3a3a3a",
+    };
   });
 
-  const firstLesson = chapters.flatMap((c) => c.lessons)[0];
+  const today = new Intl.DateTimeFormat("pl-PL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
 
   return (
-    <div className="p-4 md:p-6 space-y-8">
-      <div className="glow-card glow-border relative overflow-hidden p-8">
-        <h1 className="text-3xl font-bold text-text-primary">Witaj, {name}!</h1>
-        <p className="mt-1 text-text-secondary">
-          Kontynuuj naukę druku 3D z drukarką Bambu Lab A1 Mini.
-        </p>
-        {firstLesson && (
-          <Link
-            href={`/kurs/${firstLesson.id}`}
-            className="glow-btn mt-4 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white"
-          >
-            <PlayCircle className="h-4 w-4" />
-            Kontynuuj naukę
-          </Link>
-        )}
+    <div className="p-[26px] md:px-[30px]">
+      <h1 className="font-display text-[23px] font-semibold text-[#f0f0f0]">
+        Witaj ponownie, {name}
+      </h1>
+      <p className="mt-[6px] text-[13.5px] capitalize text-[#8a8a8a]">
+        {today}
+        <span className="lowercase">
+          {" · "}
+          masz {unreadMessages.length} nowych wiadomości
+          {currentLessonId ? " i 1 lekcję w toku" : ""}
+        </span>
+      </p>
+
+      {/* HERO */}
+      <div className="mt-5 flex overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]">
+        <div className="flex-1 p-[24px_26px]">
+          <span className="inline-block rounded-[5px] bg-[#9d6bff1a] px-[9px] py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--accent-soft)]">
+            {currentLessonId
+              ? `W trakcie · Rozdział ${String(currentChapterIdx + 1).padStart(2, "0")}`
+              : "Kurs ukończony 🎉"}
+          </span>
+          <h2 className="mb-[5px] mt-[13px] font-display text-[20px] font-semibold text-[#f0f0f0]">
+            {currentLessonTitle || currentChapterTitle || "Druk 3D od zera do mistrza"}
+          </h2>
+          <p className="mb-4 text-[13.5px] text-[#8f8f8f]">
+            {currentChapterTitle || "Cały materiał kursu"}
+          </p>
+          <div className="h-[6px] max-w-[420px] overflow-hidden rounded-[4px] bg-[#2b2b2b]">
+            <div
+              className="h-full rounded-[4px] bg-[var(--accent)]"
+              style={{ width: `${overallPct}%` }}
+            />
+          </div>
+          <div className="mt-4 flex items-center gap-4">
+            {currentLessonId && (
+              <Link
+                href={`/kurs/${currentLessonId}`}
+                className="glow-btn inline-flex items-center gap-[7px] rounded-[6px] px-[17px] py-[9px] text-[13.5px] font-semibold text-white"
+              >
+                Kontynuuj naukę
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+            <span className="text-[12.5px] text-[#7a7a7a]">
+              {overallPct}% całego kursu ukończone
+            </span>
+          </div>
+        </div>
+        <div
+          className="hidden w-[230px] shrink-0 items-center justify-center border-l border-[#2b2b2b] sm:flex"
+          style={{
+            background:
+              "repeating-linear-gradient(45deg,#ffffff08,#ffffff08 10px,#ffffff03 10px,#ffffff03 20px)",
+          }}
+        >
+          <span className="font-mono text-[11px] tracking-[0.04em] text-[#6e6e6e]">
+            [ podgląd modelu ]
+          </span>
+        </div>
       </div>
 
-      <ProgressOverview />
+      {/* STATS */}
+      <div className="mt-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Ukończone lekcje" value={`${stats.completed}`} suffix={`/ ${stats.total}`} />
+        <StatCard label="Passa nauki" value={`${stats.streak}`} suffix="dni" />
+        <StatCard
+          label="Pozycja w grupie"
+          value={`#${stats.rank}`}
+          suffix={`z ${stats.rankTotal}`}
+        />
+      </div>
 
-      {/* Widgety: wiadomości i społeczność */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="glow-card p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-text-primary">
-            <MessageSquare className="h-5 w-5 text-[var(--accent)]" />
-            Nieprzeczytane wiadomości
-          </h2>
-          {unreadMessages.length === 0 ? (
-            <p className="text-sm text-text-muted">Brak nowych wiadomości.</p>
-          ) : (
-            <ul className="space-y-3">
-              {unreadMessages.map((m) => (
-                <li key={m.id}>
+      {/* TWO COL */}
+      <div className="mt-[18px] grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[1fr_352px]">
+        <div className="flex flex-col gap-[18px]">
+          {/* Ostatnie wiadomości */}
+          <Card>
+            <CardHeader title="Ostatnie wiadomości">
+              <DashboardMessagesButton />
+            </CardHeader>
+            {unreadMessages.length === 0 ? (
+              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak nowych wiadomości.</p>
+            ) : (
+              unreadMessages.map((m) => {
+                const label = m.sender.username || m.sender.email;
+                return (
                   <Link
+                    key={m.id}
                     href={`/profil/${m.sender.id}`}
-                    className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-[var(--bg-elevated)]"
+                    className="flex items-start gap-[11px] border-b border-[#262626] py-[11px] last:border-0"
                   >
-                    <Avatar className="h-8 w-8 shrink-0">
-                      {m.sender.avatarUrl && (
-                        <AvatarImage src={m.sender.avatarUrl} />
-                      )}
-                      <AvatarFallback className="text-xs">
-                        {(m.sender.username || m.sender.email)
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <AvatarCircle
+                      url={m.sender.avatarUrl}
+                      label={label}
+                      size={36}
+                    />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-text-primary">
-                        {m.sender.username || m.sender.email}
-                      </p>
-                      <p className="truncate text-xs text-text-secondary">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-semibold text-[#ededed]">
+                          {label}
+                        </span>
+                        <span className="ml-auto text-[11.5px] text-[#6e6e6e]">
+                          {timeAgo(m.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-[3px] truncate text-[12.5px] text-[#8a8a8a]">
                         {m.content}
                       </p>
                     </div>
+                    <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full bg-[var(--accent)]" />
                   </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          <DashboardMessagesButton />
+                );
+              })
+            )}
+          </Card>
+
+          {/* Aktywność społeczności */}
+          <Card>
+            <CardHeader title="Aktywność społeczności">
+              <Link
+                href="/spolecznosc"
+                className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
+              >
+                Przejdź
+              </Link>
+            </CardHeader>
+            {recentPosts.length === 0 ? (
+              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak postów.</p>
+            ) : (
+              recentPosts.map((p) => {
+                const label = p.author.username || p.author.email;
+                return (
+                  <Link
+                    key={p.id}
+                    href="/spolecznosc"
+                    className="flex items-start gap-[11px] border-b border-[#262626] py-3 last:border-0"
+                  >
+                    <AvatarCircle url={p.author.avatarUrl} label={label} size={36} />
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-[3px] text-[11.5px] text-[#8a8a8a]">
+                        {label} · {timeAgo(p.createdAt)}
+                      </div>
+                      <div className="truncate text-[13.5px] font-semibold text-[#ededed]">
+                        {p.title || p.content}
+                      </div>
+                      <div className="mt-[6px] text-[11.5px] text-[#6e6e6e]">
+                        {p._count.comments} odpowiedzi
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </Card>
         </div>
 
-        <div className="glow-card p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-text-primary">
-            <Users2 className="h-5 w-5 text-[var(--accent)]" />
-            Ostatnie w społeczności
-          </h2>
-          {recentPosts.length === 0 ? (
-            <p className="text-sm text-text-muted">Brak postów.</p>
-          ) : (
-            <ul className="space-y-3">
-              {recentPosts.map((p) => (
-                <li key={p.id} className="rounded-md p-2">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6 shrink-0">
-                      {p.author.avatarUrl && (
-                        <AvatarImage src={p.author.avatarUrl} />
-                      )}
-                      <AvatarFallback className="text-[10px]">
-                        {(p.author.username || p.author.email)
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium text-text-primary">
-                      {p.author.username || p.author.email}
+        <div className="flex flex-col gap-[18px]">
+          {/* Ogłoszenia */}
+          <Card>
+            <CardHeader title="Ogłoszenia" />
+            {announcements.length === 0 ? (
+              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak ogłoszeń.</p>
+            ) : (
+              announcements.map((a) => (
+                <div
+                  key={a.id}
+                  className="border-b border-[#262626] py-[11px] last:border-0"
+                >
+                  <div className="mb-1 flex items-center gap-[7px]">
+                    <span className="rounded-[4px] bg-[#9d6bff1a] px-[7px] py-[2px] text-[10px] font-semibold text-[var(--accent-soft)]">
+                      {(a.attachments as { type: string; tag?: string }[])?.find(
+                        (x) => x.type === ANNOUNCEMENT_MARKER
+                      )?.tag || "Ogłoszenie"}
                     </span>
-                    <span className="text-xs text-text-muted">
-                      {timeAgo(p.createdAt.toISOString())}
+                    <span className="ml-auto text-[11px] text-[#6e6e6e]">
+                      {timeAgo(a.createdAt)}
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-text-secondary">
-                    {p.title ? `${p.title} — ` : ""}
-                    {p.content}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-          <Link
-            href="/spolecznosc"
-            className="mt-4 inline-block text-sm text-[var(--accent)] hover:underline"
-          >
-            Przejdź do społeczności →
-          </Link>
-        </div>
-      </div>
-
-      <div>
-        <h2 className="mb-4 text-xl font-bold text-text-primary">Twój kurs</h2>
-
-        {chapters.length === 0 ? (
-          <div className="glow-card p-8 text-center text-text-secondary">
-            <BookOpen className="mx-auto mb-3 h-10 w-10 text-text-muted" />
-            Brak rozdziałów. Administrator wkrótce doda kurs.
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {chapters.map((chapter) => (
-              <div key={chapter.id} className="glow-card p-6">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="text-2xl">{chapter.iconUrl || "📘"}</span>
-                  <div className="min-w-0">
-                    <h3 className="truncate font-semibold text-text-primary">
-                      {chapter.title}
-                    </h3>
-                    <p className="text-xs text-text-muted">
-                      {chapter.lessons.length} lekcji
-                    </p>
+                  <div className="text-[13px] font-semibold text-[#ededed]">
+                    {a.title || a.content}
                   </div>
                 </div>
-                {chapter.description && (
-                  <p className="mb-3 text-sm text-text-secondary">
-                    {chapter.description}
-                  </p>
-                )}
-                <ChapterProgressBar chapterId={chapter.id} />
-                <ul className="mt-3 space-y-1">
-                  {chapter.lessons.map((lesson) => (
-                    <li key={lesson.id}>
-                      <Link
-                        href={`/kurs/${lesson.id}`}
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text-secondary transition-colors hover:bg-[var(--bg-elevated)] hover:text-text-primary"
-                      >
-                        <PlayCircle className="h-4 w-4 shrink-0 text-[var(--accent)]" />
-                        <span className="min-w-0 flex-1 truncate">
-                          {lesson.title}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                  {chapter.lessons.length === 0 && (
-                    <li className="px-2 py-1.5 text-sm text-text-muted">
-                      Brak lekcji w tym rozdziale.
-                    </li>
-                  )}
-                </ul>
-              </div>
-            ))}
-          </div>
+              ))
+            )}
+          </Card>
+
+          {/* Twój postęp (per rozdział) */}
+          <Card>
+            <CardHeader title="Twój postęp">
+              <Link
+                href={currentLessonId ? `/kurs/${currentLessonId}` : "/dashboard"}
+                className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
+              >
+                Kurs
+              </Link>
+            </CardHeader>
+            {modules.length === 0 ? (
+              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak rozdziałów.</p>
+            ) : (
+              modules.map((m) => (
+                <div key={m.n} className="py-[9px]">
+                  <div className="mb-[7px] flex items-center gap-[10px]">
+                    <span className="font-display text-[11px] font-semibold text-[#6e6e6e]">
+                      {m.n}
+                    </span>
+                    <span className="flex-1 truncate text-[12.5px] font-medium text-[#cfcfcf]">
+                      {m.title}
+                    </span>
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: m.color }}
+                    >
+                      {m.pct}%
+                    </span>
+                  </div>
+                  <div className="h-[5px] overflow-hidden rounded-[3px] bg-[#2b2b2b]">
+                    <div
+                      className="h-full rounded-[3px]"
+                      style={{ width: `${m.pct}%`, background: m.color }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  suffix?: string;
+}) {
+  return (
+    <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[16px_18px]">
+      <div className="text-[12px] font-medium text-[#8a8a8a]">{label}</div>
+      <div className="mt-[6px] font-display text-[23px] font-semibold text-[#f0f0f0]">
+        {value}{" "}
+        {suffix && (
+          <span className="text-[14px] font-medium text-[#6e6e6e]">{suffix}</span>
         )}
       </div>
+    </div>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[16px_18px]">
+      {children}
+    </div>
+  );
+}
+
+function CardHeader({
+  title,
+  children,
+}: {
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-[6px] flex items-center">
+      <span className="font-display text-[14.5px] font-semibold text-[#f0f0f0]">
+        {title}
+      </span>
+      <span className="ml-auto">{children}</span>
+    </div>
+  );
+}
+
+function AvatarCircle({
+  url,
+  label,
+  size,
+}: {
+  url?: string | null;
+  label: string;
+  size: number;
+}) {
+  if (url) {
+    return (
+      <Avatar style={{ width: size, height: size }} className="shrink-0">
+        <AvatarImage src={url} />
+        <AvatarFallback className="text-[12.5px]">
+          {initialsOf(label)}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-full text-[12.5px] font-semibold text-white"
+      style={{ width: size, height: size, background: colorFromString(label) }}
+    >
+      {initialsOf(label)}
     </div>
   );
 }
