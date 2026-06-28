@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import fs from "fs";
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const { email, password, callbackUrl } = await parseBody(req);
 
     if (!email || !password) {
-      return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
+      return NextResponse.json({ error: "invalid" }, { status: 401 });
     }
 
     log(`[login] looking up: ${email}`);
@@ -45,13 +45,13 @@ export async function POST(req: NextRequest) {
 
     log(`[login] user found: ${!!user}`);
     if (!user || !user.passwordHash) {
-      return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
+      return NextResponse.json({ error: "invalid" }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     log(`[login] password valid: ${valid}`);
     if (!valid) {
-      return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
+      return NextResponse.json({ error: "invalid" }, { status: 401 });
     }
 
     const rawSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
@@ -74,28 +74,11 @@ export async function POST(req: NextRequest) {
       .setExpirationTime("30d")
       .sign(secretKey);
 
-    log("[login] token signed");
-
-    const maxAge = 30 * 24 * 60 * 60;
-    const cookieStr = [
-      `${cookieName}=${token}`,
-      "HttpOnly",
-      "SameSite=Lax",
-      "Path=/",
-      `Max-Age=${maxAge}`,
-      ...(secure ? ["Secure"] : []),
-    ].join("; ");
-
+    log("[login] token signed, returning");
     const safeUrl = callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
-    const html = `<!DOCTYPE html><html><head><script>document.cookie=${JSON.stringify(cookieStr)};window.location.replace(${JSON.stringify(safeUrl)});</script></head><body></body></html>`;
-
-    log("[login] returning html redirect");
-    return new Response(html, {
-      status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
+    return NextResponse.json({ token, cookieName, callbackUrl: safeUrl });
   } catch (err) {
     log(`[login] ERROR: ${err}`);
-    return new Response("Błąd serwera", { status: 500 });
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 }

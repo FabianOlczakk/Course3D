@@ -17,17 +17,10 @@ import {
 export function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const urlError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(
-    urlError === "invalid"
-      ? "Nieprawidłowy e-mail lub hasło."
-      : urlError === "server"
-      ? "Błąd połączenia z serwerem."
-      : null
-  );
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,19 +33,18 @@ export function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, callbackUrl }),
-        redirect: "follow",
       });
 
-      if (res.ok && res.headers.get("content-type")?.includes("text/html")) {
-        // Server returned HTML with embedded redirect script — inject it
-        const html = await res.text();
-        document.open();
-        document.write(html);
-        document.close();
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setError("Nieprawidłowy e-mail lub hasło.");
         return;
       }
 
-      setError("Nieprawidłowy e-mail lub hasło.");
+      const maxAge = 30 * 24 * 60 * 60;
+      document.cookie = `${data.cookieName}=${data.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+      window.location.replace(data.callbackUrl || "/dashboard");
     } catch {
       setError("Błąd połączenia z serwerem.");
     } finally {
