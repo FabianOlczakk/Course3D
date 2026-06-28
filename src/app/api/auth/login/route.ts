@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
       name: user.username,
       username: user.username,
       role: user.role,
-      picture: user.avatarUrl ?? null,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
