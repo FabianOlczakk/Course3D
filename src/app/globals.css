@@ -76,6 +76,29 @@
     background: var(--bg-base);
     min-height: 100vh;
   }
+
+  /* Minimalny, dyskretny pasek przewijania (cała aplikacja) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #ffffff1f transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #ffffff1f;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ffffff33;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
   h1,
   h2,
   h3,

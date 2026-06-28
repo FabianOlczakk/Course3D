@@ -23,6 +23,7 @@ export default async function AdminLessonsPage({
     description: l.description,
     videoUrl: l.videoUrl,
     contentJson: l.contentJson,
+    timestamps: (l.timestamps as ManagedLesson["timestamps"]) ?? null,
     order: l.order,
   }));
 

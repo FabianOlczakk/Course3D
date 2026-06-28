@@ -4,11 +4,23 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { requireAdmin } from "@/lib/admin-guard";
 
+const timestampsSchema = z
+  .array(
+    z.object({
+      time: z.number().nonnegative(),
+      label: z.string().optional(),
+      elementId: z.string().min(1),
+    })
+  )
+  .nullable()
+  .optional();
+
 const patchSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   contentJson: z.string().nullable().optional(),
+  timestamps: timestampsSchema,
   order: z.number().int().optional(),
 });
 
@@ -67,6 +79,8 @@ export async function PATCH(
   if (parsed.data.videoUrl !== undefined) data.videoUrl = parsed.data.videoUrl;
   if (parsed.data.contentJson !== undefined)
     data.contentJson = parsed.data.contentJson ?? undefined;
+  if (parsed.data.timestamps !== undefined)
+    data.timestamps = parsed.data.timestamps ?? undefined;
   if (parsed.data.order !== undefined) data.order = parsed.data.order;
 
   try {

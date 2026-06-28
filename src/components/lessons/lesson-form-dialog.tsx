@@ -15,12 +15,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+export interface LessonTimestampData {
+  time: number;
+  label?: string;
+  elementId: string;
+}
+
 export interface LessonData {
   id: string;
   title: string;
   description: string | null;
   videoUrl: string | null;
   contentJson: unknown;
+  timestamps?: LessonTimestampData[] | null;
+}
+
+// "1:20,Nazwa,sekcja" (po jednym w linii) -> [{time, label, elementId}]
+function parseTimestamps(text: string): LessonTimestampData[] {
+  return text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [timeStr, label, elementId] = line.split(",").map((s) => s?.trim());
+      const parts = (timeStr || "").split(":").map(Number);
+      const time =
+        parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0] || 0;
+      return { time, label: label || "", elementId: elementId || "" };
+    })
+    .filter((t) => t.elementId && !Number.isNaN(t.time))
+    .sort((a, b) => a.time - b.time);
+}
+
+function serializeTimestamps(ts?: LessonTimestampData[] | null): string {
+  return (ts ?? [])
+    .map((t) => {
+      const m = Math.floor(t.time / 60);
+      const s = Math.round(t.time % 60);
+      return `${m}:${String(s).padStart(2, "0")},${t.label || ""},${t.elementId}`;
+    })
+    .join("\n");
 }
 
 interface Props {
@@ -53,6 +87,7 @@ export function LessonFormDialog({
   const [description, setDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [content, setContent] = useState("");
+  const [timestampsText, setTimestampsText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +97,7 @@ export function LessonFormDialog({
       setDescription(lesson?.description ?? "");
       setVideoUrl(lesson?.videoUrl ?? "");
       setContent(contentToString(lesson?.contentJson));
+      setTimestampsText(serializeTimestamps(lesson?.timestamps));
       setError(null);
     }
   }, [open, lesson]);
@@ -82,6 +118,7 @@ export function LessonFormDialog({
           description: description || null,
           videoUrl: videoUrl || null,
           contentJson: content || null,
+          timestamps: parseTimestamps(timestampsText),
         }),
       });
       const data = await res.json();
@@ -142,8 +179,27 @@ export function LessonFormDialog({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={8}
-              placeholder="<h2>Wstęp</h2><p>...</p>"
+              placeholder={'<h2 id="kalibracja">Kalibracja</h2><p>...</p>'}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ls-timestamps">
+              Timestampy wideo (jeden na linię: <code>czas,nazwa,id-sekcji</code>)
+            </Label>
+            <Textarea
+              id="ls-timestamps"
+              value={timestampsText}
+              onChange={(e) => setTimestampsText(e.target.value)}
+              rows={5}
+              placeholder={"0:00,Wstęp,wstep\n1:20,Kalibracja,kalibracja\n3:05,Pierwszy wydruk,pierwszy-wydruk"}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-text-muted">
+              „id-sekcji" musi odpowiadać atrybutowi <code>id</code> elementu w
+              treści (np. <code>&lt;h2 id=&quot;kalibracja&quot;&gt;</code>).
+              Fioletowy kursor płynnie przejdzie do tej sekcji, gdy wideo
+              osiągnie podany czas.
+            </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>

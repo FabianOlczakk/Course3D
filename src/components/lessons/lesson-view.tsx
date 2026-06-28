@@ -21,51 +21,50 @@ interface NavLesson {
   title: string;
 }
 
-// Skrypt wstrzykiwany do iframe treści lekcji: nasłuchuje czasu wideo z rodzica
-// i podświetla element [data-ts] odpowiadający bieżącemu czasowi.
-const TIMESTAMP_LISTENER = `<script>
-window.addEventListener('message', function(e) {
-  if (!e.data || e.data.type !== 'COURSE_TIME') return;
-  var t = e.data.time;
-  var els = document.querySelectorAll('[data-ts]');
-  var active = null;
-  els.forEach(function(el) {
-    var ts = el.getAttribute('data-ts');
-    var parts = ts.split(':').map(Number);
-    var sec = parts.length === 2 ? parts[0]*60 + parts[1] : parts[0];
-    if (t >= sec) active = el;
-  });
-  els.forEach(function(el) { el.classList.remove('active'); });
-  if (active) {
-    active.classList.add('active');
-    active.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
-<\/script>
-<style>[data-ts].active{background:rgba(168,85,247,0.18);border-left:3px solid #a855f7;padding-left:8px;border-radius:4px;box-shadow:0 0 12px rgba(168,85,247,0.25);transition:all .3s ease;}</style>`;
-
-function injectTimestampScript(html: string): string {
-  if (html.includes("</body>")) {
-    return html.replace("</body>", TIMESTAMP_LISTENER + "</body>");
-  }
-  return html + TIMESTAMP_LISTENER;
-}
-
-// Parsuje "2:30" -> 150 sekund.
-function parseTs(ts: string): number {
-  const parts = ts.split(":").map(Number);
-  return parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0];
-}
-
-// Wyciąga posortowane wartości data-ts (w sekundach) z surowego HTML.
-function extractDataTs(html: string): number[] {
-  const matches = Array.from(html.matchAll(/data-ts=["']([^"']+)["']/g));
-  return matches.map((m) => parseTs(m[1])).sort((a, b) => a - b);
-}
-
 export interface LessonTimestamp {
   time: number;
   elementId: string;
+}
+
+// Skrypt wstrzykiwany do iframe: rysuje fioletowy kursor, który PŁYNNIE
+// przechodzi (interpolacja po offsetTop) między kolejnymi sekcjami treści w
+// zależności od czasu wideo, oraz podświetla aktualną sekcję.
+function buildCursorScript(timestamps: LessonTimestamp[]): string {
+  const data = JSON.stringify(timestamps ?? []);
+  return `<style>
+    body{position:relative;padding-left:16px !important;}
+    #__ts_cursor{position:absolute;left:2px;width:3px;border-radius:2px;background:#9d6bff;box-shadow:0 0 8px rgba(157,107,255,.7);transition:top .28s linear,height .28s linear;z-index:99999;}
+    .__ts_active{background:rgba(157,107,255,.10);border-radius:6px;transition:background .3s ease;}
+  </style>
+  <script>(function(){
+    var TS=${data};
+    if(!TS.length)return;
+    var cur=document.createElement('div');cur.id='__ts_cursor';cur.style.top='0px';cur.style.height='24px';
+    function attach(){if(document.body)document.body.appendChild(cur);}
+    if(document.body)attach();else document.addEventListener('DOMContentLoaded',attach);
+    function box(id){var el=document.getElementById(id);if(!el)return null;return {top:el.offsetTop,h:el.offsetHeight,el:el};}
+    function hl(el){var a=document.querySelectorAll('.__ts_active');for(var i=0;i<a.length;i++)a[i].classList.remove('__ts_active');if(el)el.classList.add('__ts_active');}
+    function update(t){
+      var i=-1;for(var k=0;k<TS.length;k++){if(t>=TS[k].time)i=k;else break;}
+      if(i<0){var f=box(TS[0].elementId);if(f){cur.style.top=f.top+'px';cur.style.height=f.h+'px';}return;}
+      var c=box(TS[i].elementId);if(!c)return;
+      var nt=TS[i+1];
+      if(!nt){cur.style.top=c.top+'px';cur.style.height=c.h+'px';hl(c.el);return;}
+      var n=box(nt.elementId);if(!n){cur.style.top=c.top+'px';cur.style.height=c.h+'px';hl(c.el);return;}
+      var dur=nt.time-TS[i].time;var p=dur>0?Math.min(1,Math.max(0,(t-TS[i].time)/dur)):0;
+      cur.style.top=(c.top+(n.top-c.top)*p)+'px';
+      cur.style.height=(c.h+(n.h-c.h)*p)+'px';
+      var active=p<0.5?c.el:n.el;hl(active);
+      try{active.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+    }
+    window.addEventListener('message',function(e){if(e.data&&e.data.type==='COURSE_TIME')update(e.data.time);});
+  })();<\/script>`;
+}
+
+function injectCursor(html: string, timestamps: LessonTimestamp[]): string {
+  const s = buildCursorScript(timestamps);
+  if (html.includes("</body>")) return html.replace("</body>", s + "</body>");
+  return html + s;
 }
 
 export interface LessonQuiz {
@@ -99,10 +98,8 @@ export function LessonView({
   quizzes,
 }: LessonViewProps) {
   const toast = useToast();
-  const contentRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [cursorPercent, setCursorPercent] = useState(0);
 
   const [completed, setCompleted] = useState(initialCompleted);
   const [saving, setSaving] = useState(false);
@@ -117,11 +114,9 @@ export function LessonView({
     const base = html.includes("background: #0a0a")
       ? html
       : injectDarkBackground(html);
-    return injectTimestampScript(base);
-  }, [html]);
-  const dataTsList = useMemo(() => extractDataTs(html || ""), [html]);
+    return injectCursor(base, timestamps);
+  }, [html, timestamps]);
 
-  const [activeElementId, setActiveElementId] = useState<string | null>(null);
   const shownQuizzes = useRef<Set<number>>(new Set());
   const [activeQuiz, setActiveQuiz] = useState<LessonQuiz | null>(null);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
@@ -189,39 +184,11 @@ export function LessonView({
   // Synchronizacja czasu wideo: podświetlanie elementów i quizy.
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
-      // Wyślij czas do iframe treści lekcji (synchronizacja [data-ts]).
+      // Wyślij czas do iframe treści lekcji — kursor interpoluje pozycję.
       iframeRef.current?.contentWindow?.postMessage(
         { type: "COURSE_TIME", time: currentTime },
         "*"
       );
-
-      // Pasek kursora: pozycja na podstawie indeksu aktywnego data-ts.
-      if (dataTsList.length > 0) {
-        let activeIdx = -1;
-        for (let i = 0; i < dataTsList.length; i++) {
-          if (currentTime >= dataTsList[i]) activeIdx = i;
-          else break;
-        }
-        const pct =
-          activeIdx < 0
-            ? 0
-            : dataTsList.length === 1
-              ? 100
-              : (activeIdx / (dataTsList.length - 1)) * 100;
-        setCursorPercent(pct);
-      }
-
-      // Timestamps — znajdź ostatni element, którego czas już minął.
-      if (timestamps.length > 0) {
-        let current: LessonTimestamp | null = null;
-        for (const t of timestamps) {
-          if (currentTime >= t.time) current = t;
-          else break;
-        }
-        if (current && current.elementId !== activeElementId) {
-          setActiveElementId(current.elementId);
-        }
-      }
 
       // Quizy — auto-pauza przy osiągnięciu triggersAt.
       if (quizzes.length > 0 && !activeQuiz) {
@@ -237,24 +204,8 @@ export function LessonView({
         }
       }
     },
-    [timestamps, quizzes, activeElementId, activeQuiz, dataTsList]
+    [quizzes, activeQuiz]
   );
-
-  // Zastosuj podświetlenie do aktywnego elementu w panelu treści.
-  useEffect(() => {
-    const root = contentRef.current;
-    if (!root) return;
-    root
-      .querySelectorAll(".lesson-highlight")
-      .forEach((el) => el.classList.remove("lesson-highlight"));
-    if (activeElementId) {
-      const el = root.querySelector(`#${CSS.escape(activeElementId)}`);
-      if (el) {
-        el.classList.add("lesson-highlight");
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }
-  }, [activeElementId]);
 
   const closeQuiz = useCallback(() => {
     setActiveQuiz(null);
@@ -340,26 +291,13 @@ export function LessonView({
         {/* Prawa strona: treść lekcji w iframe (obsługuje JS, CSS, animacje) */}
         <div className="relative flex overflow-hidden bg-[var(--bg-base)]">
           {html ? (
-            <>
-              {/* Pionowy pasek kursora wskazujący bieżącą sekcję */}
-              {dataTsList.length > 0 && (
-                <div className="relative w-6 flex-shrink-0 bg-[var(--bg-elevated)]">
-                  <div
-                    className="absolute left-0 w-6 transition-all duration-300"
-                    style={{ top: `${cursorPercent}%` }}
-                  >
-                    <div className="ml-1 h-3 w-3 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent-glow)]" />
-                  </div>
-                </div>
-              )}
-              <iframe
-                ref={iframeRef}
-                srcDoc={enrichedHtml}
-                className="h-full w-full flex-1 border-0"
-                sandbox="allow-scripts allow-same-origin"
-                title="Treść lekcji"
-              />
-            </>
+            <iframe
+              ref={iframeRef}
+              srcDoc={enrichedHtml}
+              className="h-full w-full flex-1 border-0"
+              sandbox="allow-scripts allow-same-origin"
+              title="Treść lekcji"
+            />
           ) : (
             <div className="flex h-full items-center justify-center p-8 text-center text-text-secondary">
               <div>

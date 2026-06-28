@@ -9,6 +9,16 @@ const createSchema = z.object({
   description: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   contentJson: z.string().nullable().optional(),
+  timestamps: z
+    .array(
+      z.object({
+        time: z.number().nonnegative(),
+        label: z.string().optional(),
+        elementId: z.string().min(1),
+      })
+    )
+    .nullable()
+    .optional(),
   order: z.number().int().optional(),
 });
 
@@ -81,6 +91,7 @@ export async function POST(
       description: parsed.data.description ?? null,
       videoUrl: parsed.data.videoUrl ?? null,
       contentJson: parsed.data.contentJson ?? undefined,
+      timestamps: parsed.data.timestamps ?? undefined,
       order,
     },
   });
