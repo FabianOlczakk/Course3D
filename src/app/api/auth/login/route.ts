@@ -77,7 +77,10 @@ export async function POST(req: NextRequest) {
 
     log("[login] token signed, redirecting");
     const safeUrl = callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
-    const res = NextResponse.redirect(new URL(safeUrl, req.nextUrl.origin), 302);
+    const host = req.headers.get("host") || "localhost:3000";
+    const proto = req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "") || "http";
+    const origin = `${proto}://${host}`;
+    const res = NextResponse.redirect(new URL(safeUrl, origin), 302);
     res.cookies.set(cookieName, token, {
       httpOnly: true,
       sameSite: "lax",
