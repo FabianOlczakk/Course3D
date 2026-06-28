@@ -86,6 +86,17 @@ export function PostCard({
           <AdminBadge role={post.author.role} />
           <span className="text-text-muted">·</span>
           <span className="text-xs text-text-muted">{timeAgo(post.createdAt)}</span>
+          {post.category && (
+            <span
+              className="rounded-[5px] px-2 py-0.5 text-[10.5px] font-semibold"
+              style={{
+                background: (post.category.color || "#9d6bff") + "1a",
+                color: post.category.color || "var(--accent-soft)",
+              }}
+            >
+              {post.category.name}
+            </span>
+          )}
         </div>
         {canDelete && (
           <button

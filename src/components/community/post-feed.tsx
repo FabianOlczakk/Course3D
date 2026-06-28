@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, Plus, Trash2 } from "lucide-react";
 import { NewPostForm } from "@/components/community/new-post-form";
 import { PostCard } from "@/components/community/post-card";
-import type { PostItem } from "@/components/community/types";
+import type { CategoryMini, PostItem } from "@/components/community/types";
 
 // Feed postów z paginacją kursorową.
 export function PostFeed({
@@ -24,6 +24,50 @@ export function PostFeed({
   const [searchActive, setSearchActive] = useState(false);
   const [searchResults, setSearchResults] = useState<PostItem[]>([]);
   const [searching, setSearching] = useState(false);
+
+  const [categories, setCategories] = useState<CategoryMini[]>([]);
+  const [activeCat, setActiveCat] = useState("");
+  const [managing, setManaging] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState("#9d6bff");
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/categories?type=POST");
+      if (res.ok) setCategories((await res.json()).categories ?? []);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  useEffect(() => {
+    void loadCategories();
+  }, [loadCategories]);
+
+  async function addCategory() {
+    const name = newCatName.trim();
+    if (!name) return;
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, color: newCatColor, type: "POST" }),
+    });
+    if (res.ok) {
+      setNewCatName("");
+      void loadCategories();
+    }
+  }
+  async function deleteCategory(id: string) {
+    if (!confirm("Usunąć kategorię?")) return;
+    const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      if (activeCat === id) setActiveCat("");
+      void loadCategories();
+    }
+  }
+
+  const shownPosts = activeCat
+    ? posts.filter((p) => p.category?.id === activeCat)
+    : posts;
 
   const loadMore = useCallback(
     async (reset = false) => {
@@ -126,9 +170,82 @@ export function PostFeed({
         </div>
       ) : (
         <>
+      {/* Zakładki kategorii */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setActiveCat("")}
+          className={
+            activeCat === ""
+              ? "rounded-md bg-[#9d6bff1a] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--accent-soft)]"
+              : "rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12.5px] font-semibold text-text-secondary hover:text-text-primary"
+          }
+        >
+          Wszystko
+        </button>
+        {categories.map((c) => (
+          <span key={c.id} className="flex items-center">
+            <button
+              onClick={() => setActiveCat(c.id)}
+              className={
+                activeCat === c.id
+                  ? "rounded-md px-3 py-1.5 text-[12.5px] font-semibold"
+                  : "rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12.5px] font-semibold text-text-secondary hover:text-text-primary"
+              }
+              style={
+                activeCat === c.id
+                  ? { background: (c.color || "#9d6bff") + "1a", color: c.color || "#b89dff" }
+                  : undefined
+              }
+            >
+              {c.name}
+            </button>
+            {isAdmin && managing && (
+              <button
+                onClick={() => void deleteCategory(c.id)}
+                aria-label="Usuń kategorię"
+                className="ml-1 text-text-muted hover:text-red-400"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </span>
+        ))}
+        {isAdmin && (
+          <button
+            onClick={() => setManaging((m) => !m)}
+            className="rounded-md border border-[var(--border-subtle)] px-3 py-1.5 text-[12.5px] font-semibold text-text-secondary hover:text-text-primary"
+          >
+            {managing ? "Gotowe" : "Zarządzaj"}
+          </button>
+        )}
+      </div>
+
+      {isAdmin && managing && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
+          <input
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            placeholder="Nazwa nowej kategorii"
+            className="flex-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-text-primary outline-none"
+          />
+          <input
+            type="color"
+            value={newCatColor}
+            onChange={(e) => setNewCatColor(e.target.value)}
+            className="h-9 w-12 cursor-pointer rounded-md border border-[var(--border-subtle)] bg-transparent"
+          />
+          <button
+            onClick={() => void addCategory()}
+            className="glow-btn flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-white"
+          >
+            <Plus className="h-4 w-4" /> Dodaj
+          </button>
+        </div>
+      )}
+
       <NewPostForm onCreated={(p) => setPosts((prev) => [p, ...prev])} />
 
-      {posts.map((post) => (
+      {shownPosts.map((post) => (
         <PostCard
           key={post.id}
           post={post}

@@ -1,21 +1,30 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Paperclip, Plus, X } from "lucide-react";
 import {
   readAttachments,
   formatFileSize,
   type Attachment,
 } from "@/lib/attachments-client";
-import type { PostItem } from "@/components/community/types";
+import type { CategoryMini, PostItem } from "@/components/community/types";
 
 // Formularz tworzenia nowego posta.
 export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void }) {
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [categories, setCategories] = useState<CategoryMini[]>([]);
+  const [categoryId, setCategoryId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/categories?type=POST")
+      .then((r) => (r.ok ? r.json() : { categories: [] }))
+      .then((d) => setCategories(d.categories ?? []))
+      .catch(() => {});
+  }, []);
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -38,7 +47,7 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text, attachments }),
+        body: JSON.stringify({ content: text, attachments, categoryId: categoryId || null }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -48,6 +57,7 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
       const data = await res.json();
       setContent("");
       setAttachments([]);
+      setCategoryId("");
       onCreated(data.post);
     } catch {
       setError("Nie udało się dodać posta.");
@@ -95,14 +105,30 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
-        <button
-          type="button"
-          className="glow-icon-btn"
-          aria-label="Dodaj załącznik"
-          onClick={() => fileRef.current?.click()}
-        >
-          <Paperclip className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="glow-icon-btn"
+            aria-label="Dodaj załącznik"
+            onClick={() => fileRef.current?.click()}
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+          {categories.length > 0 && (
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="h-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 text-sm text-text-primary outline-none"
+            >
+              <option value="">Bez kategorii</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         <button
           type="button"
           disabled={submitting || !content.trim()}

@@ -10,6 +10,12 @@ export interface AuthorMini {
   lastActiveAt?: string | Date | null;
 }
 
+export interface CategoryMini {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 export interface PostItem {
   id: string;
   authorId: string;
@@ -18,6 +24,7 @@ export interface PostItem {
   attachments: Attachment[] | null;
   createdAt: string;
   author: AuthorMini;
+  category?: CategoryMini | null;
   _count: { comments: number };
 }
 

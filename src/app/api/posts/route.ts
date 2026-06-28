@@ -8,6 +8,7 @@ import { attachmentsSchema } from "@/lib/attachments";
 const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
 } as const;
+const categorySelect = { select: { id: true, name: true, color: true } } as const;
 
 // Posty z paginacją kursorową (najnowsze pierwsze).
 export async function GET(req: Request) {
@@ -29,11 +30,11 @@ export async function GET(req: Request) {
     orderBy: { createdAt: "desc" },
     include: {
       author: authorSelect,
+      category: categorySelect,
       _count: { select: { comments: true } },
     },
   });
 
-  // Odfiltruj ogłoszenia z normalnego feedu społeczności.
   const visible = posts;
   const hasMore = visible.length > limit;
   const items = hasMore ? visible.slice(0, limit) : visible;
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
 const createSchema = z.object({
   content: z.string().trim().min(1, "Treść nie może być pusta.").max(10000),
   title: z.string().trim().max(255).optional(),
+  categoryId: z.string().optional().nullable(),
   attachments: attachmentsSchema,
 });
 
@@ -75,10 +77,12 @@ export async function POST(req: Request) {
       authorId: session.user.id,
       content: parsed.data.content,
       title: parsed.data.title || null,
+      categoryId: parsed.data.categoryId || null,
       attachments: parsed.data.attachments ?? undefined,
     },
     include: {
       author: authorSelect,
+      category: categorySelect,
       _count: { select: { comments: true } },
     },
   });
