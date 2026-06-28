@@ -15,7 +15,9 @@ import {
   ChevronRight,
   X,
   Pencil,
+  LogOut,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { useProgress } from "@/lib/use-progress";
@@ -24,23 +26,27 @@ import {
   type SidebarChapter,
 } from "@/components/chapters/chapter-list";
 
-type NavIcon = React.ComponentType<{ className?: string }>;
-
-/** Pozycja menu: link do trasy LUB akcja (np. otwarcie panelu). */
-interface NavItem {
-  key: string;
-  label: string;
-  icon: NavIcon;
-  href?: string;
-  event?: string;
-  badge?: number;
-}
-
 function colorFromString(str: string): string {
   const palette = ["#9d6bff", "#5b8def", "#3ecf8e", "#e0944a", "#d9536a"];
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
   return palette[h % palette.length];
+}
+
+interface Conversation {
+  userId: string;
+  username: string | null;
+  email: string;
+  avatarUrl: string | null;
+  lastMessage: string;
+  unreadCount: number;
+}
+
+interface WikiArticleMini {
+  id: string;
+  title: string;
+  slug: string;
+  category: string | null;
 }
 
 export function Sidebar({
@@ -69,8 +75,14 @@ export function Sidebar({
   const [courseOpen, setCourseOpen] = useState(
     chapters.some((c) => c.lessons.some((l) => pathname === `/kurs/${l.id}`))
   );
+  const [wiadOpen, setWiadOpen] = useState(false);
+  const [wikiOpen, setWikiOpen] = useState(pathname.startsWith("/wiki"));
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [wikiArticles, setWikiArticles] = useState<WikiArticleMini[]>([]);
+  const [openWikiCat, setOpenWikiCat] = useState<string | null>(null);
+  const [profileMenu, setProfileMenu] = useState(false);
 
-  // Liczniki powiadomień (wiadomości + ogłoszenia)
+  // Liczniki powiadomień
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -108,7 +120,50 @@ export function Sidebar({
     };
   }, [pathname]);
 
-  // Postęp całego kursu
+  // Lazy: konwersacje przy rozwinięciu Wiadomości
+  useEffect(() => {
+    if (!wiadOpen) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/messages/conversations");
+        if (res.ok) {
+          const d = await res.json();
+          if (!cancelled) setConversations(d.conversations ?? []);
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [wiadOpen]);
+
+  // Lazy: artykuły wiki przy rozwinięciu
+  useEffect(() => {
+    if (!wikiOpen) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/wiki");
+        if (res.ok) {
+          const d = await res.json();
+          if (!cancelled) setWikiArticles(d.articles ?? []);
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [wikiOpen]);
+
+  const wikiByCategory = useMemo(() => {
+    const map = new Map<string, WikiArticleMini[]>();
+    for (const a of wikiArticles) {
+      const cat = a.category || "Inne";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(a);
+    }
+    return Array.from(map.entries());
+  }, [wikiArticles]);
+
   const courseStats = useMemo(() => {
     const total = chapters.reduce((s, c) => s + c.lessons.length, 0);
     const done = chapters.reduce(
@@ -122,66 +177,28 @@ export function Sidebar({
         (c) => !c.lessons.every((l) => progress[l.id]?.completed)
       )
     );
-    return { total, done, pct, currentIdx, count: chapters.length };
+    return { pct, currentIdx, count: chapters.length };
   }, [chapters, progress]);
 
-  const platformNav: NavItem[] = [
-    { key: "pulpit", label: "Pulpit", icon: Home, href: "/dashboard" },
-    {
-      key: "spol",
-      label: "Społeczność",
-      icon: MessageCircle,
-      href: "/spolecznosc",
-    },
-    {
-      key: "wiad",
-      label: "Wiadomości",
-      icon: Mail,
-      event: "open-messages",
-      badge: unreadMsg,
-    },
-    {
-      key: "ogl",
-      label: "Ogłoszenia",
-      icon: Bell,
-      event: "open-announcements",
-      badge: unreadAnn,
-    },
-    { key: "wiki", label: "Wiki", icon: BookOpen, href: "/wiki" },
-  ];
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
 
-  const adminNav: NavItem[] = [
-    { key: "users", label: "Użytkownicy", icon: Users, href: "/admin/users" },
-    { key: "chapters", label: "Rozdziały", icon: Boxes, href: "/admin/chapters" },
-    {
-      key: "adminOgl",
-      label: "Ogłoszenia",
-      icon: Bell,
-      href: "/admin/ogloszenia",
-    },
-    { key: "adminWiki", label: "Wiki", icon: Pencil, href: "/admin/wiki/new" },
-  ];
-
-  function isActive(item: NavItem) {
-    if (!item.href) return false;
-    return pathname === item.href || pathname.startsWith(item.href + "/");
-  }
-
-  function handleClick(item: NavItem) {
-    onMobileClose?.();
-    if (item.event) {
-      window.dispatchEvent(new CustomEvent(item.event));
-    } else if (item.href) {
-      router.push(item.href);
-    }
-  }
-
-  const navButton = (item: NavItem) => {
-    const active = isActive(item);
+  // Prosty przycisk nawigacji (link)
+  const linkButton = (
+    key: string,
+    label: string,
+    icon: React.ComponentType<{ className?: string }>,
+    href: string
+  ) => {
+    const Icon = icon;
+    const active = isActive(href);
     return (
       <button
-        key={item.key}
-        onClick={() => handleClick(item)}
+        key={key}
+        onClick={() => {
+          onMobileClose?.();
+          router.push(href);
+        }}
         className={cn(
           "relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium transition-colors",
           active
@@ -192,25 +209,54 @@ export function Sidebar({
         {active && (
           <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-[2px] bg-[var(--accent)]" />
         )}
-        <item.icon
+        <Icon
           className={cn(
             "h-[18px] w-[18px] shrink-0",
             active ? "text-[var(--accent)]" : "text-[#8a8a8a]"
           )}
         />
-        <span className="flex-1">{item.label}</span>
-        {item.badge ? (
+        <span className="flex-1">{label}</span>
+      </button>
+    );
+  };
+
+  // Przycisk z plakietką i rozwijaniem lub akcją
+  const expandRow = (
+    label: string,
+    icon: React.ComponentType<{ className?: string }>,
+    {
+      open,
+      onToggle,
+      badge,
+      badgeAccent,
+    }: { open?: boolean; onToggle: () => void; badge?: number; badgeAccent?: boolean }
+  ) => {
+    const Icon = icon;
+    return (
+      <button
+        onClick={onToggle}
+        className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
+      >
+        <Icon className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
+        <span className="flex-1">{label}</span>
+        {badge ? (
           <span
             className={cn(
               "flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] px-[5px] text-[10.5px] font-semibold",
-              item.key === "ogl"
+              badgeAccent
                 ? "bg-[var(--accent)] text-white"
                 : "bg-[#2e2e2e] text-[#cfcfcf]"
             )}
           >
-            {item.badge > 99 ? "99+" : item.badge}
+            {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 shrink-0 text-[#6e6e6e] transition-transform",
+            open && "rotate-90"
+          )}
+        />
       </button>
     );
   };
@@ -222,12 +268,19 @@ export function Sidebar({
     </div>
   );
 
+  // Kontener podgrupy — wyraźnie zagnieżdżony (wcięcie + lewa krawędź)
+  const subgroup = (children: React.ReactNode) => (
+    <div className="my-1 ml-[20px] border-l border-[#333] pl-[10px]">
+      {children}
+    </div>
+  );
+
   const initials = (username || email).slice(0, 2).toUpperCase();
   const avatarColor = colorFromString(username || email);
 
   const content = (
     <>
-      {/* HEADER — branding (bez ikony) */}
+      {/* HEADER — branding bez ikony */}
       <div className="flex items-center justify-between gap-2 border-b border-[#2b2b2b] px-[18px] py-4">
         <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
           <div className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[#f0f0f0]">
@@ -252,10 +305,141 @@ export function Sidebar({
       {/* NAV */}
       <div className="flex-1 overflow-y-auto px-[10px] pb-4 pt-[10px]">
         {groupLabel("Platforma")}
-        <div className="space-y-[1px]">{platformNav.map(navButton)}</div>
+        <div className="space-y-[1px]">
+          {linkButton("pulpit", "Pulpit", Home, "/dashboard")}
+          {linkButton("spol", "Społeczność", MessageCircle, "/spolecznosc")}
 
+          {/* Wiadomości — rozwijane (5 ostatnich + Więcej) */}
+          {expandRow("Wiadomości", Mail, {
+            open: wiadOpen,
+            onToggle: () => setWiadOpen((o) => !o),
+            badge: unreadMsg,
+          })}
+          {wiadOpen &&
+            subgroup(
+              <>
+                {conversations.length === 0 ? (
+                  <p className="px-2 py-1.5 text-[12px] text-[#6e6e6e]">
+                    Brak rozmów.
+                  </p>
+                ) : (
+                  conversations.slice(0, 5).map((c) => {
+                    const label = c.username || c.email;
+                    return (
+                      <button
+                        key={c.userId}
+                        onClick={() => {
+                          onMobileClose?.();
+                          router.push(`/wiadomosci?u=${c.userId}`);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left transition-colors hover:bg-[#ffffff09]"
+                      >
+                        <span
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                          style={{ background: colorFromString(label) }}
+                        >
+                          {label.slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12.5px] text-[#cfcfcf]">
+                            {label}
+                          </span>
+                        </span>
+                        {c.unreadCount > 0 && (
+                          <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[var(--accent)]" />
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+                <Link
+                  href="/wiadomosci"
+                  onClick={onMobileClose}
+                  className="mt-1 block rounded-[6px] px-2 py-1.5 text-[12.5px] font-semibold text-[var(--accent-soft)] hover:bg-[#ffffff09]"
+                >
+                  Więcej →
+                </Link>
+              </>
+            )}
+
+          {/* Ogłoszenia — panel (drawer) */}
+          <button
+            onClick={() => {
+              onMobileClose?.();
+              window.dispatchEvent(new CustomEvent("open-announcements"));
+            }}
+            className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
+          >
+            <Bell className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
+            <span className="flex-1">Ogłoszenia</span>
+            {unreadAnn > 0 && (
+              <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] bg-[var(--accent)] px-[5px] text-[10.5px] font-semibold text-white">
+                {unreadAnn > 99 ? "99+" : unreadAnn}
+              </span>
+            )}
+          </button>
+
+          {/* Wiki — rozwijane (kategorie → artykuły) */}
+          {expandRow("Wiki", BookOpen, {
+            open: wikiOpen,
+            onToggle: () => setWikiOpen((o) => !o),
+          })}
+          {wikiOpen &&
+            subgroup(
+              wikiByCategory.length === 0 ? (
+                <p className="px-2 py-1.5 text-[12px] text-[#6e6e6e]">
+                  Brak artykułów.
+                </p>
+              ) : (
+                wikiByCategory.map(([cat, arts]) => {
+                  const catOpen = openWikiCat === cat;
+                  return (
+                    <div key={cat}>
+                      <button
+                        onClick={() => setOpenWikiCat(catOpen ? null : cat)}
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] font-semibold uppercase tracking-[0.03em] text-[#7a7a7a] transition-colors hover:bg-[#ffffff09]"
+                      >
+                        <ChevronRight
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0 transition-transform",
+                            catOpen && "rotate-90"
+                          )}
+                        />
+                        <span className="flex-1 truncate">{cat}</span>
+                        <span className="text-[10px] text-[#5f5f5f]">
+                          {arts.length}
+                        </span>
+                      </button>
+                      {catOpen &&
+                        subgroup(
+                          arts.map((a) => {
+                            const active = pathname === `/wiki/${a.slug}`;
+                            return (
+                              <Link
+                                key={a.id}
+                                href={`/wiki/${a.slug}`}
+                                onClick={onMobileClose}
+                                className={cn(
+                                  "block truncate rounded-[6px] px-2 py-1.5 text-[12.5px] transition-colors",
+                                  active
+                                    ? "bg-[#9d6bff14] text-[var(--accent-soft)]"
+                                    : "text-[#cfcfcf] hover:bg-[#ffffff09]"
+                                )}
+                              >
+                                {a.title}
+                              </Link>
+                            );
+                          })
+                        )}
+                    </div>
+                  );
+                })
+              )
+            )}
+        </div>
+
+        {/* NAUKA — widget kursu z rozwijanymi rozdziałami */}
         {groupLabel("Nauka")}
-        {/* Widget postępu kursu z rozwijaną listą rozdziałów */}
         <button
           onClick={() => setCourseOpen((o) => !o)}
           className="relative flex w-full items-start gap-[11px] rounded-[7px] px-[11px] py-[10px] text-left transition-colors hover:bg-[#ffffff09]"
@@ -284,28 +468,29 @@ export function Sidebar({
             )}
           />
         </button>
-
-        {courseOpen && (
-          <div className="mt-1 pl-1">
-            <ChapterList chapters={chapters} onNavigate={onMobileClose} />
-          </div>
-        )}
+        {courseOpen && subgroup(<ChapterList chapters={chapters} onNavigate={onMobileClose} />)}
 
         {/* ADMIN */}
-        {role === "ADMIN" &&
-          groupLabel(
-            "Administracja",
-            <span className="rounded-[4px] bg-[#9d6bff1f] px-[6px] py-[2px] text-[9px] tracking-[0.03em] text-[var(--accent-soft)]">
-              INSTRUKTOR
-            </span>
-          )}
         {role === "ADMIN" && (
-          <div className="space-y-[1px]">{adminNav.map(navButton)}</div>
+          <>
+            {groupLabel(
+              "Administracja",
+              <span className="rounded-[4px] bg-[#9d6bff1f] px-[6px] py-[2px] text-[9px] tracking-[0.03em] text-[var(--accent-soft)]">
+                INSTRUKTOR
+              </span>
+            )}
+            <div className="space-y-[1px]">
+              {linkButton("users", "Użytkownicy", Users, "/admin/users")}
+              {linkButton("chapters", "Rozdziały", Boxes, "/admin/chapters")}
+              {linkButton("adminOgl", "Ogłoszenia", Bell, "/admin/ogloszenia")}
+              {linkButton("adminWiki", "Wiki", Pencil, "/admin/wiki/new")}
+            </div>
+          </>
         )}
       </div>
 
-      {/* FOOTER — użytkownik z kropką obecności */}
-      <div className="flex items-center gap-[10px] border-t border-[#2b2b2b] p-[11px]">
+      {/* FOOTER — użytkownik + kropka obecności + menu (profil/wyloguj) */}
+      <div className="relative flex items-center gap-[10px] border-t border-[#2b2b2b] p-[11px]">
         <div className="relative shrink-0">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -332,26 +517,46 @@ export function Sidebar({
             {role === "ADMIN" ? "Instruktor" : "Kursant"}
           </div>
         </div>
-        <Link
-          href="/profile"
-          onClick={onMobileClose}
-          title="Ustawienia profilu"
+        <button
+          onClick={() => setProfileMenu((o) => !o)}
+          title="Ustawienia"
           className="flex h-[30px] w-[30px] items-center justify-center rounded-[6px] text-[#7a7a7a] transition-colors hover:bg-[#ffffff0a] hover:text-[#cfcfcf]"
         >
           <SlidersHorizontal className="h-4 w-4" />
-        </Link>
+        </button>
+
+        {profileMenu && (
+          <div className="absolute bottom-[52px] right-[11px] z-50 w-[180px] overflow-hidden rounded-[8px] border border-[#2b2b2b] bg-[#1e1e1e] shadow-xl">
+            <Link
+              href="/profile"
+              onClick={() => {
+                setProfileMenu(false);
+                onMobileClose?.();
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#cfcfcf] hover:bg-[#ffffff09]"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Profil i ustawienia
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#e07686] hover:bg-[#ffffff09]"
+            >
+              <LogOut className="h-4 w-4" />
+              Wyloguj się
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
 
   return (
     <>
-      {/* Desktop */}
       <aside className="hidden w-[248px] shrink-0 flex-col border-r border-[#2b2b2b] bg-[#1c1c1c] md:flex">
         {content}
       </aside>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div

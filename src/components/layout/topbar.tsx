@@ -1,33 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
-import {
-  LogOut,
-  Users2,
-  User as UserIcon,
-  Shield,
-  Menu,
-  Search,
-  X,
-  BookOpen,
-  FileText,
-  Loader2,
-} from "lucide-react";
-import { MessagesPanel } from "@/components/messages/messages-panel";
+import { Users2, Menu, Search, X, BookOpen, FileText, Loader2 } from "lucide-react";
 import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import type { Role } from "@prisma/client";
 
 interface SearchResult {
@@ -50,6 +26,7 @@ function SearchBar() {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState<"all" | "lesson" | "post" | "wiki">("all");
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -72,9 +49,18 @@ function SearchBar() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, search]);
 
-  const allResults = results
-    ? [...(results.lessons ?? []), ...(results.wiki ?? []), ...(results.posts ?? [])]
-    : [];
+  const allResults = (
+    results
+      ? [...(results.lessons ?? []), ...(results.wiki ?? []), ...(results.posts ?? [])]
+      : []
+  ).filter((r) => filter === "all" || r.type === filter);
+
+  const FILTERS: { key: "all" | "lesson" | "post" | "wiki"; label: string }[] = [
+    { key: "all", label: "Wszystko" },
+    { key: "lesson", label: "Lekcje" },
+    { key: "post", label: "Posty" },
+    { key: "wiki", label: "Wiki" },
+  ];
 
   const typeIcon = (type: SearchResult["type"]) => {
     if (type === "lesson") return <BookOpen className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />;
@@ -112,6 +98,24 @@ function SearchBar() {
 
       {open && query.length >= 2 && (
         <div className="glow-card absolute left-0 top-full z-50 mt-1 w-full min-w-[320px] overflow-hidden rounded-lg p-0 shadow-xl">
+          {/* Filtry typu — pojawiają się po wpisaniu zapytania */}
+          <div className="flex gap-1.5 border-b border-[var(--border-subtle)] p-2">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setFilter(f.key)}
+                className={
+                  filter === f.key
+                    ? "rounded-md bg-[#9d6bff1a] px-2.5 py-1 text-xs font-semibold text-[var(--accent-soft)]"
+                    : "rounded-md px-2.5 py-1 text-xs font-semibold text-text-secondary hover:bg-[var(--bg-elevated)]"
+                }
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
           {allResults.length === 0 && !loading && (
             <p className="px-4 py-3 text-sm text-text-muted">Brak wyników dla „{query}"</p>
           )}
@@ -155,14 +159,6 @@ export function Topbar({
   avatarUrl,
   onMenuClick,
 }: TopbarProps) {
-  const initials = (username || email).slice(0, 2).toUpperCase();
-  const [messagesOpen, setMessagesOpen] = useState(false);
-  const [messagesTarget, setMessagesTarget] = useState<{
-    id: string;
-    username: string | null;
-    email: string;
-    avatarUrl: string | null;
-  } | null>(null);
   const [announcementsOpen, setAnnouncementsOpen] = useState(false);
 
   // Heartbeat — aktualizuj lastActiveAt co 60 sekund
@@ -175,25 +171,15 @@ export function Topbar({
     return () => clearInterval(id);
   }, []);
 
-  // Panele otwierane z paska bocznego (custom events)
+  // Panel ogłoszeń otwierany z paska bocznego (custom event)
   useEffect(() => {
-    function onOpenMessages(e: Event) {
-      const detail = (e as CustomEvent).detail as
-        | { id: string; username: string | null; email: string; avatarUrl: string | null }
-        | undefined;
-      setMessagesTarget(detail ?? null);
-      setMessagesOpen(true);
-    }
     function onOpenAnnouncements() {
       localStorage.setItem("announcements-last-seen", String(Date.now()));
       setAnnouncementsOpen(true);
     }
-    window.addEventListener("open-messages", onOpenMessages);
     window.addEventListener("open-announcements", onOpenAnnouncements);
-    return () => {
-      window.removeEventListener("open-messages", onOpenMessages);
+    return () =>
       window.removeEventListener("open-announcements", onOpenAnnouncements);
-    };
   }, []);
 
   return (
@@ -214,57 +200,20 @@ export function Topbar({
 
         <div className="flex-1" />
 
-        {/* Prawa strona: rola + avatar */}
+        {/* Prawa strona: tylko plakietka roli */}
         <div className="flex items-center gap-2">
-          <Badge
-            variant={role === "ADMIN" ? "default" : "secondary"}
-            className="hidden sm:flex"
+          <span
+            className={
+              role === "ADMIN"
+                ? "rounded-md bg-[#9d6bff1a] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--accent-soft)]"
+                : "rounded-md bg-[#5b8def1a] px-3 py-1.5 text-[12.5px] font-semibold text-[#a8c4ff]"
+            }
           >
             {role === "ADMIN" ? "Instruktor" : "Kursant"}
-          </Badge>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <Avatar>
-                  {avatarUrl && <AvatarImage src={avatarUrl} alt={email} />}
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span>{username || "Użytkownik"}</span>
-                  <span className="text-xs font-normal text-muted-foreground">{email}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile"><UserIcon className="h-4 w-4" />Profil</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/wiki"><FileText className="h-4 w-4" />Wiki</Link>
-              </DropdownMenuItem>
-              {role === "ADMIN" && (
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/chapters"><Shield className="h-4 w-4" />Panel instruktora</Link>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
-                <LogOut className="h-4 w-4" />Wyloguj się
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          </span>
         </div>
       </header>
 
-      <MessagesPanel
-        open={messagesOpen}
-        onClose={() => { setMessagesOpen(false); setMessagesTarget(null); }}
-        initialUser={messagesTarget}
-      />
       <AnnouncementsPanel open={announcementsOpen} onClose={() => setAnnouncementsOpen(false)} />
     </>
   );

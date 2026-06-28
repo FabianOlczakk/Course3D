@@ -55,10 +55,12 @@ export function MessagesPanel({
   open,
   onClose,
   initialUser,
+  variant = "drawer",
 }: {
   open: boolean;
   onClose: () => void;
   initialUser?: UserMini | null;
+  variant?: "drawer" | "page";
 }) {
   const { data: session } = useSession();
   const meId = session?.user?.id ?? "";
@@ -201,14 +203,8 @@ export function MessagesPanel({
 
   const showList = !active; // sterowanie widokiem na mobile
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div className="glow-card animate-in slide-in-from-right relative z-10 flex h-full w-full max-w-[600px] flex-col rounded-none border-l border-[var(--border-glow)] duration-200 md:m-0">
+  const body = (
+    <>
         {/* Nagłówek */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4">
           <div className="flex items-center gap-2">
@@ -221,13 +217,15 @@ export function MessagesPanel({
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
-            <h2 className="text-lg font-semibold text-text-primary">
-              💬 Wiadomości
+            <h2 className="font-display text-lg font-semibold text-text-primary">
+              Wiadomości
             </h2>
           </div>
-          <button className="glow-icon-btn" aria-label="Zamknij" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </button>
+          {variant !== "page" && (
+            <button className="glow-icon-btn" aria-label="Zamknij" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="flex min-h-0 flex-1">
@@ -453,6 +451,26 @@ export function MessagesPanel({
             )}
           </div>
         </div>
+    </>
+  );
+
+  if (variant === "page") {
+    return (
+      <div className="flex h-[calc(100vh-3.5rem)] w-full flex-col bg-[#181818]">
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden
+      />
+      <div className="glow-card animate-in slide-in-from-right relative z-10 flex h-full w-full max-w-[600px] flex-col rounded-none border-l border-[var(--border-glow)] duration-200 md:m-0">
+        {body}
       </div>
     </div>
   );

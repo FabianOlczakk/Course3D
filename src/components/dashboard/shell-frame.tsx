@@ -45,7 +45,9 @@ export function ShellFrame({
           avatarUrl={avatarUrl}
           onMenuClick={() => setMobileOpen(true)}
         />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto">
+          <div className="mx-auto w-full max-w-[1200px]">{children}</div>
+        </main>
       </div>
     </div>
   );

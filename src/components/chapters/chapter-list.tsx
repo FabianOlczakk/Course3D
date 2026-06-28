@@ -116,7 +116,7 @@ export function ChapterList({
             )}
 
             {open && (
-              <div className="ml-3 mt-1 space-y-0.5 border-l border-[var(--border-subtle)] pl-2">
+              <div className="ml-2 mt-1 space-y-0.5 border-l-2 border-[#383838] pl-3">
                 {chapter.lessons.length === 0 ? (
                   <p className="px-2 py-1 text-xs text-text-muted">
                     Brak lekcji w tym rozdziale.

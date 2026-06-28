@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MessageSquare, Pencil } from "lucide-react";
 
 interface ProfileUser {
@@ -19,18 +20,9 @@ export function ProfileActions({
   user: ProfileUser;
   viewerIsAdmin: boolean;
 }) {
+  const router = useRouter();
   function sendMessage() {
-    window.dispatchEvent(
-      new CustomEvent("open-messages", {
-        detail: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          avatarUrl: user.avatarUrl,
-          role: user.role,
-        },
-      })
-    );
+    router.push(`/wiadomosci?u=${user.id}`);
   }
 
   return (
