@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Loader2, Paperclip, Search, Send, X } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Paperclip, Search, Send, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
@@ -217,7 +217,8 @@ export function MessagesPanel({
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
-            <h2 className="font-display text-lg font-semibold text-text-primary">
+            <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-text-primary">
+              <Mail className="h-5 w-5 text-[var(--accent)]" />
               Wiadomości
             </h2>
           </div>

@@ -65,8 +65,8 @@ export function PostCard({
   return (
     <article className="glow-card p-4">
       <div className="flex items-center gap-3">
-        <Link href={`/profil/${post.author.id}`}>
-          <Avatar className="h-9 w-9 shrink-0">
+        <Link href={`/profil/${post.author.id}`} className="relative shrink-0">
+          <Avatar className="h-9 w-9">
             {post.author.avatarUrl && (
               <AvatarImage src={post.author.avatarUrl} alt={authorName(post.author)} />
             )}
@@ -74,13 +74,16 @@ export function PostCard({
               {authorInitials(post.author)}
             </AvatarFallback>
           </Avatar>
+          <OnlineDot
+            lastActiveAt={post.author.lastActiveAt}
+            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-2 border-[#1e1e1e]"
+          />
         </Link>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <Link
             href={`/profil/${post.author.id}`}
             className="flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
           >
-            <OnlineDot lastActiveAt={post.author.lastActiveAt} />
             {authorName(post.author)}
           </Link>
           <AdminBadge role={post.author.role} />

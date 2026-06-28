@@ -16,6 +16,7 @@ import {
   X,
   Pencil,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -102,6 +103,8 @@ export function Sidebar({
   const [wiadOpen, setWiadOpen] = useState(false);
   const [wikiOpen, setWikiOpen] = useState(pathname.startsWith("/wiki"));
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [wiadLoaded, setWiadLoaded] = useState(false);
+  const [wikiLoaded, setWikiLoaded] = useState(false);
   const [wikiArticles, setWikiArticles] = useState<WikiArticleMini[]>([]);
   const [openWikiCat, setOpenWikiCat] = useState<string | null>(null);
   const [profileMenu, setProfileMenu] = useState(false);
@@ -157,6 +160,8 @@ export function Sidebar({
         }
       } catch {
         /* ignore */
+      } finally {
+        if (!cancelled) setWiadLoaded(true);
       }
     })();
   }, [wiadOpen]);
@@ -174,6 +179,8 @@ export function Sidebar({
         }
       } catch {
         /* ignore */
+      } finally {
+        if (!cancelled) setWikiLoaded(true);
       }
     })();
   }, [wikiOpen]);
@@ -299,6 +306,13 @@ export function Sidebar({
     </div>
   );
 
+  const spinnerRow = (
+    <div className="flex items-center gap-2 px-2 py-1.5 text-[12px] text-[#6e6e6e]">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" />
+      Wczytywanie…
+    </div>
+  );
+
   const initials = (username || email).slice(0, 2).toUpperCase();
   const avatarColor = colorFromString(username || email);
 
@@ -333,6 +347,25 @@ export function Sidebar({
           {linkButton("pulpit", "Pulpit", Home, "/dashboard")}
           {linkButton("spol", "Społeczność", MessageCircle, "/spolecznosc")}
 
+          {/* Ogłoszenia — pełna strona */}
+          <button
+            onClick={() => {
+              onMobileClose?.();
+              localStorage.setItem("announcements-last-seen", String(Date.now()));
+              setUnreadAnn(0);
+              router.push("/ogloszenia");
+            }}
+            className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
+          >
+            <Bell className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
+            <span className="flex-1">Ogłoszenia</span>
+            {unreadAnn > 0 && (
+              <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] bg-[var(--accent)] px-[5px] text-[10.5px] font-semibold text-white">
+                {unreadAnn > 99 ? "99+" : unreadAnn}
+              </span>
+            )}
+          </button>
+
           {/* Wiadomości — rozwijane (5 ostatnich + Więcej) */}
           {expandRow("Wiadomości", Mail, {
             open: wiadOpen,
@@ -342,7 +375,9 @@ export function Sidebar({
           {wiadOpen &&
             subgroup(
               <>
-                {conversations.length === 0 ? (
+                {!wiadLoaded ? (
+                  spinnerRow
+                ) : conversations.length === 0 ? (
                   <p className="px-2 py-1.5 text-[12px] text-[#6e6e6e]">
                     Brak rozmów.
                   </p>
@@ -386,25 +421,6 @@ export function Sidebar({
               </>
             )}
 
-          {/* Ogłoszenia — pełna strona */}
-          <button
-            onClick={() => {
-              onMobileClose?.();
-              localStorage.setItem("announcements-last-seen", String(Date.now()));
-              setUnreadAnn(0);
-              router.push("/ogloszenia");
-            }}
-            className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
-          >
-            <Bell className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
-            <span className="flex-1">Ogłoszenia</span>
-            {unreadAnn > 0 && (
-              <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] bg-[var(--accent)] px-[5px] text-[10.5px] font-semibold text-white">
-                {unreadAnn > 99 ? "99+" : unreadAnn}
-              </span>
-            )}
-          </button>
-
           {/* Wiki — rozwijane (kategorie → artykuły) */}
           {expandRow("Wiki", BookOpen, {
             open: wikiOpen,
@@ -412,7 +428,9 @@ export function Sidebar({
           })}
           {wikiOpen &&
             subgroup(
-              wikiByCategory.length === 0 ? (
+              !wikiLoaded ? (
+                spinnerRow
+              ) : wikiByCategory.length === 0 ? (
                 <p className="px-2 py-1.5 text-[12px] text-[#6e6e6e]">
                   Brak artykułów.
                 </p>
@@ -506,10 +524,45 @@ export function Sidebar({
               </span>
             )}
             <div className="space-y-[1px]">
-              {linkButton("users", "Użytkownicy", Users, "/admin/users")}
-              {linkButton("chapters", "Rozdziały", Boxes, "/admin/chapters")}
-              {linkButton("adminOgl", "Ogłoszenia", Bell, "/admin/ogloszenia")}
-              {linkButton("adminWiki", "Wiki", Pencil, "/admin/wiki/new")}
+              {[
+                { label: "Użytkownicy", icon: Users, href: "/admin/users" },
+                { label: "Rozdziały", icon: Boxes, href: "/admin/chapters" },
+                { label: "Ogłoszenia", icon: Bell, href: "/admin/ogloszenia" },
+                { label: "Wiki", icon: Pencil, href: "/admin/wiki/new" },
+              ].map((it) => {
+                const Icon = it.icon;
+                const active = isActive(it.href);
+                return (
+                  <button
+                    key={it.href}
+                    onClick={() => {
+                      onMobileClose?.();
+                      router.push(it.href);
+                    }}
+                    className={cn(
+                      "group relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium transition-colors",
+                      active
+                        ? "bg-[#ffffff0d] text-[#ededed]"
+                        : "text-[#b4b4b4] hover:bg-[#ffffff09] hover:text-[#ededed]"
+                    )}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-[2px] bg-[var(--accent)]" />
+                    )}
+                    <Icon
+                      className={cn(
+                        "h-[18px] w-[18px] shrink-0",
+                        active ? "text-[var(--accent)]" : "text-[#8a8a8a]"
+                      )}
+                    />
+                    <span className="flex-1">{it.label}</span>
+                    <span className="flex items-center gap-0.5 text-[11px] font-semibold text-[#6e6e6e] opacity-60 transition-all group-hover:text-[var(--accent-soft)] group-hover:opacity-100">
+                      Edytuj
+                      <ChevronRight className="h-3 w-3" />
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </>
         )}

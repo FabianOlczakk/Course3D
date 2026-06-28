@@ -1,23 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Loader2, Paperclip, Plus, X } from "lucide-react";
-import {
-  readAttachments,
-  formatFileSize,
-  type Attachment,
-} from "@/lib/attachments-client";
+import { useEffect, useState } from "react";
+import { Loader2, Plus } from "lucide-react";
 import type { CategoryMini, PostItem } from "@/components/community/types";
 
 // Formularz tworzenia nowego posta.
 export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void }) {
   const [content, setContent] = useState("");
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [categories, setCategories] = useState<CategoryMini[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/categories?type=POST")
@@ -25,18 +18,6 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
       .then((d) => setCategories(d.categories ?? []))
       .catch(() => {});
   }, []);
-
-  async function handleFiles(files: FileList | null) {
-    if (!files?.length) return;
-    setError(null);
-    try {
-      const next = await readAttachments(files, attachments.length);
-      setAttachments((prev) => [...prev, ...next]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Błąd pliku.");
-    }
-    if (fileRef.current) fileRef.current.value = "";
-  }
 
   async function submit() {
     const text = content.trim();
@@ -47,7 +28,7 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text, attachments, categoryId: categoryId || null }),
+        body: JSON.stringify({ content: text, categoryId: categoryId || null }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -56,7 +37,6 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
       }
       const data = await res.json();
       setContent("");
-      setAttachments([]);
       setCategoryId("");
       onCreated(data.post);
     } catch {
@@ -67,73 +47,37 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
   }
 
   return (
-    <div className="glow-card p-4">
+    <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-4">
       {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={3}
-        placeholder="📝 Napisz post..."
-        className="w-full resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
+        placeholder="Zadaj pytanie lub pokaż swój wydruk..."
+        className="w-full resize-none rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 text-sm text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
       />
-      {attachments.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {attachments.map((a, i) => (
-            <span
-              key={i}
-              className="flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-1 text-xs text-text-secondary"
-            >
-              {a.name} ({formatFileSize(a.size)})
-              <button
-                type="button"
-                aria-label="Usuń"
-                onClick={() =>
-                  setAttachments((prev) => prev.filter((_, idx) => idx !== i))
-                }
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="mt-2 flex items-center justify-between">
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="glow-icon-btn"
-            aria-label="Dodaj załącznik"
-            onClick={() => fileRef.current?.click()}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        {categories.length > 0 ? (
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="h-9 rounded-md border border-[#2e2e2e] bg-[#141414] px-2 text-sm text-text-primary outline-none focus:border-[var(--accent)]"
           >
-            <Paperclip className="h-4 w-4" />
-          </button>
-          {categories.length > 0 && (
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="h-9 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 text-sm text-text-primary outline-none"
-            >
-              <option value="">Bez kategorii</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
+            <option value="">Bez kategorii</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span />
+        )}
         <button
           type="button"
           disabled={submitting || !content.trim()}
           onClick={() => void submit()}
-          className="glow-btn flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="glow-btn flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {submitting ? (
             <Loader2 className="h-4 w-4 animate-spin" />

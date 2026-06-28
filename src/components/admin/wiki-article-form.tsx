@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/lib/toast";
 
 interface WikiArticleData {
@@ -76,7 +76,10 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
   return (
     <form onSubmit={save} className="space-y-5">
       <div className="flex items-center gap-3">
-        <Link href="/wiki" className="glow-icon-btn">
+        <Link
+          href="/wiki"
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-[#2e2e2e] bg-[#1e1e1e] text-text-secondary transition-colors hover:border-[var(--accent)] hover:text-text-primary"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <h1 className="text-xl font-bold text-text-primary">
@@ -122,14 +125,25 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
           <p className="text-xs text-text-muted">Obsługiwany HTML. Użyj h2/h3 do nagłówków, p do akapitów, ul/li do list, code/pre do kodu.</p>
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <label className="flex cursor-pointer select-none items-center gap-2.5 text-sm">
+          <span
+            className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
+              published
+                ? "border-[var(--accent)] bg-[var(--accent)]"
+                : "border-[#2e2e2e] bg-[#141414]"
+            }`}
+          >
+            {published && <Check className="h-3.5 w-3.5 text-white" />}
+          </span>
           <input
             type="checkbox"
             checked={published}
             onChange={(e) => setPublished(e.target.checked)}
-            className="accent-[var(--accent)]"
+            className="sr-only"
           />
-          <span className="text-text-secondary">Opublikowany (widoczny dla kursantów)</span>
+          <span className="text-text-secondary">
+            Opublikowany (widoczny dla kursantów)
+          </span>
         </label>
       </div>
 

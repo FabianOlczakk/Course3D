@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Pin } from "lucide-react";
+import { Pin, Bell } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { timeAgo } from "@/lib/format-time";
 
@@ -37,7 +37,8 @@ export default async function AnnouncementsPage() {
   return (
     <div className="p-[26px] md:px-[30px]">
       <div className="mx-auto max-w-[760px]">
-        <h1 className="font-display text-[23px] font-semibold text-[#f0f0f0]">
+        <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[#f0f0f0]">
+          <Bell className="h-6 w-6 text-[var(--accent)]" />
           Ogłoszenia
         </h1>
         <p className="mb-[22px] mt-[6px] text-[13.5px] text-[#8a8a8a]">
