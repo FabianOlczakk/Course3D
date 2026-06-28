@@ -11,20 +11,21 @@ function log(msg: string) {
 }
 
 async function parseBody(req: NextRequest): Promise<{ email: string; password: string; callbackUrl: string }> {
+  const qcb = req.nextUrl.searchParams.get("callbackUrl") || "/dashboard";
   const ct = req.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
     const body = await req.json();
     return {
       email: (body.email as string | undefined)?.toLowerCase() ?? "",
       password: (body.password as string | undefined) ?? "",
-      callbackUrl: (body.callbackUrl as string | undefined) || "/dashboard",
+      callbackUrl: (body.callbackUrl as string | undefined) || qcb,
     };
   }
   const fd = await req.formData();
   return {
     email: ((fd.get("email") as string | null) ?? "").toLowerCase(),
     password: (fd.get("password") as string | null) ?? "",
-    callbackUrl: (fd.get("callbackUrl") as string | null) || "/dashboard",
+    callbackUrl: (fd.get("callbackUrl") as string | null) || qcb,
   };
 }
 
@@ -74,9 +75,17 @@ export async function POST(req: NextRequest) {
       .setExpirationTime("30d")
       .sign(secretKey);
 
-    log("[login] token signed, returning");
+    log("[login] token signed, redirecting");
     const safeUrl = callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
-    return NextResponse.json({ token, cookieName, callbackUrl: safeUrl });
+    const res = NextResponse.redirect(new URL(safeUrl, req.nextUrl.origin), 302);
+    res.cookies.set(cookieName, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60,
+      secure,
+    });
+    return res;
   } catch (err) {
     log(`[login] ERROR: ${err}`);
     return NextResponse.json({ error: "server_error" }, { status: 500 });

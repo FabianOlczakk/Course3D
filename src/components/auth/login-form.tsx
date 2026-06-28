@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,40 +16,14 @@ import {
 export function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const error = searchParams.get("error");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, callbackUrl }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        setError("Nieprawidłowy e-mail lub hasło.");
-        return;
-      }
-
-      const maxAge = 30 * 24 * 60 * 60;
-      document.cookie = `${data.cookieName}=${data.token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
-      window.location.replace(data.callbackUrl || "/dashboard");
-    } catch {
-      setError("Błąd połączenia z serwerem.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const errorMessage =
+    error === "invalid"
+      ? "Nieprawidłowy e-mail lub hasło."
+      : error === "server"
+      ? "Błąd połączenia z serwerem."
+      : null;
 
   return (
     <Card>
@@ -61,15 +34,14 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form method="POST" action={`/api/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Adres e-mail</Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="ty@przyklad.pl"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
             />
@@ -78,18 +50,17 @@ export function LoginForm() {
             <Label htmlFor="password">Hasło</Label>
             <Input
               id="password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
             />
           </div>
-          {error && (
-            <p className="text-sm font-medium text-destructive">{error}</p>
+          {errorMessage && (
+            <p className="text-sm font-medium text-destructive">{errorMessage}</p>
           )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Logowanie..." : "Zaloguj się"}
+          <Button type="submit" className="w-full">
+            Zaloguj się
           </Button>
           <p className="text-center text-sm">
             <Link href="/forgot-password" className="text-primary underline">
