@@ -21,6 +21,7 @@ export default async function MessagesRoutePage({
           email: true,
           avatarUrl: true,
           role: true,
+          lastActiveAt: true,
         },
       })
     : null;

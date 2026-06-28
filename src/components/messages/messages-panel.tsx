@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Loader2, Mail, Paperclip, Search, Send, X } from "luc
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
+import { OnlineDot } from "@/components/shared/online-dot";
 import { readAttachments, formatFileSize, type Attachment } from "@/lib/attachments-client";
 import { shortTime, timeAgo } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ interface UserMini {
   email: string;
   avatarUrl: string | null;
   role?: string;
+  lastActiveAt?: string | Date | null;
 }
 
 interface Conversation {
@@ -27,6 +29,7 @@ interface Conversation {
   email: string;
   avatarUrl: string | null;
   role?: string;
+  lastActiveAt?: string | Date | null;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
@@ -276,6 +279,7 @@ export function MessagesPanel({
                     name={displayName(c)}
                     initials={initials(c)}
                     avatarUrl={c.avatarUrl}
+                    lastActiveAt={c.lastActiveAt}
                     preview={c.lastMessage}
                     time={timeAgo(c.lastMessageAt)}
                     unread={c.unreadCount}
@@ -287,6 +291,7 @@ export function MessagesPanel({
                         email: c.email,
                         avatarUrl: c.avatarUrl,
                         role: c.role,
+                        lastActiveAt: c.lastActiveAt,
                       })
                     }
                   />
@@ -309,14 +314,22 @@ export function MessagesPanel({
             {active ? (
               <>
                 <div className="flex shrink-0 items-center gap-3 border-b border-[var(--border-subtle)] px-4 py-3">
-                  <Avatar className="h-8 w-8">
-                    {active.avatarUrl && (
-                      <AvatarImage src={active.avatarUrl} alt={displayName(active)} />
+                  <div className="relative shrink-0">
+                    <Avatar className="h-8 w-8">
+                      {active.avatarUrl && (
+                        <AvatarImage src={active.avatarUrl} alt={displayName(active)} />
+                      )}
+                      <AvatarFallback className="text-xs">
+                        {initials(active)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {active.lastActiveAt !== undefined && (
+                      <OnlineDot
+                        lastActiveAt={active.lastActiveAt}
+                        className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-2 border-[var(--bg-card)]"
+                      />
                     )}
-                    <AvatarFallback className="text-xs">
-                      {initials(active)}
-                    </AvatarFallback>
-                  </Avatar>
+                  </div>
                   <a
                     href={`/profil/${active.id}`}
                     className="font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
@@ -503,6 +516,7 @@ function ConversationRow({
   name,
   initials: ini,
   avatarUrl,
+  lastActiveAt,
   preview,
   time,
   unread,
@@ -512,6 +526,7 @@ function ConversationRow({
   name: string;
   initials: string;
   avatarUrl: string | null;
+  lastActiveAt?: string | Date | null;
   preview: string;
   time?: string;
   unread?: number;
@@ -527,10 +542,18 @@ function ConversationRow({
         activeRow && "bg-[var(--bg-elevated)]"
       )}
     >
-      <Avatar className="h-9 w-9 shrink-0">
-        {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
-        <AvatarFallback className="text-xs">{ini}</AvatarFallback>
-      </Avatar>
+      <div className="relative shrink-0">
+        <Avatar className="h-9 w-9">
+          {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+          <AvatarFallback className="text-xs">{ini}</AvatarFallback>
+        </Avatar>
+        {lastActiveAt !== undefined && (
+          <OnlineDot
+            lastActiveAt={lastActiveAt}
+            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-2 border-[var(--bg-card)]"
+          />
+        )}
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-sm font-medium text-text-primary">

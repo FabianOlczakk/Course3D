@@ -15,6 +15,7 @@ export default async function CommunityPage() {
   return (
     <div className="mx-auto max-w-[740px] p-[26px] md:px-[30px]">
       <HighlightTarget param="post" prefix="post-" />
+      <HighlightTarget param="comment" prefix="comment-" />
       <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[#f0f0f0]">
         <Users2 className="h-6 w-6 text-[var(--accent)]" />
         Społeczność

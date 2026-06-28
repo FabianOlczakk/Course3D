@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Loader2, MessageCircle, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
@@ -54,6 +55,17 @@ export function PostCard({
   useEffect(() => {
     if (expanded) void loadComments();
   }, [expanded, loadComments]);
+
+  // Bezpośredni link do komentarza — rozwiń ten post automatycznie.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (
+      searchParams.get("comment") &&
+      searchParams.get("post") === post.id
+    ) {
+      setExpanded(true);
+    }
+  }, [searchParams, post.id]);
 
   const canDelete = post.authorId === currentUserId || isAdmin;
 

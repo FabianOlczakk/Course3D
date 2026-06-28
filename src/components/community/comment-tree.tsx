@@ -14,6 +14,7 @@ import {
 } from "@/components/community/types";
 import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
+import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
 const MAX_INDENT = 4;
 
@@ -95,12 +96,13 @@ function CommentNode({
 
   return (
     <div
+      id={`comment-${node.id}`}
       className="border-l border-[var(--border-subtle)] pl-3"
       style={{ marginLeft: indent > 0 ? `${indent * 0.5}rem` : 0 }}
     >
       <div className="flex items-start gap-2">
-        <Link href={`/profil/${node.author.id}`}>
-          <Avatar className="h-7 w-7 shrink-0">
+        <Link href={`/profil/${node.author.id}`} className="relative shrink-0">
+          <Avatar className="h-7 w-7">
             {node.author.avatarUrl && (
               <AvatarImage src={node.author.avatarUrl} alt={authorName(node.author)} />
             )}
@@ -108,6 +110,10 @@ function CommentNode({
               {authorInitials(node.author)}
             </AvatarFallback>
           </Avatar>
+          <OnlineDot
+            lastActiveAt={node.author.lastActiveAt}
+            className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 border-2 border-[#1e1e1e]"
+          />
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -115,23 +121,30 @@ function CommentNode({
               href={`/profil/${node.author.id}`}
               className="flex items-center gap-1 text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
             >
-              <OnlineDot lastActiveAt={node.author.lastActiveAt} />
               {authorName(node.author)}
             </Link>
             <AdminBadge role={node.author.role} />
             <span className="text-xs text-text-muted">
               {timeAgo(node.createdAt)}
             </span>
-            {canDelete && (
-              <button
-                type="button"
-                aria-label="Usuń komentarz"
-                className="ml-auto text-text-muted transition-colors hover:text-red-400"
-                onClick={() => void handleDelete()}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              {isAdmin && (
+                <CopyLinkButton
+                  path={`/spolecznosc?post=${postId}&comment=${node.id}`}
+                  className="text-text-muted transition-colors hover:text-[var(--accent-soft)]"
+                />
+              )}
+              {canDelete && (
+                <button
+                  type="button"
+                  aria-label="Usuń komentarz"
+                  className="text-text-muted transition-colors hover:text-red-400"
+                  onClick={() => void handleDelete()}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
           <p className="whitespace-pre-wrap break-words text-sm text-text-secondary">
             {node.content}
