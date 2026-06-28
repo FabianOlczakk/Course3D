@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { encode } from "next-auth/jwt";
+import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import fs from "fs";
@@ -28,14 +28,6 @@ async function parseBody(req: NextRequest): Promise<{ email: string; password: s
   };
 }
 
-function htmlRedirect(url: string, cookie: string): Response {
-  const html = `<!DOCTYPE html><html><head><script>document.cookie=${JSON.stringify(cookie)};window.location.replace(${JSON.stringify(url)});</script></head><body></body></html>`;
-  return new Response(html, {
-    status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
-}
-
 export async function POST(req: NextRequest) {
   log("[login] start");
   try {
@@ -62,28 +54,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=invalid", req.nextUrl.origin));
     }
 
-    const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+    const rawSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+    const secretKey = new TextEncoder().encode(rawSecret);
     const secure = req.nextUrl.protocol === "https:";
     const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
 
-    log("[login] encoding token");
-    const token = await encode({
-      token: {
-        sub: user.id,
-        id: user.id,
-        email: user.email,
-        name: user.username,
-        username: user.username,
-        role: user.role,
-        picture: user.avatarUrl ?? null,
-      },
-      secret,
-      salt: cookieName,
-    });
-    log("[login] token encoded");
+    log("[login] signing token");
+    const token = await new SignJWT({
+      sub: user.id,
+      id: user.id,
+      email: user.email,
+      name: user.username,
+      username: user.username,
+      role: user.role,
+      picture: user.avatarUrl ?? null,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("30d")
+      .sign(secretKey);
+
+    log("[login] token signed");
 
     const maxAge = 30 * 24 * 60 * 60;
-    const cookieHeader = [
+    const cookieStr = [
       `${cookieName}=${token}`,
       "HttpOnly",
       "SameSite=Lax",
@@ -92,10 +86,16 @@ export async function POST(req: NextRequest) {
       ...(secure ? ["Secure"] : []),
     ].join("; ");
 
+    const safeUrl = callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+    const html = `<!DOCTYPE html><html><head><script>document.cookie=${JSON.stringify(cookieStr)};window.location.replace(${JSON.stringify(safeUrl)});</script></head><body></body></html>`;
+
     log("[login] returning html redirect");
-    return htmlRedirect(callbackUrl, cookieHeader);
+    return new Response(html, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   } catch (err) {
     log(`[login] ERROR: ${err}`);
-    return NextResponse.redirect(new URL("/login?error=server", req.nextUrl.origin));
+    return new Response("Błąd serwera", { status: 500 });
   }
 }

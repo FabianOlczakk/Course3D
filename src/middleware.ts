@@ -1,30 +1,34 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { decode } from "next-auth/jwt";
+import { jwtVerify } from "jose";
 
 const PUBLIC = ["/login", "/set-password", "/forgot-password", "/reset-password"];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isPublic = pathname === "/" || PUBLIC.some((p) => pathname.startsWith(p));
-  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+  const rawSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "";
+  const secretKey = new TextEncoder().encode(rawSecret);
   const secure = req.nextUrl.protocol === "https:";
   const cookieName = secure ? "__Secure-authjs.session-token" : "authjs.session-token";
-  const cookieValue = req.cookies.get(cookieName)?.value
-    ?? req.cookies.get("authjs.session-token")?.value
-    ?? req.cookies.get("__Secure-authjs.session-token")?.value;
+  const cookieValue =
+    req.cookies.get(cookieName)?.value ??
+    req.cookies.get("authjs.session-token")?.value ??
+    req.cookies.get("__Secure-authjs.session-token")?.value;
 
   let role: string | undefined;
   let isLoggedIn = false;
 
-  if (cookieValue && secret) {
+  if (cookieValue && rawSecret) {
     try {
-      const token = await decode({ token: cookieValue, secret, salt: cookieName });
-      if (token?.sub || (token as Record<string, unknown>)?.id) {
+      const { payload } = await jwtVerify(cookieValue, secretKey);
+      if (payload.sub || (payload as Record<string, unknown>).id) {
         isLoggedIn = true;
-        role = (token as Record<string, unknown>)?.role as string | undefined;
+        role = (payload as Record<string, unknown>).role as string | undefined;
       }
     } catch {
-      const res = isPublic ? NextResponse.next() : NextResponse.redirect(new URL("/login", req.nextUrl.origin));
+      const res = isPublic
+        ? NextResponse.next()
+        : NextResponse.redirect(new URL("/login", req.nextUrl.origin));
       res.cookies.delete("__Secure-authjs.session-token");
       res.cookies.delete("authjs.session-token");
       return res;
