@@ -24,7 +24,7 @@ export const authConfig: NextAuthConfig = {
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
         token.username = (user as { username: string | null }).username;
-        token.picture = (user as { image?: string | null }).image ?? null;
+        token.picture = null;
       }
       return token;
     },

@@ -81,7 +81,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
         token.username = (user as { username: string | null }).username;
-        token.picture = (user as { image?: string | null }).image ?? null;
+        // NIE zapisujemy obrazka (avatarUrl) w tokenie — base64 obrazek
+        // powodował ogromne, dzielone na kawałki cookie (HTTP 431).
+        token.picture = null;
         log("[jwt] all fields set, returning token");
         return token;
       }
@@ -89,18 +91,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const fresh = await prisma.user.findUnique({
             where: { id: token.id },
-            select: { role: true, username: true, avatarUrl: true },
+            select: { role: true, username: true },
           });
           if (fresh) {
             token.role = fresh.role;
             token.username = fresh.username;
-            token.picture = fresh.avatarUrl ?? null;
           }
+          token.picture = null;
         } catch (e) {
           log(`[jwt] db refresh error: ${e}`);
         }
       }
       return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        (session.user as { role: Role }).role = token.role as Role;
+        (session.user as { username: string | null }).username =
+          (token.username as string | null) ?? null;
+        // Avatar pobieramy z bazy (Node runtime), nie z tokena.
+        try {
+          if (token.id) {
+            const fresh = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { avatarUrl: true },
+            });
+            session.user.image = fresh?.avatarUrl ?? null;
+          }
+        } catch {
+          session.user.image = null;
+        }
+      }
+      return session;
     },
   },
   providers: [
