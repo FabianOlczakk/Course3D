@@ -29,7 +29,10 @@ export function ShellFrame({
   return (
     <div className="flex min-h-screen">
       <Sidebar
+        username={username}
+        email={email}
         role={role}
+        avatarUrl={avatarUrl}
         chapters={chapters}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
