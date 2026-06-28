@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "latin-ext"] });
+const dmSans = DM_Sans({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-dm-sans",
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
+});
 
 export const metadata: Metadata = {
-  title: "Course3D — Kurs druku 3D",
+  title: "Kurs druku 3D — BambuLab A1 mini",
   description:
-    "Platforma kursu druku 3D z drukarką Bambu Lab A1 Mini. Naucz się druku 3D od podstaw.",
+    "Platforma kursu druku 3D z drukarką BambuLab A1 mini. Naucz się druku 3D od podstaw.",
 };
 
 export default function RootLayout({
@@ -16,11 +24,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pl" className="dark">
-      <body className={inter.className}>
+    <html
+      lang="pl"
+      className={`dark ${dmSans.variable} ${spaceGrotesk.variable}`}
+    >
+      <body className="font-sans">
         {children}
         <div className="fixed bottom-2 right-2 text-xs text-muted-foreground/40 select-none pointer-events-none">
-          v0.2.0
+          v0.3.0
         </div>
       </body>
     </html>

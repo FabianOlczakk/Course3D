@@ -8,7 +8,6 @@ import {
   LogOut,
   MessageSquare,
   Users2,
-  Printer,
   User as UserIcon,
   Shield,
   Menu,
@@ -21,7 +20,6 @@ import {
 } from "lucide-react";
 import { MessagesPanel } from "@/components/messages/messages-panel";
 import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
-import { PrinterPanel } from "@/components/printer/printer-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -168,7 +166,6 @@ export function Topbar({
     email: string;
     avatarUrl: string | null;
   } | null>(null);
-  const [printerOpen, setPrinterOpen] = useState(false);
   const [announcementsOpen, setAnnouncementsOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [annUnread, setAnnUnread] = useState(0);
@@ -272,12 +269,9 @@ export function Topbar({
           <button type="button" title="Społeczność" aria-label="Społeczność" className="glow-icon-btn" onClick={() => router.push("/spolecznosc")}>
             <Users2 className="h-4 w-4" />
           </button>
-          <button type="button" title="Sterowanie drukarką 3D" aria-label="Drukarka" className="glow-icon-btn" onClick={() => setPrinterOpen(true)}>
-            <Printer className="h-4 w-4" />
-          </button>
 
           <Badge variant={role === "ADMIN" ? "default" : "secondary"} className="ml-1 hidden sm:flex">
-            {role === "ADMIN" ? "Admin" : "Kursant"}
+            {role === "ADMIN" ? "Instruktor" : "Kursant"}
           </Badge>
 
           <DropdownMenu>
@@ -323,7 +317,6 @@ export function Topbar({
         initialUser={messagesTarget}
       />
       <AnnouncementsPanel open={announcementsOpen} onClose={() => setAnnouncementsOpen(false)} />
-      <PrinterPanel open={printerOpen} onClose={() => setPrinterOpen(false)} />
     </>
   );
 }
