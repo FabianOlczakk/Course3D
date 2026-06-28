@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Users2 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { PostFeed } from "@/components/community/post-feed";
+import { HighlightTarget } from "@/components/shared/highlight-target";
 
 export const metadata = {
   title: "Społeczność — Kurs druku 3D",
@@ -13,6 +14,7 @@ export default async function CommunityPage() {
 
   return (
     <div className="mx-auto max-w-[740px] p-[26px] md:px-[30px]">
+      <HighlightTarget param="post" prefix="post-" />
       <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[#f0f0f0]">
         <Users2 className="h-6 w-6 text-[var(--accent)]" />
         Społeczność

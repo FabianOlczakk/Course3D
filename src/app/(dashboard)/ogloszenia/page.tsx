@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Pin, Bell } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { timeAgo } from "@/lib/format-time";
+import { CopyLinkButton } from "@/components/shared/copy-link-button";
+import { HighlightTarget } from "@/components/shared/highlight-target";
 
 export const metadata: Metadata = {
   title: "Ogłoszenia — Kurs druku 3D",
@@ -20,6 +23,8 @@ interface AnnouncementRow {
 }
 
 export default async function AnnouncementsPage() {
+  const session = await auth();
+  const isAdmin = session?.user?.role === "ADMIN";
   let announcements: AnnouncementRow[] = [];
 
   try {
@@ -36,6 +41,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="p-[26px] md:px-[30px]">
+      <HighlightTarget param="a" prefix="a-" />
       <div className="mx-auto max-w-[760px]">
         <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[#f0f0f0]">
           <Bell className="h-6 w-6 text-[var(--accent)]" />
@@ -57,6 +63,7 @@ export default async function AnnouncementsPage() {
             return (
               <div
                 key={a.id}
+                id={`a-${a.id}`}
                 className="mb-3 rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[18px_20px]"
               >
                 <div className="mb-[9px] flex items-center gap-[9px]">
@@ -74,6 +81,7 @@ export default async function AnnouncementsPage() {
                   <span className="ml-auto text-[11.5px] text-[#6e6e6e]">
                     {timeAgo(a.createdAt)} · {author.username || author.email}
                   </span>
+                  {isAdmin && <CopyLinkButton path={`/ogloszenia?a=${a.id}`} />}
                 </div>
                 <h3 className="mb-[7px] font-display text-[17px] font-semibold text-[#f0f0f0]">
                   {a.title}

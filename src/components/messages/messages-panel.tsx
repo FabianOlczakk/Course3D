@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Loader2, Mail, Paperclip, Search, Send, X } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Mail, Paperclip, Search, Send, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
@@ -64,6 +64,8 @@ export function MessagesPanel({
 }) {
   const { data: session } = useSession();
   const meId = session?.user?.id ?? "";
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
+  const [asSystem, setAsSystem] = useState(false);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<UserMini | null>(null);
@@ -176,7 +178,7 @@ export function MessagesPanel({
       const res = await fetch(`/api/messages/${active.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, attachments: pendingAttachments }),
+        body: JSON.stringify({ content, attachments: pendingAttachments, asSystem }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -374,6 +376,26 @@ export function MessagesPanel({
                 <div className="shrink-0 border-t border-[var(--border-subtle)] p-3">
                   {error && (
                     <p className="mb-2 text-xs text-red-400">{error}</p>
+                  )}
+                  {isAdmin && (
+                    <label className="mb-2 flex cursor-pointer select-none items-center gap-2 text-xs text-text-secondary">
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                          asSystem
+                            ? "border-[var(--accent)] bg-[var(--accent)]"
+                            : "border-[#2e2e2e] bg-[#141414]"
+                        }`}
+                      >
+                        {asSystem && <Check className="h-3 w-3 text-white" />}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={asSystem}
+                        onChange={(e) => setAsSystem(e.target.checked)}
+                        className="sr-only"
+                      />
+                      Wyślij incognito jako <strong className="text-[var(--accent-soft)]">SYSTEM</strong>
+                    </label>
                   )}
                   {pendingAttachments.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-2">

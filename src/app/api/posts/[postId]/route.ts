@@ -2,6 +2,38 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+// Pojedynczy post (np. dla bezpośredniego linku).
+export async function GET(
+  _req: Request,
+  { params }: { params: { postId: string } }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
+  }
+  const post = await prisma.post.findUnique({
+    where: { id: params.postId },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+          role: true,
+          lastActiveAt: true,
+        },
+      },
+      category: { select: { id: true, name: true, color: true } },
+      _count: { select: { comments: true } },
+    },
+  });
+  if (!post) {
+    return NextResponse.json({ error: "Nie znaleziono posta." }, { status: 404 });
+  }
+  return NextResponse.json({ post });
+}
+
 // Usuń własny post (lub dowolny — jeśli administrator).
 export async function DELETE(
   _req: Request,

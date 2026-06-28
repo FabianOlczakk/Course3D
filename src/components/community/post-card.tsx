@@ -17,6 +17,7 @@ import {
 } from "@/components/community/types";
 import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
+import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
 export function PostCard({
   post,
@@ -63,7 +64,7 @@ export function PostCard({
   }
 
   return (
-    <article className="glow-card p-4">
+    <article id={`post-${post.id}`} className="glow-card p-4">
       <div className="flex items-center gap-3">
         <Link href={`/profil/${post.author.id}`} className="relative shrink-0">
           <Avatar className="h-9 w-9">
@@ -101,16 +102,19 @@ export function PostCard({
             </span>
           )}
         </div>
-        {canDelete && (
-          <button
-            type="button"
-            aria-label="Usuń post"
-            className="ml-auto text-text-muted transition-colors hover:text-red-400"
-            onClick={() => void handleDelete()}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {isAdmin && <CopyLinkButton path={`/spolecznosc?post=${post.id}`} />}
+          {canDelete && (
+            <button
+              type="button"
+              aria-label="Usuń post"
+              className="text-text-muted transition-colors hover:text-red-400"
+              onClick={() => void handleDelete()}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {post.title && (

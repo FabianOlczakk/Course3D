@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
+import { getSystemUserId } from "@/lib/system-user";
 
 // Wiadomości pomiędzy bieżącym użytkownikiem a :userId (rosnąco wg daty).
 export async function GET(
@@ -37,6 +38,7 @@ export async function GET(
 const sendSchema = z.object({
   content: z.string().trim().max(5000).optional().default(""),
   attachments: attachmentsSchema,
+  asSystem: z.boolean().optional(),
 });
 
 // Wyślij wiadomość do :userId.
@@ -73,7 +75,7 @@ export async function POST(
     );
   }
 
-  const { content, attachments } = parsed.data;
+  const { content, attachments, asSystem } = parsed.data;
   if (!content && (!attachments || attachments.length === 0)) {
     return NextResponse.json(
       { error: "Wiadomość nie może być pusta." },
@@ -89,9 +91,13 @@ export async function POST(
     );
   }
 
+  // Wysyłka incognito jako „SYSTEM" — tylko dla administratora.
+  const senderId =
+    asSystem && session.user.role === "ADMIN" ? await getSystemUserId() : me;
+
   const message = await prisma.message.create({
     data: {
-      senderId: me,
+      senderId,
       receiverId,
       content,
       attachments: attachments ?? undefined,

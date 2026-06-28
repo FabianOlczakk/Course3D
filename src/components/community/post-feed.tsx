@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2, Search, X, Plus, Trash2 } from "lucide-react";
 import { NewPostForm } from "@/components/community/new-post-form";
 import { PostCard } from "@/components/community/post-card";
@@ -95,6 +96,29 @@ export function PostFeed({
     void loadMore(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Bezpośredni link do posta (?post=ID) — dociągnij, jeśli nie jest na liście.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const target = searchParams.get("post");
+    if (!target) return;
+    setPosts((prev) => {
+      if (prev.some((p) => p.id === target)) return prev;
+      void (async () => {
+        try {
+          const res = await fetch(`/api/posts/${target}`);
+          if (res.ok) {
+            const d = await res.json();
+            if (d.post) setPosts((cur) => [d.post, ...cur.filter((p) => p.id !== target)]);
+          }
+        } catch {
+          /* ignore */
+        }
+      })();
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Wyszukiwanie z debounce.
   useEffect(() => {

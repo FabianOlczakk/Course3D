@@ -16,6 +16,7 @@ import {
   LessonFormDialog,
   type LessonData,
 } from "@/components/lessons/lesson-form-dialog";
+import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
 export interface ManagedLesson extends LessonData {
   order: number;
@@ -140,6 +141,14 @@ export function LessonsManager({ chapterId, chapterTitle, initial }: Props) {
               </div>
 
               <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" asChild aria-label="Kopiuj link">
+                  <span>
+                    <CopyLinkButton
+                      path={`/kurs/${ls.id}`}
+                      className="flex h-4 w-4 items-center justify-center text-text-secondary hover:text-[var(--accent-soft)]"
+                    />
+                  </span>
+                </Button>
                 <Button variant="outline" size="icon" asChild aria-label="Podgląd">
                   <Link href={`/kurs/${ls.id}`}>
                     <ExternalLink className="h-4 w-4" />
