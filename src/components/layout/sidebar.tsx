@@ -70,11 +70,35 @@ export function Sidebar({
   const router = useRouter();
   const { progress } = useProgress();
 
+  // Szerokość paska bocznego z możliwością przeciągania (jak okno w Windows)
+  useEffect(() => {
+    const saved = Number(localStorage.getItem("sidebar-width"));
+    if (saved >= 200 && saved <= 420) setWidth(saved);
+  }, []);
+
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      const w = Math.min(420, Math.max(200, ev.clientX));
+      setWidth(w);
+      localStorage.setItem("sidebar-width", String(w));
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = "";
+    };
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
+
   const [unreadMsg, setUnreadMsg] = useState(0);
   const [unreadAnn, setUnreadAnn] = useState(0);
   const [courseOpen, setCourseOpen] = useState(
     chapters.some((c) => c.lessons.some((l) => pathname === `/kurs/${l.id}`))
   );
+  const [width, setWidth] = useState(248);
   const [wiadOpen, setWiadOpen] = useState(false);
   const [wikiOpen, setWikiOpen] = useState(pathname.startsWith("/wiki"));
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -362,11 +386,13 @@ export function Sidebar({
               </>
             )}
 
-          {/* Ogłoszenia — panel (drawer) */}
+          {/* Ogłoszenia — pełna strona */}
           <button
             onClick={() => {
               onMobileClose?.();
-              window.dispatchEvent(new CustomEvent("open-announcements"));
+              localStorage.setItem("announcements-last-seen", String(Date.now()));
+              setUnreadAnn(0);
+              router.push("/ogloszenia");
             }}
             className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
           >
@@ -456,7 +482,7 @@ export function Sidebar({
             </span>
             <span className="block h-1 overflow-hidden rounded-[3px] bg-[#2b2b2b]">
               <span
-                className="block h-full rounded-[3px] bg-[var(--accent)] transition-all"
+                className="block h-full rounded-[3px] bg-[var(--green)] transition-all"
                 style={{ width: `${courseStats.pct}%` }}
               />
             </span>
@@ -553,8 +579,17 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="hidden w-[248px] shrink-0 flex-col border-r border-[#2b2b2b] bg-[#1c1c1c] md:flex">
+      <aside
+        style={{ width }}
+        className="relative hidden shrink-0 flex-col border-r border-[#2b2b2b] bg-[#1c1c1c] md:flex"
+      >
         {content}
+        {/* Uchwyt do zmiany szerokości (przeciąganie myszą) */}
+        <div
+          onMouseDown={startResize}
+          title="Przeciągnij, aby zmienić szerokość"
+          className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-[var(--accent)]"
+        />
       </aside>
 
       {mobileOpen && (

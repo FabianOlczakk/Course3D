@@ -5,7 +5,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getLearnerStats } from "@/lib/stats";
 import { timeAgo } from "@/lib/format-time";
-import { isAnnouncement, ANNOUNCEMENT_MARKER } from "@/lib/announcements";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DashboardMessagesButton } from "@/components/dashboard/dashboard-widgets";
 
@@ -66,12 +65,25 @@ export default async function DashboardPage() {
 
   const completedSet = new Set(completedRows.map((r) => r.lessonId));
 
-  const announcements = recentPostsRaw
-    .filter((p) => isAnnouncement(p.attachments))
-    .slice(0, 3);
-  const recentPosts = recentPostsRaw
-    .filter((p) => !isAnnouncement(p.attachments))
-    .slice(0, 3);
+  const recentPosts = recentPostsRaw.slice(0, 3);
+
+  // Ogłoszenia z dedykowanej tabeli (degraduj łagodnie, gdy migracja jeszcze
+  // nie została uruchomiona).
+  let announcements: {
+    id: string;
+    title: string;
+    createdAt: Date;
+    category: { name: string; color: string | null } | null;
+  }[] = [];
+  try {
+    announcements = await prisma.announcement.findMany({
+      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+      take: 3,
+      include: { category: { select: { name: true, color: true } } },
+    });
+  } catch {
+    announcements = [];
+  }
 
   // Aktualna lekcja (pierwsza nieukończona) + numer rozdziału
   let currentLessonId: string | null = null;
@@ -282,17 +294,21 @@ export default async function DashboardPage() {
                   className="border-b border-[#262626] py-[11px] last:border-0"
                 >
                   <div className="mb-1 flex items-center gap-[7px]">
-                    <span className="rounded-[4px] bg-[#9d6bff1a] px-[7px] py-[2px] text-[10px] font-semibold text-[var(--accent-soft)]">
-                      {(a.attachments as { type: string; tag?: string }[])?.find(
-                        (x) => x.type === ANNOUNCEMENT_MARKER
-                      )?.tag || "Ogłoszenie"}
+                    <span
+                      className="rounded-[4px] px-[7px] py-[2px] text-[10px] font-semibold"
+                      style={{
+                        background: (a.category?.color || "#9d6bff") + "1a",
+                        color: a.category?.color || "var(--accent-soft)",
+                      }}
+                    >
+                      {a.category?.name || "Ogłoszenie"}
                     </span>
                     <span className="ml-auto text-[11px] text-[#6e6e6e]">
                       {timeAgo(a.createdAt)}
                     </span>
                   </div>
                   <div className="text-[13px] font-semibold text-[#ededed]">
-                    {a.title || a.content}
+                    {a.title}
                   </div>
                 </div>
               ))

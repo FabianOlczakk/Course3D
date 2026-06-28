@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users2, Menu, Search, X, BookOpen, FileText, Loader2 } from "lucide-react";
-import { AnnouncementsPanel } from "@/components/announcements/announcements-panel";
 import type { Role } from "@prisma/client";
 
 interface SearchResult {
@@ -159,8 +158,6 @@ export function Topbar({
   avatarUrl,
   onMenuClick,
 }: TopbarProps) {
-  const [announcementsOpen, setAnnouncementsOpen] = useState(false);
-
   // Heartbeat — aktualizuj lastActiveAt co 60 sekund
   useEffect(() => {
     async function beat() {
@@ -171,50 +168,32 @@ export function Topbar({
     return () => clearInterval(id);
   }, []);
 
-  // Panel ogłoszeń otwierany z paska bocznego (custom event)
-  useEffect(() => {
-    function onOpenAnnouncements() {
-      localStorage.setItem("announcements-last-seen", String(Date.now()));
-      setAnnouncementsOpen(true);
-    }
-    window.addEventListener("open-announcements", onOpenAnnouncements);
-    return () =>
-      window.removeEventListener("open-announcements", onOpenAnnouncements);
-  }, []);
-
   return (
-    <>
-      <header className="flex h-14 items-center gap-[18px] border-b border-[#2b2b2b] bg-[#1a1a1a] px-6">
-        {/* Lewa strona: hamburger (mobile) */}
-        <button
-          type="button"
-          aria-label="Otwórz menu"
-          className="glow-icon-btn md:hidden"
-          onClick={onMenuClick}
-        >
-          <Menu className="h-4 w-4" />
-        </button>
+    <header className="relative flex h-14 items-center justify-center border-b border-[#2b2b2b] bg-[#1a1a1a] px-6">
+      {/* Hamburger (mobile) */}
+      <button
+        type="button"
+        aria-label="Otwórz menu"
+        className="glow-icon-btn absolute left-4 md:hidden"
+        onClick={onMenuClick}
+      >
+        <Menu className="h-4 w-4" />
+      </button>
 
-        {/* Wyszukiwarka */}
-        <SearchBar />
+      {/* Wyszukiwarka — wycentrowana */}
+      <SearchBar />
 
-        <div className="flex-1" />
-
-        {/* Prawa strona: tylko plakietka roli */}
-        <div className="flex items-center gap-2">
-          <span
-            className={
-              role === "ADMIN"
-                ? "rounded-md bg-[#9d6bff1a] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--accent-soft)]"
-                : "rounded-md bg-[#5b8def1a] px-3 py-1.5 text-[12.5px] font-semibold text-[#a8c4ff]"
-            }
-          >
-            {role === "ADMIN" ? "Instruktor" : "Kursant"}
-          </span>
-        </div>
-      </header>
-
-      <AnnouncementsPanel open={announcementsOpen} onClose={() => setAnnouncementsOpen(false)} />
-    </>
+      {/* Plakietka roli — przy prawej krawędzi */}
+      <span
+        className={
+          "absolute right-6 hidden sm:block rounded-md px-3 py-1.5 text-[12.5px] font-semibold " +
+          (role === "ADMIN"
+            ? "bg-[#9d6bff1a] text-[var(--accent-soft)]"
+            : "bg-[#5b8def1a] text-[#a8c4ff]")
+        }
+      >
+        {role === "ADMIN" ? "Instruktor" : "Kursant"}
+      </span>
+    </header>
   );
 }

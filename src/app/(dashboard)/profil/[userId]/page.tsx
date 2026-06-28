@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdminBadge } from "@/components/shared/admin-badge";
 import { ProfileActions } from "@/components/profile/profile-actions";
-import { isAnnouncement } from "@/lib/announcements";
 import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
 import { isOnline } from "@/lib/online-status";
@@ -46,7 +45,7 @@ export default async function ProfilePage({
     }),
   ]);
 
-  const recentPosts = posts.filter((p) => !isAnnouncement(p.attachments)).slice(0, 10);
+  const recentPosts = posts.slice(0, 10);
   const name = user.username || user.email;
   const initials = name.slice(0, 2).toUpperCase();
   const isSelf = user.id === session.user.id;

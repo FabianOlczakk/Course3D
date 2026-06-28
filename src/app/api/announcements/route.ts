@@ -1,38 +1,28 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { requireAdmin } from "@/lib/admin-guard";
-import { ANNOUNCEMENT_MARKER, isAnnouncement } from "@/lib/announcements";
 
 const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true },
 } as const;
+const categorySelect = {
+  select: { id: true, name: true, color: true },
+} as const;
 
-// Lista ogłoszeń (najnowsze pierwsze).
+// Lista ogłoszeń — przypięte najpierw, potem najnowsze.
 export async function GET() {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
   }
 
-  const posts = await prisma.post.findMany({
-    where: { attachments: { not: Prisma.DbNull } },
-    orderBy: { createdAt: "desc" },
-    include: { author: authorSelect },
+  const announcements = await prisma.announcement.findMany({
+    orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+    include: { author: authorSelect, category: categorySelect },
     take: 100,
   });
-
-  const announcements = posts
-    .filter((p) => isAnnouncement(p.attachments))
-    .map((p) => ({
-      id: p.id,
-      title: p.title,
-      content: p.content,
-      createdAt: p.createdAt,
-      author: p.author,
-    }));
 
   return NextResponse.json({ announcements });
 }
@@ -40,6 +30,8 @@ export async function GET() {
 const createSchema = z.object({
   title: z.string().trim().min(1, "Tytuł jest wymagany.").max(255),
   content: z.string().trim().min(1, "Treść nie może być pusta.").max(100000),
+  categoryId: z.string().optional().nullable(),
+  pinned: z.boolean().optional(),
 });
 
 // Utwórz ogłoszenie (tylko admin).
@@ -64,15 +56,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const post = await prisma.post.create({
+  const announcement = await prisma.announcement.create({
     data: {
       authorId: session.user.id,
       title: parsed.data.title,
       content: parsed.data.content,
-      attachments: [{ type: ANNOUNCEMENT_MARKER }],
+      categoryId: parsed.data.categoryId || null,
+      pinned: parsed.data.pinned ?? false,
     },
-    include: { author: authorSelect },
+    include: { author: authorSelect, category: categorySelect },
   });
 
-  return NextResponse.json({ announcement: post }, { status: 201 });
+  return NextResponse.json({ announcement }, { status: 201 });
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isAnnouncement } from "@/lib/announcements";
 
 const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true },
@@ -39,7 +38,7 @@ export async function GET(req: Request) {
     take: 20,
   });
 
-  const visible = posts.filter((p) => !isAnnouncement(p.attachments));
+  const visible = posts;
 
   return NextResponse.json({ posts: visible });
 }

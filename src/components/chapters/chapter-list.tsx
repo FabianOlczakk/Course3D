@@ -104,10 +104,8 @@ export function ChapterList({
                 <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--bg-elevated)]">
                   <div
                     className={cn(
-                      "h-full rounded-full transition-all duration-300",
-                      done
-                        ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)]"
-                        : "bg-[var(--accent)]"
+                      "h-full rounded-full bg-[var(--green)] transition-all duration-300",
+                      done && "shadow-[0_0_8px_rgba(62,207,142,0.6)]"
                     )}
                     style={{ width: `${pct}%` }}
                   />

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isAnnouncement } from "@/lib/announcements";
 
 // Publiczny profil użytkownika (dostępny dla zalogowanych).
 export async function GET(
@@ -52,7 +51,6 @@ export async function GET(
   ]);
 
   const recentPosts = posts
-    .filter((p) => !isAnnouncement(p.attachments))
     .slice(0, 10)
     .map((p) => ({
       id: p.id,

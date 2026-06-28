@@ -27,7 +27,7 @@ export function ShellFrame({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar
         username={username}
         email={email}

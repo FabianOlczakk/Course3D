@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
 
-import { isAnnouncement } from "@/lib/announcements";
 
 const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
@@ -35,7 +34,7 @@ export async function GET(req: Request) {
   });
 
   // Odfiltruj ogłoszenia z normalnego feedu społeczności.
-  const visible = posts.filter((p) => !isAnnouncement(p.attachments));
+  const visible = posts;
   const hasMore = visible.length > limit;
   const items = hasMore ? visible.slice(0, limit) : visible;
   const nextCursor = hasMore ? items[items.length - 1]?.id : null;
