@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { encode, decode, type JWT } from "next-auth/jwt";
-import { jwtVerify } from "jose";
+import { decode, type JWT } from "next-auth/jwt";
+import { jwtVerify, SignJWT } from "jose";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -45,8 +45,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async encode(params) {
       log("[encode] start");
       try {
-        const token = await encode({ ...params, secret });
-        log("[encode] success");
+        // Podpisujemy HS256 (jose) — TEN SAM format co /api/auth/login
+        // i middleware. Domyślny encode NextAuth tworzy JWE, którego
+        // middleware nie umie zweryfikować → ciągłe wylogowywanie.
+        const secretKey = new TextEncoder().encode(secret);
+        const t = (params.token ?? {}) as Record<string, unknown>;
+        const token = await new SignJWT(t)
+          .setProtectedHeader({ alg: "HS256" })
+          .setIssuedAt()
+          .setExpirationTime("30d")
+          .sign(secretKey);
+        log("[encode] success (jose HS256)");
         return token;
       } catch (err) {
         log(`[encode] ERROR: ${err}`);
