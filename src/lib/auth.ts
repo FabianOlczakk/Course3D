@@ -1,6 +1,6 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { encode, decode } from "next-auth/jwt";
+import { encode, decode, type JWT } from "next-auth/jwt";
 import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -60,7 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const secretKey = new TextEncoder().encode(secret);
         const { payload } = await jwtVerify(params.token, secretKey);
         log("[decode] success via jose HS256");
-        return payload as Record<string, unknown>;
+        return payload as unknown as JWT;
       } catch {
         try {
           const token = await decode({ ...params, secret });
