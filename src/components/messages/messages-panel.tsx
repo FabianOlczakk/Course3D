@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
 import { OnlineDot } from "@/components/shared/online-dot";
+import { isOnline } from "@/lib/online-status";
 import { readAttachments, formatFileSize, type Attachment } from "@/lib/attachments-client";
 import { shortTime, timeAgo } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
@@ -211,7 +212,14 @@ export function MessagesPanel({
   const body = (
     <>
         {/* Nagłówek */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4">
+        <div
+          className={cn(
+            "flex shrink-0 items-center justify-between",
+            variant === "page"
+              ? "mb-4"
+              : "h-16 border-b border-[var(--border-subtle)] px-4"
+          )}
+        >
           <div className="flex items-center gap-2">
             {active && (
               <button
@@ -222,8 +230,18 @@ export function MessagesPanel({
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
-            <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-text-primary">
-              <Mail className="h-5 w-5 text-[var(--accent)]" />
+            <h2
+              className={cn(
+                "flex items-center gap-2 font-display font-semibold text-text-primary",
+                variant === "page" ? "text-[23px]" : "text-lg"
+              )}
+            >
+              <Mail
+                className={cn(
+                  "text-[var(--accent)]",
+                  variant === "page" ? "h-6 w-6" : "h-5 w-5"
+                )}
+              />
               Wiadomości
             </h2>
           </div>
@@ -234,11 +252,19 @@ export function MessagesPanel({
           )}
         </div>
 
-        <div className="flex min-h-0 flex-1">
+        <div
+          className={cn(
+            "flex min-h-0 flex-1",
+            variant === "page" && "gap-[18px]"
+          )}
+        >
           {/* Lista konwersacji */}
           <div
             className={cn(
-              "flex w-full flex-col border-r border-[var(--border-subtle)] md:w-[240px] md:shrink-0",
+              "flex w-full flex-col md:w-[290px] md:shrink-0",
+              variant === "page"
+                ? "overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]"
+                : "border-r border-[var(--border-subtle)]",
               !showList && "hidden md:flex"
             )}
           >
@@ -249,7 +275,7 @@ export function MessagesPanel({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Szukaj użytkownika..."
-                  className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-md border border-[#2e2e2e] bg-[#141414] py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
                 />
               </div>
             </div>
@@ -308,6 +334,8 @@ export function MessagesPanel({
           <div
             className={cn(
               "flex min-w-0 flex-1 flex-col",
+              variant === "page" &&
+                "overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]",
               showList && "hidden md:flex"
             )}
           >
@@ -330,18 +358,29 @@ export function MessagesPanel({
                       />
                     )}
                   </div>
-                  <a
-                    href={`/profil/${active.id}`}
-                    className="font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
-                  >
-                    {displayName(active)}
-                  </a>
-                  <AdminBadge role={active.role} />
+                  <div className="min-w-0">
+                    <a
+                      href={`/profil/${active.id}`}
+                      className="block truncate text-[13.5px] font-semibold text-text-primary hover:text-[var(--accent)] hover:underline"
+                    >
+                      {displayName(active)}
+                    </a>
+                    <div className="flex items-center gap-1 text-[11.5px]">
+                      {isOnline(active.lastActiveAt ? new Date(active.lastActiveAt) : null) ? (
+                        <span className="text-[var(--green)]">● Online</span>
+                      ) : (
+                        <span className="text-[#6e6e6e]">Offline</span>
+                      )}
+                      {active.role === "ADMIN" && (
+                        <span className="text-[#6e6e6e]">· Instruktor</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div
                   ref={scrollRef}
-                  className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4"
+                  className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5"
                 >
                   {messages.length === 0 && (
                     <p className="py-8 text-center text-sm text-text-muted">
@@ -357,10 +396,10 @@ export function MessagesPanel({
                       >
                         <div
                           className={cn(
-                            "max-w-[75%] rounded-2xl px-3 py-2 text-sm",
+                            "max-w-[70%] px-[14px] py-[10px] text-[13.5px] leading-[1.5]",
                             mine
-                              ? "glow-btn rounded-br-sm text-white"
-                              : "rounded-bl-sm border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-text-primary"
+                              ? "rounded-[10px_10px_3px_10px] bg-[var(--accent)] text-white"
+                              : "rounded-[10px_10px_10px_3px] bg-[#242424] text-[#e0e0e0]"
                           )}
                         >
                           {m.content && (
@@ -459,8 +498,8 @@ export function MessagesPanel({
                         }
                       }}
                       rows={1}
-                      placeholder="Napisz..."
-                      className="max-h-32 min-h-[2.25rem] flex-1 resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Napisz wiadomość..."
+                      className="max-h-32 min-h-[2.5rem] flex-1 resize-none rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 text-[13.5px] text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
                     />
                     <button
                       type="button"
@@ -492,7 +531,7 @@ export function MessagesPanel({
 
   if (variant === "page") {
     return (
-      <div className="flex h-[calc(100vh-3.5rem)] w-full flex-col bg-[#181818]">
+      <div className="flex h-[calc(100vh-3.5rem)] w-full flex-col bg-[#181818] p-[26px] md:px-[30px]">
         {body}
       </div>
     );
