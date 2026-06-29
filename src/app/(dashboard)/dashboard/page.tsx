@@ -137,10 +137,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-[26px] md:px-[30px]">
-      <h1 className="font-display text-[23px] font-semibold text-[#f0f0f0]">
+      <h1 className="font-display text-[23px] font-semibold text-[var(--text-primary)]">
         Witaj ponownie, {name}
       </h1>
-      <p className="mt-[6px] text-[13.5px] capitalize text-[#8a8a8a]">
+      <p className="mt-[6px] text-[13.5px] capitalize text-[var(--text-muted)]">
         {today}
         <span className="lowercase">
           {" · "}
@@ -152,20 +152,20 @@ export default async function DashboardPage() {
       {/* Układ: lewa kolumna treści + prawy rail „Twój postęp" */}
       <div className="mt-5 grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-[1fr_320px]">
        <div className="flex min-w-0 flex-col gap-[18px]">
-        <div className="flex overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]">
+        <div className="flex overflow-hidden rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
         <div className="flex-1 p-[24px_26px]">
           <span className="inline-block rounded-[5px] bg-[#9d6bff1a] px-[9px] py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--accent-soft)]">
             {currentLessonId
               ? `W trakcie · Rozdział ${String(currentChapterIdx + 1).padStart(2, "0")}`
               : "Kurs ukończony 🎉"}
           </span>
-          <h2 className="mb-[5px] mt-[13px] font-display text-[20px] font-semibold text-[#f0f0f0]">
+          <h2 className="mb-[5px] mt-[13px] font-display text-[20px] font-semibold text-[var(--text-primary)]">
             {currentLessonTitle || currentChapterTitle || "Druk 3D od zera do mistrza"}
           </h2>
-          <p className="mb-4 text-[13.5px] text-[#8f8f8f]">
+          <p className="mb-4 text-[13.5px] text-[var(--text-muted)]">
             {currentChapterTitle || "Cały materiał kursu"}
           </p>
-          <div className="h-[6px] max-w-[420px] overflow-hidden rounded-[4px] bg-[#2b2b2b]">
+          <div className="h-[6px] max-w-[420px] overflow-hidden rounded-[4px] bg-[var(--bg-elevated)]">
             <div
               className="h-full rounded-[4px] bg-[var(--accent)]"
               style={{ width: `${overallPct}%` }}
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             )}
-            <span className="text-[12.5px] text-[#7a7a7a]">
+            <span className="text-[12.5px] text-[var(--text-muted)]">
               {overallPct}% całego kursu ukończone
             </span>
           </div>
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
             <DashboardMessagesButton />
           </CardHeader>
           {unreadMessages.length === 0 ? (
-            <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak nowych wiadomości.</p>
+            <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Brak nowych wiadomości.</p>
           ) : (
             unreadMessages.map((m) => {
               const label = m.sender.username || m.sender.email;
@@ -215,15 +215,15 @@ export default async function DashboardPage() {
                 <Link
                   key={m.id}
                   href={`/profil/${m.sender.id}`}
-                  className="flex items-start gap-[11px] border-b border-[#262626] py-[11px] last:border-0"
+                  className="flex items-start gap-[11px] border-b border-[var(--border-subtle)] py-[11px] last:border-0"
                 >
                   <AvatarCircle url={m.sender.avatarUrl} label={label} size={36} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold text-[#ededed]">{label}</span>
-                      <span className="ml-auto text-[11.5px] text-[#6e6e6e]">{timeAgo(m.createdAt)}</span>
+                      <span className="text-[13px] font-semibold text-[var(--text-primary)]">{label}</span>
+                      <span className="ml-auto text-[11.5px] text-[var(--text-muted)]">{timeAgo(m.createdAt)}</span>
                     </div>
-                    <p className="mt-[3px] truncate text-[12.5px] text-[#8a8a8a]">{m.content}</p>
+                    <p className="mt-[3px] truncate text-[12.5px] text-[var(--text-muted)]">{m.content}</p>
                   </div>
                   <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full bg-[var(--accent)]" />
                 </Link>
@@ -255,7 +255,7 @@ export default async function DashboardPage() {
             </Link>
           </CardHeader>
           {recentPosts.length === 0 ? (
-            <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak postów.</p>
+            <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Brak postów.</p>
           ) : (
             recentPosts.map((p) => {
               const label = p.author.username || p.author.email;
@@ -263,11 +263,11 @@ export default async function DashboardPage() {
                 <Link
                   key={p.id}
                   href="/spolecznosc"
-                  className="flex items-start gap-[11px] border-b border-[#262626] py-3 last:border-0"
+                  className="flex items-start gap-[11px] border-b border-[var(--border-subtle)] py-3 last:border-0"
                 >
                   <AvatarCircle url={p.author.avatarUrl} label={label} size={36} />
                   <div className="min-w-0 flex-1">
-                    <div className="mb-[3px] flex items-center gap-[6px] text-[11.5px] text-[#8a8a8a]">
+                    <div className="mb-[3px] flex items-center gap-[6px] text-[11.5px] text-[var(--text-muted)]">
                       {label} · {timeAgo(p.createdAt)}
                       {p.category && (
                         <span
@@ -281,10 +281,10 @@ export default async function DashboardPage() {
                         </span>
                       )}
                     </div>
-                    <div className="truncate text-[13.5px] font-semibold text-[#ededed]">
+                    <div className="truncate text-[13.5px] font-semibold text-[var(--text-primary)]">
                       {p.title || p.content}
                     </div>
-                    <div className="mt-[6px] text-[11.5px] text-[#6e6e6e]">
+                    <div className="mt-[6px] text-[11.5px] text-[var(--text-muted)]">
                       {p._count.comments} odpowiedzi
                     </div>
                   </div>
@@ -308,22 +308,22 @@ export default async function DashboardPage() {
          </CardHeader>
          <div className="-mr-1 min-h-0 flex-1 overflow-auto pr-1">
            {modules.length === 0 ? (
-             <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak rozdziałów.</p>
+             <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Brak rozdziałów.</p>
            ) : (
              modules.map((m) => (
                <div key={m.n} className="py-[9px]">
                  <div className="mb-[7px] flex items-center gap-[10px]">
-                   <span className="font-display text-[11px] font-semibold text-[#6e6e6e]">
+                   <span className="font-display text-[11px] font-semibold text-[var(--text-muted)]">
                      {m.n}
                    </span>
-                   <span className="flex-1 truncate text-[12.5px] font-medium text-[#cfcfcf]">
+                   <span className="flex-1 truncate text-[12.5px] font-medium text-[var(--text-primary)]">
                      {m.title}
                    </span>
                    <span className="text-[11px] font-semibold" style={{ color: m.color }}>
                      {m.pct}%
                    </span>
                  </div>
-                 <div className="h-[5px] overflow-hidden rounded-[3px] bg-[#2b2b2b]">
+                 <div className="h-[5px] overflow-hidden rounded-[3px] bg-[var(--bg-elevated)]">
                    <div
                      className="h-full rounded-[3px]"
                      style={{ width: `${m.pct}%`, background: m.color }}
@@ -349,12 +349,12 @@ function StatCard({
   suffix?: string;
 }) {
   return (
-    <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[16px_18px]">
-      <div className="text-[12px] font-medium text-[#8a8a8a]">{label}</div>
-      <div className="mt-[6px] font-display text-[23px] font-semibold text-[#f0f0f0]">
+    <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-[16px_18px]">
+      <div className="text-[12px] font-medium text-[var(--text-muted)]">{label}</div>
+      <div className="mt-[6px] font-display text-[23px] font-semibold text-[var(--text-primary)]">
         {value}{" "}
         {suffix && (
-          <span className="text-[14px] font-medium text-[#6e6e6e]">{suffix}</span>
+          <span className="text-[14px] font-medium text-[var(--text-muted)]">{suffix}</span>
         )}
       </div>
     </div>
@@ -370,7 +370,7 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[16px_18px] ${className ?? ""}`}
+      className={`rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-[16px_18px] ${className ?? ""}`}
     >
       {children}
     </div>
@@ -386,7 +386,7 @@ function CardHeader({
 }) {
   return (
     <div className="mb-[6px] flex items-center">
-      <span className="font-display text-[14.5px] font-semibold text-[#f0f0f0]">
+      <span className="font-display text-[14.5px] font-semibold text-[var(--text-primary)]">
         {title}
       </span>
       <span className="ml-auto">{children}</span>

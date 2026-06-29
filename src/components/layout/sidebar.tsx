@@ -12,6 +12,7 @@ import {
   Boxes,
   Users,
   SlidersHorizontal,
+  UserCircle,
   ChevronRight,
   X,
   Pencil,
@@ -648,7 +649,7 @@ export function Sidebar({
               }}
               className="flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <UserCircle className="h-4 w-4" />
               Mój profil
             </Link>
             <Link

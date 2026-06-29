@@ -71,7 +71,7 @@ export function AnnouncementsWidget({ announcements, categories }: Props) {
           <Link
             key={a.id}
             href={`/ogloszenia/${a.id}`}
-            className="block border-b border-[#262626] py-[11px] last:border-0 hover:opacity-80 transition-opacity"
+            className="block border-b border-[var(--border-subtle)] py-[11px] last:border-0 hover:opacity-80 transition-opacity"
           >
             <div className="mb-1 flex items-center gap-[7px]">
               <span

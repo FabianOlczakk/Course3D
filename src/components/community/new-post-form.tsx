@@ -48,14 +48,14 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
   }
 
   return (
-    <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-4">
+    <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
       {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={3}
         placeholder="Zadaj pytanie lub pokaż swój wydruk..."
-        className="w-full resize-none rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 text-sm text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
+        className="w-full resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-text-primary placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between gap-2">
         <StyledSelect
