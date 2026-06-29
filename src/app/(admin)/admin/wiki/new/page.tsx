@@ -4,7 +4,7 @@ export const metadata = { title: "Nowy artykuł Wiki | Admin" };
 
 export default function NewWikiArticlePage() {
   return (
-    <div className="p-4 md:p-6 max-w-3xl">
+    <div className="mx-auto max-w-3xl p-4 md:p-6">
       <WikiArticleForm />
     </div>
   );

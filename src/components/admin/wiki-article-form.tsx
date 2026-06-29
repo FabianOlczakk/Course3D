@@ -148,7 +148,7 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
       </div>
 
       <div className="flex gap-3">
-        <button type="submit" disabled={loading} className="glow-btn inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+        <button type="submit" disabled={loading} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#8a5af0] disabled:opacity-60">
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           {isEdit ? "Zapisz zmiany" : "Utwórz artykuł"}
         </button>

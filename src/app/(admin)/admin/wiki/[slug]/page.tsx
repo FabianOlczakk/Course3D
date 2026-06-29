@@ -12,7 +12,7 @@ export default async function EditWikiArticlePage({ params }: { params: { slug: 
   });
   if (!article) notFound();
   return (
-    <div className="p-4 md:p-6 max-w-3xl">
+    <div className="mx-auto max-w-3xl p-4 md:p-6">
       <WikiArticleForm initial={article} />
     </div>
   );

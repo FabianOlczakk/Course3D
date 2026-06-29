@@ -299,9 +299,9 @@ export function Sidebar({
     </div>
   );
 
-  // Kontener podgrupy — wyraźnie zagnieżdżony (wcięcie + lewa krawędź)
+  // Kontener podgrupy — wyraźnie wydzielony panel (ciemniejsze tło + akcent)
   const subgroup = (children: React.ReactNode) => (
-    <div className="my-1 ml-[20px] border-l border-[#333] pl-[10px]">
+    <div className="my-1 ml-[14px] space-y-[1px] rounded-md border-l-2 border-[var(--accent)] bg-[#151515] py-[5px] pl-2 pr-1">
       {children}
     </div>
   );
@@ -391,14 +391,23 @@ export function Sidebar({
                           onMobileClose?.();
                           router.push(`/wiadomosci?u=${c.userId}`);
                         }}
-                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left transition-colors hover:bg-[#ffffff09]"
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left transition-colors hover:bg-[#ffffff0d]"
                       >
-                        <span
-                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                          style={{ background: colorFromString(label) }}
-                        >
-                          {label.slice(0, 2).toUpperCase()}
-                        </span>
+                        {c.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={c.avatarUrl}
+                            alt={label}
+                            className="h-6 w-6 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                            style={{ background: colorFromString(label) }}
+                          >
+                            {label.slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[12.5px] text-[#cfcfcf]">
                             {label}
@@ -414,9 +423,10 @@ export function Sidebar({
                 <Link
                   href="/wiadomosci"
                   onClick={onMobileClose}
-                  className="mt-1 block rounded-[6px] px-2 py-1.5 text-[12.5px] font-semibold text-[var(--accent-soft)] hover:bg-[#ffffff09]"
+                  className="mt-1.5 flex items-center justify-center gap-1 rounded-md bg-[#9d6bff1a] px-2 py-1.5 text-[12px] font-semibold text-[var(--accent-soft)] transition-colors hover:bg-[#9d6bff2e]"
                 >
-                  Więcej →
+                  Zobacz wszystkie
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </>
             )}

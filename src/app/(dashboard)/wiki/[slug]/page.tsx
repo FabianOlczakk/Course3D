@@ -25,7 +25,7 @@ export default async function WikiArticlePage({ params }: { params: { slug: stri
   if (!article || (!article.published && !isAdmin)) notFound();
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl">
+    <div className="mx-auto max-w-3xl p-4 md:p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <Link href="/wiki" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
           <ArrowLeft className="h-4 w-4" />

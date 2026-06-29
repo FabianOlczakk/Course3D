@@ -57,22 +57,25 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
         className="w-full resize-none rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 text-sm text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between gap-2">
-        {categories.length > 0 ? (
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="h-9 rounded-md border border-[#2e2e2e] bg-[#141414] px-2 text-sm text-text-primary outline-none focus:border-[var(--accent)]"
-          >
-            <option value="">Bez kategorii</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span />
-        )}
+        <select
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          title={
+            categories.length === 0
+              ? "Brak kategorii — instruktor może je dodać w zakładkach (Zarządzaj)"
+              : "Wybierz kategorię"
+          }
+          className="h-9 rounded-md border border-[#2e2e2e] bg-[#141414] px-2 text-sm text-text-primary outline-none focus:border-[var(--accent)]"
+        >
+          <option value="">
+            {categories.length === 0 ? "Brak kategorii" : "Bez kategorii"}
+          </option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           disabled={submitting || !content.trim()}
