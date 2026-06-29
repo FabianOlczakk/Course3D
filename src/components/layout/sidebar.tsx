@@ -299,9 +299,9 @@ export function Sidebar({
     </div>
   );
 
-  // Kontener podgrupy — wyraźnie wydzielony panel (ciemniejsze tło + akcent)
+  // Kontener podgrupy — wcięcie + delikatna lewa krawędź
   const subgroup = (children: React.ReactNode) => (
-    <div className="my-1 ml-[14px] space-y-[1px] rounded-md border-l-2 border-[var(--accent)] bg-[#151515] py-[5px] pl-2 pr-1">
+    <div className="my-1 ml-[20px] border-l border-[#333] pl-[10px]">
       {children}
     </div>
   );

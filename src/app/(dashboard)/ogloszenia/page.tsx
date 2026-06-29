@@ -68,24 +68,24 @@ export default async function AnnouncementsPage() {
               >
                 <div className="mb-[9px] flex items-center gap-[9px]">
                   {a.pinned && (
-                    <Pin className="h-3.5 w-3.5 text-[var(--accent-soft)]" fill="currentColor" />
+                    <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--accent-soft)]" fill="currentColor" />
                   )}
                   {category && (
                     <span
-                      className="rounded-[5px] px-[8px] py-[3px] text-[10.5px] font-semibold"
+                      className="shrink-0 rounded-[5px] px-[8px] py-[3px] text-[10.5px] font-semibold"
                       style={{ background: color + "1a", color }}
                     >
                       {category.name}
                     </span>
                   )}
-                  <span className="ml-auto text-[11.5px] text-[#6e6e6e]">
+                  <h3 className="min-w-0 flex-1 truncate font-display text-[17px] font-semibold text-[#f0f0f0]">
+                    {a.title}
+                  </h3>
+                  <span className="shrink-0 text-[11.5px] text-[#6e6e6e]">
                     {timeAgo(a.createdAt)} · {author.username || author.email}
                   </span>
                   {isAdmin && <CopyLinkButton path={`/ogloszenia?a=${a.id}`} />}
                 </div>
-                <h3 className="mb-[7px] font-display text-[17px] font-semibold text-[#f0f0f0]">
-                  {a.title}
-                </h3>
                 <div
                   className="lesson-content text-[13.5px] leading-[1.6] text-[#9a9a9a]"
                   dangerouslySetInnerHTML={{ __html: a.content }}

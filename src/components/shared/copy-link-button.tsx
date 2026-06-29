@@ -16,13 +16,28 @@ export function CopyLinkButton({
   const [copied, setCopied] = useState(false);
 
   async function copy() {
+    const url = `${window.location.origin}${path}`;
     try {
-      const url = `${window.location.origin}${path}`;
-      await navigator.clipboard.writeText(url);
+      // navigator.clipboard działa tylko w bezpiecznym kontekście (https/
+      // localhost). Na zwykłym http (np. LAN) używamy fallbacku z execCommand.
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* ignore */
+      // Ostateczność: pokaż link do ręcznego skopiowania.
+      window.prompt("Skopiuj link:", url);
     }
   }
 

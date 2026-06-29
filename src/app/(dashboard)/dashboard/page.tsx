@@ -173,17 +173,6 @@ export default async function DashboardPage() {
             </span>
           </div>
         </div>
-        <div
-          className="hidden w-[230px] shrink-0 items-center justify-center border-l border-[#2b2b2b] sm:flex"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg,#ffffff08,#ffffff08 10px,#ffffff03 10px,#ffffff03 20px)",
-          }}
-        >
-          <span className="font-mono text-[11px] tracking-[0.04em] text-[#6e6e6e]">
-            [ podgląd modelu ]
-          </span>
-        </div>
       </div>
 
       {/* STATS */}

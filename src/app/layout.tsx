@@ -31,7 +31,7 @@ export default function RootLayout({
       <body className="font-sans">
         {children}
         <div className="fixed bottom-2 right-2 text-xs text-muted-foreground/40 select-none pointer-events-none">
-          v0.8.3
+          v0.8.4
         </div>
       </body>
     </html>

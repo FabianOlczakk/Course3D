@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, ChevronDown } from "lucide-react";
 import type { CategoryMini, PostItem } from "@/components/community/types";
 
 // Formularz tworzenia nowego posta.
@@ -57,25 +57,28 @@ export function NewPostForm({ onCreated }: { onCreated: (post: PostItem) => void
         className="w-full resize-none rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 text-sm text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between gap-2">
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          title={
-            categories.length === 0
-              ? "Brak kategorii — instruktor może je dodać w zakładkach (Zarządzaj)"
-              : "Wybierz kategorię"
-          }
-          className="h-9 rounded-md border border-[#2e2e2e] bg-[#141414] px-2 text-sm text-text-primary outline-none focus:border-[var(--accent)]"
-        >
-          <option value="">
-            {categories.length === 0 ? "Brak kategorii" : "Bez kategorii"}
-          </option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
+        <div className="relative">
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            title={
+              categories.length === 0
+                ? "Brak kategorii — instruktor może je dodać w zakładkach (Zarządzaj)"
+                : "Wybierz kategorię"
+            }
+            className="h-9 cursor-pointer appearance-none rounded-md border border-[#2e2e2e] bg-[#141414] pl-3 pr-9 text-sm text-text-primary outline-none focus:border-[var(--accent)] [&>option]:bg-[#1e1e1e] [&>option]:text-text-primary"
+          >
+            <option value="">
+              {categories.length === 0 ? "Brak kategorii" : "Bez kategorii"}
             </option>
-          ))}
-        </select>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e6e6e]" />
+        </div>
         <button
           type="button"
           disabled={submitting || !content.trim()}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Check, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/lib/toast";
 
 interface WikiArticleData {
@@ -24,7 +24,6 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [content, setContent] = useState(initial?.content ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
-  const [published, setPublished] = useState(initial?.published ?? true);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -41,7 +40,7 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
     if (loading) return;
     setLoading(true);
     try {
-      const body = { title, slug, content, category: category || null, published };
+      const body = { title, slug, content, category: category || null, published: true };
       const url = isEdit ? `/api/wiki/${initial!.slug}` : "/api/wiki";
       const method = isEdit ? "PATCH" : "POST";
       const res = await fetch(url, {
@@ -125,26 +124,6 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
           <p className="text-xs text-text-muted">Obsługiwany HTML. Użyj h2/h3 do nagłówków, p do akapitów, ul/li do list, code/pre do kodu.</p>
         </div>
 
-        <label className="flex cursor-pointer select-none items-center gap-2.5 text-sm">
-          <span
-            className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
-              published
-                ? "border-[var(--accent)] bg-[var(--accent)]"
-                : "border-[#2e2e2e] bg-[#141414]"
-            }`}
-          >
-            {published && <Check className="h-3.5 w-3.5 text-white" />}
-          </span>
-          <input
-            type="checkbox"
-            checked={published}
-            onChange={(e) => setPublished(e.target.checked)}
-            className="sr-only"
-          />
-          <span className="text-text-secondary">
-            Opublikowany (widoczny dla kursantów)
-          </span>
-        </label>
       </div>
 
       <div className="flex gap-3">

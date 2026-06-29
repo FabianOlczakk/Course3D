@@ -9,7 +9,6 @@ import {
   ArrowUp,
   ArrowDown,
   ListVideo,
-  Boxes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,13 +129,6 @@ export function ChaptersManager({ initial }: { initial: ManagedChapter[] }) {
                 </button>
               </div>
 
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#2b2b2b] bg-[#242424] text-[var(--accent)]">
-                {ch.iconUrl ? (
-                  <span className="text-lg leading-none">{ch.iconUrl}</span>
-                ) : (
-                  <Boxes className="h-[18px] w-[18px]" />
-                )}
-              </span>
 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-text-primary">

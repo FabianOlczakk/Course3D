@@ -84,6 +84,7 @@ export function ChapterList({
               onClick={() => setOpenId(open ? null : chapter.id)}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-[var(--bg-elevated)] hover:text-text-primary"
             >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
               {chapter.iconUrl ? (
                 <span className="text-base leading-none">{chapter.iconUrl}</span>
               ) : null}
