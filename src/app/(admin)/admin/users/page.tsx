@@ -15,6 +15,7 @@ export default async function AdminUsersPage() {
       role: true,
       avatarUrl: true,
       createdAt: true,
+      lastActiveAt: true,
       emailVerified: true,
       inviteToken: true,
     },
@@ -23,6 +24,7 @@ export default async function AdminUsersPage() {
   const serialized = users.map((u) => ({
     ...u,
     createdAt: u.createdAt.toISOString(),
+    lastActiveAt: u.lastActiveAt ? u.lastActiveAt.toISOString() : null,
     pending: !u.emailVerified && !!u.inviteToken,
   }));
 

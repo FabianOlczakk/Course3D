@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { OnlineDot } from "@/components/shared/online-dot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,12 +105,18 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
                 <TableRow key={u.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        {u.avatarUrl && <AvatarImage src={u.avatarUrl} />}
-                        <AvatarFallback>
-                          {(u.username || u.email).slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-8 w-8">
+                          {u.avatarUrl && <AvatarImage src={u.avatarUrl} />}
+                          <AvatarFallback>
+                            {(u.username || u.email).slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <OnlineDot
+                          lastActiveAt={u.lastActiveAt}
+                          className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-2 border-[var(--bg-card)]"
+                        />
+                      </div>
                       <Link
                         href={`/profil/${u.id}`}
                         className="font-medium hover:text-[var(--accent)] hover:underline"
@@ -121,7 +128,7 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
                   <TableCell>{u.email}</TableCell>
                   <TableCell>
                     <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
-                      {u.role === "ADMIN" ? "Administrator" : "Kursant"}
+                      {u.role === "ADMIN" ? "Instruktor" : "Kursant"}
                     </Badge>
                   </TableCell>
                   <TableCell>

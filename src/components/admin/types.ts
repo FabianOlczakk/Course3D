@@ -7,5 +7,6 @@ export interface AdminUser {
   role: Role;
   avatarUrl: string | null;
   createdAt: string;
+  lastActiveAt: string | null;
   pending: boolean;
 }
