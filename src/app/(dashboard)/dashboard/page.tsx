@@ -138,7 +138,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-[26px] md:px-[30px]">
       <h1 className="font-display text-[23px] font-semibold text-[var(--text-primary)]">
-        Witaj ponownie, {name}
+        Witaj, {name}
       </h1>
       <p className="mt-[6px] text-[13.5px] capitalize text-[var(--text-muted)]">
         {today}

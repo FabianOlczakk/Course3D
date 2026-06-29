@@ -1,14 +1,5 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { timeAgo } from "@/lib/format-time";
-
-interface Category {
-  id: string;
-  name: string;
-  color: string | null;
-}
 
 interface AnnouncementRow {
   id: string;
@@ -20,54 +11,16 @@ interface AnnouncementRow {
 
 interface Props {
   announcements: AnnouncementRow[];
-  categories: Category[];
+  categories?: unknown[];
 }
 
-export function AnnouncementsWidget({ announcements, categories }: Props) {
-  const [activeCat, setActiveCat] = useState<string | null>(null);
-
-  const shown = activeCat
-    ? announcements.filter((a) => a.categoryId === activeCat)
-    : announcements;
-
+export function AnnouncementsWidget({ announcements }: Props) {
   return (
     <>
-      {categories.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveCat(null)}
-            className={
-              "rounded-[5px] px-2.5 py-1 text-[11px] font-semibold transition-colors " +
-              (!activeCat
-                ? "bg-[#9d6bff1a] text-[var(--accent-soft)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")
-            }
-          >
-            Wszystko
-          </button>
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setActiveCat(c.id === activeCat ? null : c.id)}
-              className="rounded-[5px] px-2.5 py-1 text-[11px] font-semibold transition-colors"
-              style={
-                activeCat === c.id
-                  ? { background: (c.color || "#9d6bff") + "1a", color: c.color || "#b89dff" }
-                  : { color: "var(--text-muted)" }
-              }
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {shown.length === 0 ? (
+      {announcements.length === 0 ? (
         <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Brak ogłoszeń.</p>
       ) : (
-        shown.slice(0, 3).map((a) => (
+        announcements.slice(0, 3).map((a) => (
           <Link
             key={a.id}
             href={`/ogloszenia/${a.id}`}

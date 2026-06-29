@@ -18,6 +18,7 @@ import {
   Pencil,
   LogOut,
   Loader2,
+  Terminal,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -595,6 +596,7 @@ export function Sidebar({
                 { label: "Rozdziały", icon: Boxes, href: "/admin/chapters" },
                 { label: "Ogłoszenia", icon: Bell, href: "/admin/ogloszenia" },
                 { label: "Wiki", icon: Pencil, href: "/admin/wiki/new" },
+                { label: "Deweloper", icon: Terminal, href: "/admin/developer" },
               ].map((it) => {
                 const Icon = it.icon;
                 const active = isActive(it.href);
