@@ -75,6 +75,7 @@ export function MessagesPanel({
   const [asSystem, setAsSystem] = useState(false);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [convsLoading, setConvsLoading] = useState(true);
   const [active, setActive] = useState<UserMini | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [search, setSearch] = useState("");
@@ -96,6 +97,8 @@ export function MessagesPanel({
       setConversations(data.conversations ?? []);
     } catch {
       /* ignore polling errors */
+    } finally {
+      setConvsLoading(false);
     }
   }, []);
 
@@ -316,6 +319,18 @@ export function MessagesPanel({
                     Brak wyników.
                   </p>
                 )
+              ) : convsLoading ? (
+                <div className="space-y-0 divide-y divide-[var(--border-subtle)]">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-3">
+                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[var(--bg-elevated)]" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-24 animate-pulse rounded bg-[var(--bg-elevated)]" style={{ animationDelay: `${i * 80}ms` }} />
+                        <div className="h-2.5 w-36 animate-pulse rounded bg-[var(--bg-elevated)]" style={{ animationDelay: `${i * 80 + 40}ms` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : conversations.length ? (
                 conversations.map((c) => (
                   <ConversationRow

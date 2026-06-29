@@ -213,23 +213,6 @@ export function DeveloperClient() {
         </div>
       </div>
 
-      {/* Info o deploy.sh */}
-      <div className="rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 text-[12.5px] text-[var(--text-muted)]">
-        <p className="mb-1 font-semibold text-[var(--text-secondary)]">Konfiguracja deployu</p>
-        <p>
-          Domyślna sekwencja:{" "}
-          <code className="rounded bg-[var(--bg-base)] px-1 text-[var(--accent-soft)]">
-            git pull origin main → npm install → npm run build → pm2 restart course3d
-          </code>
-        </p>
-        <p className="mt-1">
-          Własny skrypt: ustaw zmienną środowiskową{" "}
-          <code className="rounded bg-[var(--bg-base)] px-1 text-[var(--accent-soft)]">
-            DEPLOY_SCRIPT=/ścieżka/do/deploy.sh
-          </code>{" "}
-          — aplikacja użyje go zamiast domyślnej sekwencji.
-        </p>
-      </div>
     </div>
   );
 }
