@@ -16,7 +16,7 @@ export async function AppShell({
   if (!session?.user) redirect("/login");
   if (requireAdmin && session.user.role !== "ADMIN") redirect("/dashboard");
 
-  const { username, email, role, image } = session.user;
+  const { id: userId, username, email, role, image } = session.user;
 
   const chapters: SidebarChapter[] = await prisma.chapter.findMany({
     orderBy: { order: "asc" },
@@ -34,6 +34,7 @@ export async function AppShell({
   return (
     <Providers>
       <ShellFrame
+        userId={userId}
         username={username}
         email={email ?? ""}
         role={role}

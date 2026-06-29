@@ -52,6 +52,7 @@ interface WikiArticleMini {
 }
 
 export function Sidebar({
+  userId,
   username,
   email,
   role,
@@ -60,6 +61,7 @@ export function Sidebar({
   mobileOpen = false,
   onMobileClose,
 }: {
+  userId: string;
   username: string | null;
   email: string;
   role: Role;
@@ -610,7 +612,7 @@ export function Sidebar({
         </div>
         <div className="min-w-0 flex-1">
           <Link
-            href="/profile"
+            href={`/profil/${userId}`}
             onClick={onMobileClose}
             className="block truncate text-[13px] font-semibold text-[#ededed] hover:text-[var(--accent-soft)]"
           >
@@ -639,6 +641,17 @@ export function Sidebar({
         {profileMenu && (
           <div className="absolute bottom-[52px] right-[11px] z-50 w-[180px] overflow-hidden rounded-[8px] border border-[#2b2b2b] bg-[#1e1e1e] shadow-xl">
             <Link
+              href={`/profil/${userId}`}
+              onClick={() => {
+                setProfileMenu(false);
+                onMobileClose?.();
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#cfcfcf] hover:bg-[#ffffff09]"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Mój profil
+            </Link>
+            <Link
               href="/profile"
               onClick={() => {
                 setProfileMenu(false);
@@ -647,7 +660,7 @@ export function Sidebar({
               className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#cfcfcf] hover:bg-[#ffffff09]"
             >
               <SlidersHorizontal className="h-4 w-4" />
-              Profil i ustawienia
+              Ustawienia
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}

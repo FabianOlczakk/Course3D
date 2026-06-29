@@ -403,8 +403,24 @@ export function MessagesPanel({
                   className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5"
                 >
                   {msgLoading && messages.length === 0 && (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-[var(--accent)]" />
+                    <div className="flex flex-col gap-3 py-4">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`flex gap-2 ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
+                        >
+                          {i % 2 === 0 && (
+                            <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-[#2e2e2e]" />
+                          )}
+                          <div
+                            className="animate-pulse rounded-[14px] bg-[#2e2e2e]"
+                            style={{
+                              height: 36,
+                              width: `${[120, 180, 90, 150, 110][i]}px`,
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
                   {!msgLoading && messages.length === 0 && (

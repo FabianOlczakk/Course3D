@@ -7,6 +7,7 @@ import type { SidebarChapter } from "@/components/chapters/chapter-list";
 import type { Role } from "@prisma/client";
 
 interface ShellFrameProps {
+  userId: string;
   username: string | null;
   email: string;
   role: Role;
@@ -17,6 +18,7 @@ interface ShellFrameProps {
 
 /** Klient: zarządza otwieraniem paska bocznego na urządzeniach mobilnych. */
 export function ShellFrame({
+  userId,
   username,
   email,
   role,
@@ -29,6 +31,7 @@ export function ShellFrame({
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
+        userId={userId}
         username={username}
         email={email}
         role={role}
