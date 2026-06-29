@@ -138,8 +138,9 @@ export default async function DashboardPage() {
         </span>
       </p>
 
-      {/* HERO */}
-      <div className="mt-5 flex overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]">
+      {/* HERO + Twój postęp (równa wysokość) */}
+      <div className="mt-5 grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-[1fr_352px]">
+      <div className="flex overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]">
         <div className="flex-1 p-[24px_26px]">
           <span className="inline-block rounded-[5px] bg-[#9d6bff1a] px-[9px] py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--accent-soft)]">
             {currentLessonId
@@ -175,152 +176,17 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* STATS */}
-      <div className="mt-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Ukończone lekcje" value={`${stats.completed}`} suffix={`/ ${stats.total}`} />
-        <StatCard label="Passa nauki" value={`${stats.streak}`} suffix="dni" />
-        <StatCard
-          label="Pozycja w grupie"
-          value={`#${stats.rank}`}
-          suffix={`z ${stats.rankTotal}`}
-        />
-      </div>
-
-      {/* TWO COL */}
-      <div className="mt-[18px] grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[1fr_352px]">
-        <div className="flex flex-col gap-[18px]">
-          {/* Ostatnie wiadomości */}
-          <Card>
-            <CardHeader title="Ostatnie wiadomości">
-              <DashboardMessagesButton />
-            </CardHeader>
-            {unreadMessages.length === 0 ? (
-              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak nowych wiadomości.</p>
-            ) : (
-              unreadMessages.map((m) => {
-                const label = m.sender.username || m.sender.email;
-                return (
-                  <Link
-                    key={m.id}
-                    href={`/profil/${m.sender.id}`}
-                    className="flex items-start gap-[11px] border-b border-[#262626] py-[11px] last:border-0"
-                  >
-                    <AvatarCircle
-                      url={m.sender.avatarUrl}
-                      label={label}
-                      size={36}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold text-[#ededed]">
-                          {label}
-                        </span>
-                        <span className="ml-auto text-[11.5px] text-[#6e6e6e]">
-                          {timeAgo(m.createdAt)}
-                        </span>
-                      </div>
-                      <p className="mt-[3px] truncate text-[12.5px] text-[#8a8a8a]">
-                        {m.content}
-                      </p>
-                    </div>
-                    <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full bg-[var(--accent)]" />
-                  </Link>
-                );
-              })
-            )}
-          </Card>
-
-          {/* Aktywność społeczności */}
-          <Card>
-            <CardHeader title="Aktywność społeczności">
-              <Link
-                href="/spolecznosc"
-                className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
-              >
-                Przejdź
-              </Link>
-            </CardHeader>
-            {recentPosts.length === 0 ? (
-              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak postów.</p>
-            ) : (
-              recentPosts.map((p) => {
-                const label = p.author.username || p.author.email;
-                return (
-                  <Link
-                    key={p.id}
-                    href="/spolecznosc"
-                    className="flex items-start gap-[11px] border-b border-[#262626] py-3 last:border-0"
-                  >
-                    <AvatarCircle url={p.author.avatarUrl} label={label} size={36} />
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-[3px] text-[11.5px] text-[#8a8a8a]">
-                        {label} · {timeAgo(p.createdAt)}
-                      </div>
-                      <div className="truncate text-[13.5px] font-semibold text-[#ededed]">
-                        {p.title || p.content}
-                      </div>
-                      <div className="mt-[6px] text-[11.5px] text-[#6e6e6e]">
-                        {p._count.comments} odpowiedzi
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-            )}
-          </Card>
-        </div>
-
-        <div className="flex flex-col gap-[18px]">
-          {/* Ogłoszenia */}
-          <Card>
-            <CardHeader title="Ogłoszenia">
-              <Link
-                href="/ogloszenia"
-                className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
-              >
-                Wszystkie
-              </Link>
-            </CardHeader>
-            {announcements.length === 0 ? (
-              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak ogłoszeń.</p>
-            ) : (
-              announcements.map((a) => (
-                <div
-                  key={a.id}
-                  className="border-b border-[#262626] py-[11px] last:border-0"
-                >
-                  <div className="mb-1 flex items-center gap-[7px]">
-                    <span
-                      className="rounded-[4px] px-[7px] py-[2px] text-[10px] font-semibold"
-                      style={{
-                        background: (a.category?.color || "#9d6bff") + "1a",
-                        color: a.category?.color || "var(--accent-soft)",
-                      }}
-                    >
-                      {a.category?.name || "Ogłoszenie"}
-                    </span>
-                    <span className="ml-auto text-[11px] text-[#6e6e6e]">
-                      {timeAgo(a.createdAt)}
-                    </span>
-                  </div>
-                  <div className="text-[13px] font-semibold text-[#ededed]">
-                    {a.title}
-                  </div>
-                </div>
-              ))
-            )}
-          </Card>
-
-          {/* Twój postęp (per rozdział) */}
-          <Card>
-            <CardHeader title="Twój postęp">
-              <Link
-                href={currentLessonId ? `/kurs/${currentLessonId}` : "/dashboard"}
-                className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
-              >
-                Kurs
-              </Link>
-            </CardHeader>
+        {/* Twój postęp — równa wysokość z hero */}
+        <Card className="flex max-h-[460px] flex-col overflow-hidden">
+          <CardHeader title="Twój postęp">
+            <Link
+              href={currentLessonId ? `/kurs/${currentLessonId}` : "/dashboard"}
+              className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
+            >
+              Kurs
+            </Link>
+          </CardHeader>
+          <div className="-mr-1 min-h-0 flex-1 overflow-auto pr-1">
             {modules.length === 0 ? (
               <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak rozdziałów.</p>
             ) : (
@@ -333,10 +199,7 @@ export default async function DashboardPage() {
                     <span className="flex-1 truncate text-[12.5px] font-medium text-[#cfcfcf]">
                       {m.title}
                     </span>
-                    <span
-                      className="text-[11px] font-semibold"
-                      style={{ color: m.color }}
-                    >
+                    <span className="text-[11px] font-semibold" style={{ color: m.color }}>
                       {m.pct}%
                     </span>
                   </div>
@@ -349,8 +212,121 @@ export default async function DashboardPage() {
                 </div>
               ))
             )}
-          </Card>
-        </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* STATS */}
+      <div className="mt-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Ukończone lekcje" value={`${stats.completed}`} suffix={`/ ${stats.total}`} />
+        <StatCard label="Passa nauki" value={`${stats.streak}`} suffix="dni" />
+        <StatCard
+          label="Pozycja w grupie"
+          value={`#${stats.rank}`}
+          suffix={`z ${stats.rankTotal}`}
+        />
+      </div>
+
+      {/* Wiadomości + Ogłoszenia (dwie kolumny) */}
+      <div className="mt-[18px] grid grid-cols-1 items-start gap-[18px] lg:grid-cols-2">
+        {/* Ostatnie wiadomości */}
+        <Card>
+          <CardHeader title="Ostatnie wiadomości">
+            <DashboardMessagesButton />
+          </CardHeader>
+          {unreadMessages.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak nowych wiadomości.</p>
+          ) : (
+            unreadMessages.map((m) => {
+              const label = m.sender.username || m.sender.email;
+              return (
+                <Link
+                  key={m.id}
+                  href={`/profil/${m.sender.id}`}
+                  className="flex items-start gap-[11px] border-b border-[#262626] py-[11px] last:border-0"
+                >
+                  <AvatarCircle url={m.sender.avatarUrl} label={label} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold text-[#ededed]">{label}</span>
+                      <span className="ml-auto text-[11.5px] text-[#6e6e6e]">{timeAgo(m.createdAt)}</span>
+                    </div>
+                    <p className="mt-[3px] truncate text-[12.5px] text-[#8a8a8a]">{m.content}</p>
+                  </div>
+                  <span className="mt-[6px] h-[7px] w-[7px] shrink-0 rounded-full bg-[var(--accent)]" />
+                </Link>
+              );
+            })
+          )}
+        </Card>
+
+        {/* Ogłoszenia */}
+        <Card>
+          <CardHeader title="Ogłoszenia">
+            <Link href="/ogloszenia" className="text-[12.5px] font-semibold text-[var(--accent-soft)]">
+              Wszystkie
+            </Link>
+          </CardHeader>
+          {announcements.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak ogłoszeń.</p>
+          ) : (
+            announcements.map((a) => (
+              <div key={a.id} className="border-b border-[#262626] py-[11px] last:border-0">
+                <div className="mb-1 flex items-center gap-[7px]">
+                  <span
+                    className="rounded-[4px] px-[7px] py-[2px] text-[10px] font-semibold"
+                    style={{
+                      background: (a.category?.color || "#9d6bff") + "1a",
+                      color: a.category?.color || "var(--accent-soft)",
+                    }}
+                  >
+                    {a.category?.name || "Ogłoszenie"}
+                  </span>
+                  <span className="ml-auto text-[11px] text-[#6e6e6e]">{timeAgo(a.createdAt)}</span>
+                </div>
+                <div className="text-[13px] font-semibold text-[#ededed]">{a.title}</div>
+              </div>
+            ))
+          )}
+        </Card>
+      </div>
+
+      {/* Aktywność społeczności (pełna szerokość) */}
+      <div className="mt-[18px]">
+        <Card>
+          <CardHeader title="Aktywność społeczności">
+            <Link href="/spolecznosc" className="text-[12.5px] font-semibold text-[var(--accent-soft)]">
+              Przejdź
+            </Link>
+          </CardHeader>
+          {recentPosts.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak postów.</p>
+          ) : (
+            recentPosts.map((p) => {
+              const label = p.author.username || p.author.email;
+              return (
+                <Link
+                  key={p.id}
+                  href="/spolecznosc"
+                  className="flex items-start gap-[11px] border-b border-[#262626] py-3 last:border-0"
+                >
+                  <AvatarCircle url={p.author.avatarUrl} label={label} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-[3px] text-[11.5px] text-[#8a8a8a]">
+                      {label} · {timeAgo(p.createdAt)}
+                    </div>
+                    <div className="truncate text-[13.5px] font-semibold text-[#ededed]">
+                      {p.title || p.content}
+                    </div>
+                    <div className="mt-[6px] text-[11.5px] text-[#6e6e6e]">
+                      {p._count.comments} odpowiedzi
+                    </div>
+                  </div>
+                </Link>
+              );
+            })
+          )}
+        </Card>
       </div>
     </div>
   );
@@ -378,9 +354,17 @@ function StatCard({
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[16px_18px]">
+    <div
+      className={`rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[16px_18px] ${className ?? ""}`}
+    >
       {children}
     </div>
   );
