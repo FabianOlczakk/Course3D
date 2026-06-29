@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare } from "lucide-react";
+import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare, Sun, Moon, Monitor } from "lucide-react";
 import type { Role } from "@prisma/client";
+import { useTheme, type Theme } from "@/components/theme-provider";
 
 interface SearchResult {
   type: "lesson" | "post" | "wiki";
@@ -88,7 +89,7 @@ function SearchBar() {
 
   return (
     <div className="relative w-full max-w-[460px]">
-      <div className="flex items-center gap-2 rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 focus-within:border-[var(--accent)]">
+      <div className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 focus-within:border-[var(--accent)]">
         <Search className="h-4 w-4 shrink-0 text-[#6e6e6e]" />
         <input
           ref={inputRef}
@@ -189,6 +190,62 @@ function SearchBar() {
   );
 }
 
+function ThemeSwitcher() {
+  const { theme, setTheme } = useTheme();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const options: { value: Theme; icon: React.ReactNode; label: string }[] = [
+    { value: "light", icon: <Sun className="h-3.5 w-3.5" />, label: "Jasny" },
+    { value: "dark", icon: <Moon className="h-3.5 w-3.5" />, label: "Ciemny" },
+    { value: "system", icon: <Monitor className="h-3.5 w-3.5" />, label: "Systemowy" },
+  ];
+
+  const current = options.find((o) => o.value === theme) ?? options[1];
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-label="Zmień motyw"
+        onClick={() => setOpen((o) => !o)}
+        className="glow-icon-btn"
+        title={current.label}
+      >
+        {current.icon}
+      </button>
+      {open && (
+        <div className="glow-card absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden p-1 shadow-xl">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { setTheme(o.value); setOpen(false); }}
+              className={
+                "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] text-left transition-colors " +
+                (theme === o.value
+                  ? "bg-[var(--accent-glow)] text-[var(--accent-soft)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]")
+              }
+            >
+              {o.icon}
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface TopbarProps {
   username: string | null;
   email: string;
@@ -215,7 +272,7 @@ export function Topbar({
   }, []);
 
   return (
-    <header className="relative flex h-14 items-center justify-center border-b border-[#2b2b2b] bg-[#1a1a1a] px-6">
+    <header className="relative flex h-14 items-center justify-center border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-6">
       {/* Hamburger (mobile) */}
       <button
         type="button"
@@ -229,17 +286,20 @@ export function Topbar({
       {/* Wyszukiwarka — wycentrowana */}
       <SearchBar />
 
-      {/* Plakietka roli — przy prawej krawędzi */}
-      <span
-        className={
-          "absolute right-6 hidden sm:block rounded-md px-3 py-1.5 text-[12.5px] font-semibold " +
-          (role === "ADMIN"
-            ? "bg-[#9d6bff1a] text-[var(--accent-soft)]"
-            : "bg-[#5b8def1a] text-[#a8c4ff]")
-        }
-      >
-        {role === "ADMIN" ? "Instruktor" : "Kursant"}
-      </span>
+      {/* Prawa strona: switcher motywu + plakietka roli */}
+      <div className="absolute right-4 flex items-center gap-2 sm:right-6">
+        <ThemeSwitcher />
+        <span
+          className={
+            "hidden sm:block rounded-md px-3 py-1.5 text-[12.5px] font-semibold " +
+            (role === "ADMIN"
+              ? "bg-[#9d6bff1a] text-[var(--accent-soft)]"
+              : "bg-[#5b8def1a] text-[#a8c4ff]")
+          }
+        >
+          {role === "ADMIN" ? "Instruktor" : "Kursant"}
+        </span>
+      </div>
     </header>
   );
 }

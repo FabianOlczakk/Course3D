@@ -7,6 +7,7 @@ import { getLearnerStats } from "@/lib/stats";
 import { timeAgo } from "@/lib/format-time";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DashboardMessagesButton } from "@/components/dashboard/dashboard-widgets";
+import { AnnouncementsWidget } from "@/components/dashboard/announcements-widget";
 
 export const metadata: Metadata = {
   title: "Pulpit — Kurs druku 3D",
@@ -73,14 +74,23 @@ export default async function DashboardPage() {
     id: string;
     title: string;
     createdAt: Date;
+    categoryId: string | null;
     category: { name: string; color: string | null } | null;
   }[] = [];
+  let announcementCategories: { id: string; name: string; color: string | null }[] = [];
   try {
-    announcements = await prisma.announcement.findMany({
-      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-      take: 3,
-      include: { category: { select: { name: true, color: true } } },
-    });
+    [announcements, announcementCategories] = await Promise.all([
+      prisma.announcement.findMany({
+        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+        take: 12,
+        include: { category: { select: { name: true, color: true } } },
+      }),
+      prisma.category.findMany({
+        where: { type: "ANNOUNCEMENT" },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, color: true },
+      }),
+    ]);
   } catch {
     announcements = [];
   }
@@ -228,27 +238,10 @@ export default async function DashboardPage() {
               Wszystkie
             </Link>
           </CardHeader>
-          {announcements.length === 0 ? (
-            <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak ogłoszeń.</p>
-          ) : (
-            announcements.map((a) => (
-              <div key={a.id} className="border-b border-[#262626] py-[11px] last:border-0">
-                <div className="mb-1 flex items-center gap-[7px]">
-                  <span
-                    className="rounded-[4px] px-[7px] py-[2px] text-[10px] font-semibold"
-                    style={{
-                      background: (a.category?.color || "#9d6bff") + "1a",
-                      color: a.category?.color || "var(--accent-soft)",
-                    }}
-                  >
-                    {a.category?.name || "Ogłoszenie"}
-                  </span>
-                  <span className="ml-auto text-[11px] text-[#6e6e6e]">{timeAgo(a.createdAt)}</span>
-                </div>
-                <div className="text-[13px] font-semibold text-[#ededed]">{a.title}</div>
-              </div>
-            ))
-          )}
+          <AnnouncementsWidget
+            announcements={announcements}
+            categories={announcementCategories}
+          />
         </Card>
       </div>
 

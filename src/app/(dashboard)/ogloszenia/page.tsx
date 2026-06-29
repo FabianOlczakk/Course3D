@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Pin, Bell } from "lucide-react";
+import { Pin, Bell, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { timeAgo } from "@/lib/format-time";
@@ -112,7 +112,7 @@ export default async function AnnouncementsPage({
               <div
                 key={a.id}
                 id={`a-${a.id}`}
-                className="mb-3 rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-[18px_20px]"
+                className="glow-card mb-3 p-[18px_20px]"
               >
                 <div className="mb-[9px] flex items-center gap-[9px]">
                   {a.pinned && (
@@ -126,16 +126,26 @@ export default async function AnnouncementsPage({
                       {category.name}
                     </span>
                   )}
-                  <h3 className="min-w-0 flex-1 truncate font-display text-[17px] font-semibold text-[#f0f0f0]">
+                  <Link
+                    href={`/ogloszenia/${a.id}`}
+                    className="min-w-0 flex-1 truncate font-display text-[17px] font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
+                  >
                     {a.title}
-                  </h3>
-                  <span className="shrink-0 text-[11.5px] text-[#6e6e6e]">
+                  </Link>
+                  <span className="shrink-0 text-[11.5px] text-[var(--text-muted)]">
                     {timeAgo(a.createdAt)} · {author.username || author.email}
                   </span>
-                  {isAdmin && <CopyLinkButton path={`/ogloszenia?a=${a.id}`} />}
+                  {isAdmin && <CopyLinkButton path={`/ogloszenia/${a.id}`} />}
+                  <Link
+                    href={`/ogloszenia/${a.id}`}
+                    className="shrink-0 text-[var(--text-muted)] hover:text-[var(--accent)]"
+                    aria-label="Otwórz ogłoszenie"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
                 </div>
                 <div
-                  className="lesson-content text-[13.5px] leading-[1.6] text-[#9a9a9a]"
+                  className="lesson-content text-[13.5px] leading-[1.6] text-[var(--text-secondary)]"
                   dangerouslySetInnerHTML={{ __html: a.content }}
                 />
               </div>

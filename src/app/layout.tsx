@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     "Platforma kursu druku 3D z drukarką BambuLab A1 mini. Naucz się druku 3D od podstaw.",
 };
 
+// Prevents flash of wrong theme before React hydrates.
+const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'dark';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):t;document.documentElement.classList.add(r);}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: {
@@ -27,7 +30,11 @@ export default function RootLayout({
     <html
       lang="pl"
       className={`dark ${dmSans.variable} ${spaceGrotesk.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="font-sans">{children}</body>
     </html>
   );

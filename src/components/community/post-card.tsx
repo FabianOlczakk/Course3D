@@ -115,7 +115,7 @@ export function PostCard({
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {isAdmin && <CopyLinkButton path={`/spolecznosc?post=${post.id}`} />}
+          {isAdmin && <CopyLinkButton path={`/spolecznosc/${post.id}`} />}
           {canDelete && (
             <button
               type="button"

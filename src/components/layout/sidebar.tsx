@@ -238,8 +238,8 @@ export function Sidebar({
         className={cn(
           "relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium transition-colors",
           active
-            ? "bg-[#ffffff0d] text-[#ededed]"
-            : "text-[#b4b4b4] hover:bg-[#ffffff09] hover:text-[#ededed]"
+            ? "bg-[#ffffff0d] text-[var(--text-primary)]"
+            : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
         )}
       >
         {active && (
@@ -271,7 +271,7 @@ export function Sidebar({
     return (
       <button
         onClick={onToggle}
-        className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
+        className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
       >
         <Icon className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
         <span className="flex-1">{label}</span>
@@ -281,7 +281,7 @@ export function Sidebar({
               "flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] px-[5px] text-[10.5px] font-semibold",
               badgeAccent
                 ? "bg-[var(--accent)] text-white"
-                : "bg-[#2e2e2e] text-[#cfcfcf]"
+                : "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
             )}
           >
             {badge > 99 ? "99+" : badge}
@@ -324,7 +324,7 @@ export function Sidebar({
   const content = (
     <>
       {/* HEADER — branding bez ikony (wysokość = topbar, aby border się równał) */}
-      <div className="flex h-14 items-center justify-between gap-2 border-b border-[#2b2b2b] px-[18px]">
+      <div className="flex h-14 items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-[18px]">
         <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
           <div className="flex items-baseline gap-1.5">
             <span className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[#f0f0f0]">
@@ -367,7 +367,7 @@ export function Sidebar({
               setUnreadAnn(0);
               router.push("/ogloszenia");
             }}
-            className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[#b4b4b4] transition-colors hover:bg-[#ffffff09] hover:text-[#ededed]"
+            className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
           >
             <Bell className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
             <span className="flex-1">Ogłoszenia</span>
@@ -421,7 +421,7 @@ export function Sidebar({
                           </span>
                         )}
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[12.5px] text-[#cfcfcf]">
+                          <span className="block truncate text-[12.5px] text-[var(--text-primary)]">
                             {label}
                           </span>
                         </span>
@@ -463,7 +463,7 @@ export function Sidebar({
                     <div key={cat}>
                       <button
                         onClick={() => setOpenWikiCat(catOpen ? null : cat)}
-                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] font-semibold uppercase tracking-[0.03em] text-[#7a7a7a] transition-colors hover:bg-[#ffffff09]"
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] font-semibold uppercase tracking-[0.03em] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)]"
                       >
                         <ChevronRight
                           className={cn(
@@ -489,7 +489,7 @@ export function Sidebar({
                                   "block truncate rounded-[6px] px-2 py-1.5 text-[12.5px] transition-colors",
                                   active
                                     ? "bg-[#9d6bff14] text-[var(--accent-soft)]"
-                                    : "text-[#cfcfcf] hover:bg-[#ffffff09]"
+                                    : "text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                                 )}
                               >
                                 {a.title}
@@ -508,11 +508,11 @@ export function Sidebar({
         {groupLabel("Nauka")}
         <button
           onClick={() => setCourseOpen((o) => !o)}
-          className="relative flex w-full items-start gap-[11px] rounded-[7px] px-[11px] py-[10px] text-left transition-colors hover:bg-[#ffffff09]"
+          className="relative flex w-full items-start gap-[11px] rounded-[7px] px-[11px] py-[10px] text-left transition-colors hover:bg-[var(--bg-elevated)]"
         >
           <Boxes className="mt-[1px] h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
           <span className="min-w-0 flex-1">
-            <span className="block text-[13.5px] font-medium text-[#ededed]">
+            <span className="block text-[13.5px] font-medium text-[var(--text-primary)]">
               Kurs: Druk 3D
             </span>
             <span className="my-1 block text-[11px] text-[#6e6e6e]">
@@ -520,7 +520,7 @@ export function Sidebar({
                 ? `Rozdział ${courseStats.currentIdx + 1} z ${courseStats.count} · ${courseStats.pct}%`
                 : "Brak rozdziałów"}
             </span>
-            <span className="block h-1 overflow-hidden rounded-[3px] bg-[#2b2b2b]">
+            <span className="block h-1 overflow-hidden rounded-[3px] bg-[var(--bg-elevated)]">
               <span
                 className="block h-full rounded-[3px] bg-[var(--green)] transition-all"
                 style={{ width: `${courseStats.pct}%` }}
@@ -564,8 +564,8 @@ export function Sidebar({
                     className={cn(
                       "group relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-left text-[13.5px] font-medium transition-colors",
                       active
-                        ? "bg-[#ffffff0d] text-[#ededed]"
-                        : "text-[#b4b4b4] hover:bg-[#ffffff09] hover:text-[#ededed]"
+                        ? "bg-[#ffffff0d] text-[var(--text-primary)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     {active && (
@@ -591,7 +591,7 @@ export function Sidebar({
       </div>
 
       {/* FOOTER — użytkownik + kropka obecności + menu (profil/wyloguj) */}
-      <div className="relative flex items-center gap-[10px] border-t border-[#2b2b2b] p-[11px]">
+      <div className="relative flex items-center gap-[10px] border-t border-[var(--border-subtle)] p-[11px]">
         <div className="relative shrink-0">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -608,13 +608,13 @@ export function Sidebar({
               {initials}
             </div>
           )}
-          <div className="absolute -bottom-[1px] -right-[1px] h-[11px] w-[11px] rounded-full border-2 border-[#1c1c1c] bg-[var(--green)]" />
+          <div className="absolute -bottom-[1px] -right-[1px] h-[11px] w-[11px] rounded-full border-2 border-[var(--bg-card)] bg-[var(--green)]" />
         </div>
         <div className="min-w-0 flex-1">
           <Link
             href={`/profil/${userId}`}
             onClick={onMobileClose}
-            className="block truncate text-[13px] font-semibold text-[#ededed] hover:text-[var(--accent-soft)]"
+            className="block truncate text-[13px] font-semibold text-[var(--text-primary)] hover:text-[var(--accent-soft)]"
           >
             {username || "Użytkownik"}
           </Link>
@@ -633,20 +633,20 @@ export function Sidebar({
         <button
           onClick={() => setProfileMenu((o) => !o)}
           title="Ustawienia"
-          className="flex h-[30px] w-[30px] items-center justify-center rounded-[6px] text-[#7a7a7a] transition-colors hover:bg-[#ffffff0a] hover:text-[#cfcfcf]"
+          className="flex h-[30px] w-[30px] items-center justify-center rounded-[6px] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
         >
           <SlidersHorizontal className="h-4 w-4" />
         </button>
 
         {profileMenu && (
-          <div className="absolute bottom-[52px] right-[11px] z-50 w-[180px] overflow-hidden rounded-[8px] border border-[#2b2b2b] bg-[#1e1e1e] shadow-xl">
+          <div className="absolute bottom-[52px] right-[11px] z-50 w-[180px] overflow-hidden rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-xl">
             <Link
               href={`/profil/${userId}`}
               onClick={() => {
                 setProfileMenu(false);
                 onMobileClose?.();
               }}
-              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#cfcfcf] hover:bg-[#ffffff09]"
+              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             >
               <SlidersHorizontal className="h-4 w-4" />
               Mój profil
@@ -657,14 +657,14 @@ export function Sidebar({
                 setProfileMenu(false);
                 onMobileClose?.();
               }}
-              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#cfcfcf] hover:bg-[#ffffff09]"
+              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             >
               <SlidersHorizontal className="h-4 w-4" />
               Ustawienia
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#e07686] hover:bg-[#ffffff09]"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#e07686] hover:bg-[var(--bg-elevated)]"
             >
               <LogOut className="h-4 w-4" />
               Wyloguj się
@@ -679,7 +679,7 @@ export function Sidebar({
     <>
       <aside
         style={{ width }}
-        className="relative hidden shrink-0 flex-col border-r border-[#2b2b2b] bg-[#1c1c1c] md:flex"
+        className="relative hidden shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-card)] md:flex"
       >
         {content}
         {/* Uchwyt do zmiany szerokości (przeciąganie myszą) */}
@@ -697,7 +697,7 @@ export function Sidebar({
             onClick={onMobileClose}
             aria-hidden
           />
-          <aside className="relative z-10 flex h-full w-[248px] max-w-[80vw] flex-col border-r border-[#2b2b2b] bg-[#1c1c1c]">
+          <aside className="relative z-10 flex h-full w-[248px] max-w-[80vw] flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-card)]">
             {content}
           </aside>
         </div>

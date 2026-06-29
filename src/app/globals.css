@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Course3D — paleta nowego designu (BambuLab A1 mini) */
+    /* Course3D — ciemny motyw (domyślny) */
     --bg-base: #181818;
     --bg-card: #1e1e1e;
     --bg-elevated: #242424;
@@ -17,11 +17,13 @@
     --text-secondary: #b4b4b4;
     --text-muted: #6e6e6e;
     --green: #3ecf8e;
+    --scrollbar-thumb: rgba(255,255,255,0.12);
+    --scrollbar-thumb-hover: rgba(255,255,255,0.20);
 
     /* fonty */
     --font-display: var(--font-space-grotesk), system-ui, sans-serif;
 
-    /* shadcn HSL tokens zmapowane na nową paletę */
+    /* shadcn HSL tokens */
     --background: 0 0% 9%;
     --foreground: 0 0% 94%;
     --card: 0 0% 12%;
@@ -45,6 +47,21 @@
   }
 
   .dark {
+    --bg-base: #181818;
+    --bg-card: #1e1e1e;
+    --bg-elevated: #242424;
+    --border-subtle: #2b2b2b;
+    --border-glow: rgba(157, 107, 255, 0.45);
+    --accent: #9d6bff;
+    --accent-soft: #b89dff;
+    --accent-glow: rgba(157, 107, 255, 0.12);
+    --text-primary: #f0f0f0;
+    --text-secondary: #b4b4b4;
+    --text-muted: #6e6e6e;
+    --green: #3ecf8e;
+    --scrollbar-thumb: rgba(255,255,255,0.12);
+    --scrollbar-thumb-hover: rgba(255,255,255,0.20);
+
     --background: 0 0% 9%;
     --foreground: 0 0% 94%;
     --card: 0 0% 12%;
@@ -65,6 +82,43 @@
     --input: 0 0% 17%;
     --ring: 260 100% 71%;
   }
+
+  .light {
+    --bg-base: #f5f5f5;
+    --bg-card: #ffffff;
+    --bg-elevated: #eeeeee;
+    --border-subtle: #e0e0e0;
+    --border-glow: rgba(157, 107, 255, 0.35);
+    --accent: #7c3aed;
+    --accent-soft: #6d28d9;
+    --accent-glow: rgba(124, 58, 237, 0.10);
+    --text-primary: #111111;
+    --text-secondary: #444444;
+    --text-muted: #888888;
+    --green: #16a34a;
+    --scrollbar-thumb: rgba(0,0,0,0.12);
+    --scrollbar-thumb-hover: rgba(0,0,0,0.20);
+
+    --background: 0 0% 97%;
+    --foreground: 0 0% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+    --accent-hsl: 263 70% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 263 70% 50%;
+  }
 }
 
 @layer base {
@@ -80,7 +134,7 @@
   /* Minimalny, dyskretny pasek przewijania (cała aplikacja) */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #ffffff1f transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
   ::-webkit-scrollbar {
     width: 6px;
@@ -90,11 +144,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #ffffff1f;
+    background: var(--scrollbar-thumb);
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #ffffff33;
+    background: var(--scrollbar-thumb-hover);
   }
   ::-webkit-scrollbar-corner {
     background: transparent;
@@ -118,7 +172,7 @@
       background 0.2s ease;
   }
   .glow-card:hover {
-    border-color: #353535;
+    border-color: var(--border-glow);
   }
 
   .glow-border {
@@ -151,7 +205,7 @@
   }
   .glow-icon-btn:hover {
     color: var(--text-primary);
-    background: #ffffff0a;
+    background: var(--bg-elevated);
   }
 }
 
