@@ -1,36 +1,52 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Pencil, Plus, Pin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { timeAgo } from "@/lib/format-time";
 
+interface Category {
+  id: string;
+  name: string;
+  color: string | null;
+}
 interface Announcement {
   id: string;
   title: string | null;
   content: string;
+  pinned: boolean;
   createdAt: string;
+  category: Category | null;
 }
 
 export function AnnouncementsManager() {
   const [items, setItems] = useState<Announcement[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [pinned, setPinned] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // zarządzanie kategoriami
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState("#9d6bff");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/announcements");
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.announcements ?? []);
-      }
+      const [a, c] = await Promise.all([
+        fetch("/api/announcements"),
+        fetch("/api/categories?type=ANNOUNCEMENT"),
+      ]);
+      if (a.ok) setItems((await a.json()).announcements ?? []);
+      if (c.ok) setCategories((await c.json()).categories ?? []);
     } finally {
       setLoading(false);
     }
@@ -40,23 +56,42 @@ export function AnnouncementsManager() {
     void load();
   }, [load]);
 
-  async function handleCreate(e: React.FormEvent) {
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setContent("");
+    setCategoryId("");
+    setPinned(false);
+  }
+
+  function startEdit(a: Announcement) {
+    setEditingId(a.id);
+    setTitle(a.title ?? "");
+    setContent(a.content);
+    setCategoryId(a.category?.id ?? "");
+    setPinned(a.pinned);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch("/api/announcements", {
-        method: "POST",
+      const url = editingId
+        ? `/api/announcements/${editingId}`
+        : "/api/announcements";
+      const res = await fetch(url, {
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, content, categoryId: categoryId || null, pinned }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Nie udało się utworzyć ogłoszenia.");
+        setError(data.error || "Nie udało się zapisać ogłoszenia.");
         return;
       }
-      setTitle("");
-      setContent("");
+      resetForm();
       await load();
     } finally {
       setSaving(false);
@@ -69,19 +104,80 @@ export function AnnouncementsManager() {
     if (res.ok) setItems((prev) => prev.filter((a) => a.id !== id));
   }
 
+  async function addCategory() {
+    const name = newCatName.trim();
+    if (!name) return;
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, color: newCatColor, type: "ANNOUNCEMENT" }),
+    });
+    if (res.ok) {
+      setNewCatName("");
+      void load();
+    }
+  }
+  async function deleteCategory(id: string) {
+    if (!confirm("Usunąć kategorię?")) return;
+    const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+    if (res.ok) void load();
+  }
+
+  const accent = "bg-[var(--accent)] text-white hover:bg-[#8a5af0]";
+
   return (
-    <div className="p-4 md:p-6 space-y-8">
-      <form onSubmit={handleCreate} className="glow-card space-y-4 p-6">
-        <h2 className="text-lg font-semibold">Nowe ogłoszenie</h2>
+    <div className="mx-auto max-w-3xl space-y-8 p-4 md:p-6">
+      {/* Kategorie ogłoszeń */}
+      <div className="glow-card space-y-3 p-6">
+        <h2 className="font-display text-lg font-semibold">Kategorie ogłoszeń</h2>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((c) => (
+            <span
+              key={c.id}
+              className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold"
+              style={{ background: (c.color || "#9d6bff") + "1a", color: c.color || "#b89dff" }}
+            >
+              {c.name}
+              <button onClick={() => void deleteCategory(c.id)} aria-label="Usuń">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          {categories.length === 0 && (
+            <span className="text-sm text-text-muted">Brak kategorii.</span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            placeholder="Nazwa kategorii (np. Nowość)"
+            className="flex-1"
+          />
+          <input
+            type="color"
+            value={newCatColor}
+            onChange={(e) => setNewCatColor(e.target.value)}
+            className="h-9 w-12 cursor-pointer rounded-md border border-[#2e2e2e] bg-transparent"
+          />
+          <button
+            type="button"
+            onClick={() => void addCategory()}
+            className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold ${accent}`}
+          >
+            <Plus className="h-4 w-4" /> Dodaj
+          </button>
+        </div>
+      </div>
+
+      {/* Formularz ogłoszenia */}
+      <form onSubmit={handleSubmit} className="glow-card space-y-4 p-6">
+        <h2 className="font-display text-lg font-semibold">
+          {editingId ? "Edytuj ogłoszenie" : "Nowe ogłoszenie"}
+        </h2>
         <div className="space-y-2">
           <Label htmlFor="ann-title">Tytuł</Label>
-          <Input
-            id="ann-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="np. Nowa lekcja dostępna!"
-            required
-          />
+          <Input id="ann-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="ann-content">Treść (HTML)</Label>
@@ -90,18 +186,53 @@ export function AnnouncementsManager() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={8}
-            placeholder="<h1>Witaj!</h1><p>Treść ogłoszenia...</p>"
+            placeholder="<p>Treść ogłoszenia...</p>"
             required
           />
         </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="h-10 rounded-md border border-[#2e2e2e] bg-[#141414] px-3 text-sm text-text-primary outline-none focus:border-[var(--accent)] [&>option]:bg-[#1e1e1e]"
+          >
+            <option value="">Bez kategorii</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-text-secondary">
+            <span
+              className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
+                pinned ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[#2e2e2e] bg-[#141414]"
+              }`}
+            >
+              {pinned && <Pin className="h-3 w-3 text-white" fill="currentColor" />}
+            </span>
+            <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="sr-only" />
+            Przypnij na górze
+          </label>
+          <div className="ml-auto flex gap-2">
+            {editingId && (
+              <Button type="button" variant="outline" onClick={resetForm}>
+                Anuluj
+              </Button>
+            )}
+            <button
+              type="submit"
+              disabled={saving}
+              className={`inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-semibold disabled:opacity-60 ${accent}`}
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {editingId ? "Zapisz zmiany" : "Opublikuj"}
+            </button>
+          </div>
+        </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" disabled={saving}>
-          {saving ? "Publikowanie..." : "Opublikuj ogłoszenie"}
-        </Button>
       </form>
 
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Opublikowane ogłoszenia</h2>
+      <div className="space-y-3">
+        <h2 className="font-display text-lg font-semibold">Opublikowane ogłoszenia</h2>
         {loading ? (
           <div className="flex justify-center py-6">
             <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
@@ -110,16 +241,28 @@ export function AnnouncementsManager() {
           <p className="text-sm text-text-muted">Brak ogłoszeń.</p>
         ) : (
           items.map((a) => (
-            <div
-              key={a.id}
-              className="glow-card flex items-center justify-between gap-4 p-4"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-text-primary">
-                  {a.title || "Ogłoszenie"}
-                </p>
+            <div key={a.id} className="glow-card flex items-center gap-3 p-4">
+              {a.pinned && <Pin className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" fill="currentColor" />}
+              {a.category && (
+                <span
+                  className="shrink-0 rounded-md px-2 py-0.5 text-[10.5px] font-semibold"
+                  style={{ background: (a.category.color || "#9d6bff") + "1a", color: a.category.color || "#b89dff" }}
+                >
+                  {a.category.name}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-text-primary">{a.title || "Ogłoszenie"}</p>
                 <p className="text-xs text-text-muted">{timeAgo(a.createdAt)}</p>
               </div>
+              <button
+                type="button"
+                aria-label="Edytuj"
+                className="text-text-muted transition-colors hover:text-[var(--accent-soft)]"
+                onClick={() => startEdit(a)}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
               <button
                 type="button"
                 aria-label="Usuń ogłoszenie"
