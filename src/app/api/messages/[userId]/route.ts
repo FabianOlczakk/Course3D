@@ -6,28 +6,34 @@ import { attachmentsSchema } from "@/lib/attachments";
 import { getSystemUserId } from "@/lib/system-user";
 
 // Wiadomości pomiędzy bieżącym użytkownikiem a :userId (rosnąco wg daty).
-// ?system=1 (tylko admin): wątek między kontem SYSTEM a :userId.
+// Administrator widzi też wiadomości SYSTEM↔:userId scalone w tym samym wątku
+// (oznaczone fromSystem), aby móc śledzić anonimowe wiadomości.
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { userId: string } }
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
   }
-  const systemMode =
-    new URL(req.url).searchParams.get("system") === "1" &&
-    session.user.role === "ADMIN";
-  const me = systemMode ? await getSystemUserId() : session.user.id;
+  const me = session.user.id;
   const other = params.userId;
+  const isAdmin = session.user.role === "ADMIN";
+  const systemId = isAdmin ? await getSystemUserId() : null;
 
-  const messages = await prisma.message.findMany({
-    where: {
-      OR: [
-        { senderId: me, receiverId: other },
-        { senderId: other, receiverId: me },
-      ],
-    },
+  const or = [
+    { senderId: me, receiverId: other },
+    { senderId: other, receiverId: me },
+  ];
+  if (systemId && systemId !== me) {
+    or.push(
+      { senderId: systemId, receiverId: other },
+      { senderId: other, receiverId: systemId }
+    );
+  }
+
+  const rows = await prisma.message.findMany({
+    where: { OR: or },
     orderBy: { createdAt: "asc" },
     include: {
       sender: {
@@ -35,6 +41,11 @@ export async function GET(
       },
     },
   });
+
+  const messages = rows.map((m) => ({
+    ...m,
+    fromSystem: systemId ? m.senderId === systemId : false,
+  }));
 
   return NextResponse.json({ messages });
 }

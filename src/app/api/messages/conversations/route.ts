@@ -62,7 +62,9 @@ export async function GET() {
 
   const conversations: Conv[] = Array.from(map.values());
 
-  // Administrator widzi też wątki wysłane/odebrane przez konto SYSTEM.
+  // Wątki konta SYSTEM (gdzie admin nie jest uczestnikiem) — admin widzi je
+  // scalone w zwykłej rozmowie z danym użytkownikiem, więc dodajemy tu tylko
+  // te, których jeszcze nie ma na liście (np. gdy admin nigdy nie pisał 1:1).
   if (session.user.role === "ADMIN") {
     const systemId = await getSystemUserId();
     if (systemId !== me) {
@@ -71,26 +73,22 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         include: { sender: participantSelect, receiver: participantSelect },
       });
-      const sysMap = new Map<string, Conv>();
       for (const m of sysMsgs) {
         const other = m.senderId === systemId ? m.receiver : m.sender;
-        if (other.id === systemId) continue;
-        if (!sysMap.has(other.id)) {
-          sysMap.set(other.id, {
-            userId: other.id,
-            username: other.username,
-            email: other.email,
-            avatarUrl: other.avatarUrl,
-            role: other.role,
-            lastActiveAt: other.lastActiveAt,
-            lastMessage: m.content,
-            lastMessageAt: m.createdAt,
-            unreadCount: 0,
-            system: true,
-          });
-        }
+        if (other.id === systemId || map.has(other.id)) continue;
+        map.set(other.id, {
+          userId: other.id,
+          username: other.username,
+          email: other.email,
+          avatarUrl: other.avatarUrl,
+          role: other.role,
+          lastActiveAt: other.lastActiveAt,
+          lastMessage: m.content,
+          lastMessageAt: m.createdAt,
+          unreadCount: 0,
+        });
+        conversations.push(map.get(other.id)!);
       }
-      conversations.push(...Array.from(sysMap.values()));
     }
   }
 

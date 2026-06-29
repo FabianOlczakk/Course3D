@@ -273,7 +273,14 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-[18px]">
           {/* Ogłoszenia */}
           <Card>
-            <CardHeader title="Ogłoszenia" />
+            <CardHeader title="Ogłoszenia">
+              <Link
+                href="/ogloszenia"
+                className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
+              >
+                Wszystkie
+              </Link>
+            </CardHeader>
             {announcements.length === 0 ? (
               <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak ogłoszeń.</p>
             ) : (

@@ -15,6 +15,7 @@ import { useToast } from "@/lib/toast";
 import { broadcastProgressUpdate } from "@/lib/use-progress";
 import { cn } from "@/lib/utils";
 import { injectDarkBackground } from "@/lib/inject-dark-bg";
+import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
 interface NavLesson {
   id: string;
@@ -226,6 +227,11 @@ export function LessonView({
         </Link>
         <span className="text-text-muted">/</span>
         <span className="text-sm font-medium text-text-primary truncate">{title}</span>
+        <CopyLinkButton
+          path={`/kurs/${lessonId}`}
+          className="ml-auto flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] px-2.5 py-1 text-xs text-text-secondary transition-colors hover:border-[var(--accent)] hover:text-text-primary"
+          label="Kopiuj link do lekcji"
+        />
       </div>
 
       {/* Split screen — pełna szerokość */}

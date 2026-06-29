@@ -74,13 +74,15 @@ export function Sidebar({
   // Szerokość paska bocznego z możliwością przeciągania (jak okno w Windows)
   useEffect(() => {
     const saved = Number(localStorage.getItem("sidebar-width"));
-    if (saved >= 200 && saved <= 420) setWidth(saved);
+    const max = typeof window !== "undefined" ? window.innerWidth / 2 : 1000;
+    if (saved >= 200 && saved <= max) setWidth(saved);
   }, []);
 
   function startResize(e: React.MouseEvent) {
     e.preventDefault();
     const onMove = (ev: MouseEvent) => {
-      const w = Math.min(420, Math.max(200, ev.clientX));
+      const max = Math.floor(window.innerWidth / 2);
+      const w = Math.min(max, Math.max(200, ev.clientX));
       setWidth(w);
       localStorage.setItem("sidebar-width", String(w));
     };
@@ -318,8 +320,8 @@ export function Sidebar({
 
   const content = (
     <>
-      {/* HEADER — branding bez ikony */}
-      <div className="flex items-center justify-between gap-2 border-b border-[#2b2b2b] px-[18px] py-4">
+      {/* HEADER — branding bez ikony (wysokość = topbar, aby border się równał) */}
+      <div className="flex h-14 items-center justify-between gap-2 border-b border-[#2b2b2b] px-[18px]">
         <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
           <div className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[#f0f0f0]">
             Kurs druku 3D
@@ -602,8 +604,16 @@ export function Sidebar({
           <div className="truncate text-[13px] font-semibold text-[#ededed]">
             {username || "Użytkownik"}
           </div>
-          <div className="text-[11px] text-[#6e6e6e]">
-            {role === "ADMIN" ? "Instruktor" : "Kursant"}
+          <div className="mt-0.5">
+            <span
+              className={
+                role === "ADMIN"
+                  ? "inline-block rounded bg-[#9d6bff1a] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent-soft)]"
+                  : "inline-block rounded bg-[#5b8def1a] px-1.5 py-0.5 text-[10px] font-semibold text-[#a8c4ff]"
+              }
+            >
+              {role === "ADMIN" ? "Instruktor" : "Kursant"}
+            </span>
           </div>
         </div>
         <button

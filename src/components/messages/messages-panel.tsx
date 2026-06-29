@@ -47,6 +47,7 @@ interface MessageItem {
   readAt: string | null;
   createdAt: string;
   sender: UserMini;
+  fromSystem?: boolean;
 }
 
 function displayName(u: { username: string | null; email: string }) {
@@ -81,6 +82,7 @@ export function MessagesPanel({
   const [draft, setDraft] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
+  const [msgLoading, setMsgLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -113,6 +115,8 @@ export function MessagesPanel({
         void loadConversations();
       } catch {
         /* ignore */
+      } finally {
+        setMsgLoading(false);
       }
     },
     [loadConversations]
@@ -131,7 +135,11 @@ export function MessagesPanel({
 
   // Otwórz rozmowę.
   useEffect(() => {
-    if (active) void loadMessages(active.id, active.system);
+    if (active) {
+      setMessages([]);
+      setMsgLoading(true);
+      void loadMessages(active.id, active.system);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 
@@ -394,18 +402,28 @@ export function MessagesPanel({
                   ref={scrollRef}
                   className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-5"
                 >
-                  {messages.length === 0 && (
+                  {msgLoading && messages.length === 0 && (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-[var(--accent)]" />
+                    </div>
+                  )}
+                  {!msgLoading && messages.length === 0 && (
                     <p className="py-8 text-center text-sm text-text-muted">
                       Brak wiadomości. Napisz pierwszą!
                     </p>
                   )}
                   {messages.map((m) => {
-                    const mine = m.senderId === meId;
+                    const mine = m.senderId === meId || !!m.fromSystem;
                     return (
                       <div
                         key={m.id}
-                        className={cn("flex", mine ? "justify-end" : "justify-start")}
+                        className={cn("flex flex-col", mine ? "items-end" : "items-start")}
                       >
+                        {m.fromSystem && (
+                          <span className="mb-1 rounded bg-[#9d6bff1a] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[var(--accent-soft)]">
+                            WYSŁANE JAKO SYSTEM
+                          </span>
+                        )}
                         <div
                           className={cn(
                             "max-w-[70%] px-[14px] py-[10px] text-[13.5px] leading-[1.5]",

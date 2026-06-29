@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { StyledSelect } from "@/components/ui/styled-select";
 import { timeAgo } from "@/lib/format-time";
 
 interface Category {
@@ -158,7 +159,7 @@ export function AnnouncementsManager() {
             type="color"
             value={newCatColor}
             onChange={(e) => setNewCatColor(e.target.value)}
-            className="h-9 w-12 cursor-pointer rounded-md border border-[#2e2e2e] bg-transparent"
+            className="h-9 w-12 cursor-pointer rounded-md border border-[#2e2e2e] bg-transparent p-1 [&::-moz-color-swatch]:rounded [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
           />
           <button
             type="button"
@@ -191,16 +192,16 @@ export function AnnouncementsManager() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <select
+          <StyledSelect
+            className="w-[220px]"
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="h-10 rounded-md border border-[#2e2e2e] bg-[#141414] px-3 text-sm text-text-primary outline-none focus:border-[var(--accent)] [&>option]:bg-[#1e1e1e]"
-          >
-            <option value="">Bez kategorii</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            onChange={setCategoryId}
+            placeholder="Bez kategorii"
+            options={[
+              { value: "", label: "Bez kategorii" },
+              ...categories.map((c) => ({ value: c.id, label: c.name, color: c.color })),
+            ]}
+          />
           <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-text-secondary">
             <span
               className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
