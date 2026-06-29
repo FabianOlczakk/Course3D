@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { StyledSelect } from "@/components/ui/styled-select";
+import {
+  AnnouncementFormDialog,
+  type AnnouncementData,
+} from "./announcement-form-dialog";
 import { timeAgo } from "@/lib/format-time";
 
 interface Category {
@@ -27,7 +31,13 @@ export function AnnouncementsManager() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] =
+    useState<AnnouncementData | null>(null);
+
+  // inline create form
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -35,7 +45,7 @@ export function AnnouncementsManager() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // zarządzanie kategoriami
+  // category management
   const [newCatName, setNewCatName] = useState("");
   const [newCatColor, setNewCatColor] = useState("#9d6bff");
 
@@ -58,34 +68,43 @@ export function AnnouncementsManager() {
   }, [load]);
 
   function resetForm() {
-    setEditingId(null);
     setTitle("");
     setContent("");
     setCategoryId("");
     setPinned(false);
+    setError(null);
   }
 
-  function startEdit(a: Announcement) {
-    setEditingId(a.id);
-    setTitle(a.title ?? "");
-    setContent(a.content);
-    setCategoryId(a.category?.id ?? "");
-    setPinned(a.pinned);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function openEdit(a: Announcement) {
+    setEditingAnnouncement({
+      id: a.id,
+      title: a.title,
+      content: a.content,
+      pinned: a.pinned,
+      category: a.category,
+    });
+    setDialogOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function openCreate() {
+    setEditingAnnouncement(null);
+    setDialogOpen(true);
+  }
+
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
     try {
-      const url = editingId
-        ? `/api/announcements/${editingId}`
-        : "/api/announcements";
-      const res = await fetch(url, {
-        method: editingId ? "PATCH" : "POST",
+      const res = await fetch("/api/announcements", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, categoryId: categoryId || null, pinned }),
+        body: JSON.stringify({
+          title,
+          content,
+          categoryId: categoryId || null,
+          pinned,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -118,6 +137,7 @@ export function AnnouncementsManager() {
       void load();
     }
   }
+
   async function deleteCategory(id: string) {
     if (!confirm("Usunąć kategorię?")) return;
     const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
@@ -128,6 +148,15 @@ export function AnnouncementsManager() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8 p-4 md:p-6">
+      {/* Dialog do tworzenia / edycji */}
+      <AnnouncementFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        announcement={editingAnnouncement}
+        categories={categories}
+        onSaved={() => void load()}
+      />
+
       {/* Kategorie ogłoszeń */}
       <div className="glow-card space-y-3 p-6">
         <h2 className="font-display text-lg font-semibold">Kategorie ogłoszeń</h2>
@@ -136,10 +165,16 @@ export function AnnouncementsManager() {
             <span
               key={c.id}
               className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold"
-              style={{ background: (c.color || "#9d6bff") + "1a", color: c.color || "#b89dff" }}
+              style={{
+                background: (c.color || "#9d6bff") + "1a",
+                color: c.color || "#b89dff",
+              }}
             >
               {c.name}
-              <button onClick={() => void deleteCategory(c.id)} aria-label="Usuń">
+              <button
+                onClick={() => void deleteCategory(c.id)}
+                aria-label="Usuń"
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -171,69 +206,21 @@ export function AnnouncementsManager() {
         </div>
       </div>
 
-      {/* Formularz ogłoszenia */}
-      <form onSubmit={handleSubmit} className="glow-card space-y-4 p-6">
+      {/* Nowe ogłoszenie */}
+      <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">
-          {editingId ? "Edytuj ogłoszenie" : "Nowe ogłoszenie"}
+          Opublikowane ogłoszenia
         </h2>
-        <div className="space-y-2">
-          <Label htmlFor="ann-title">Tytuł</Label>
-          <Input id="ann-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="ann-content">Treść (HTML)</Label>
-          <Textarea
-            id="ann-content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={8}
-            placeholder="<p>Treść ogłoszenia...</p>"
-            required
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <StyledSelect
-            className="w-[220px]"
-            value={categoryId}
-            onChange={setCategoryId}
-            placeholder="Bez kategorii"
-            options={[
-              { value: "", label: "Bez kategorii" },
-              ...categories.map((c) => ({ value: c.id, label: c.name, color: c.color })),
-            ]}
-          />
-          <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-text-secondary">
-            <span
-              className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
-                pinned ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[#2e2e2e] bg-[#141414]"
-              }`}
-            >
-              {pinned && <Pin className="h-3 w-3 text-white" fill="currentColor" />}
-            </span>
-            <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="sr-only" />
-            Przypnij na górze
-          </label>
-          <div className="ml-auto flex gap-2">
-            {editingId && (
-              <Button type="button" variant="outline" onClick={resetForm}>
-                Anuluj
-              </Button>
-            )}
-            <button
-              type="submit"
-              disabled={saving}
-              className={`inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-semibold disabled:opacity-60 ${accent}`}
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {editingId ? "Zapisz zmiany" : "Opublikuj"}
-            </button>
-          </div>
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-      </form>
+        <button
+          type="button"
+          onClick={openCreate}
+          className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold ${accent}`}
+        >
+          <Plus className="h-4 w-4" /> Nowe ogłoszenie
+        </button>
+      </div>
 
       <div className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Opublikowane ogłoszenia</h2>
         {loading ? (
           <div className="flex justify-center py-6">
             <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
@@ -243,24 +230,34 @@ export function AnnouncementsManager() {
         ) : (
           items.map((a) => (
             <div key={a.id} className="glow-card flex items-center gap-3 p-4">
-              {a.pinned && <Pin className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" fill="currentColor" />}
+              {a.pinned && (
+                <Pin
+                  className="h-4 w-4 shrink-0 text-[var(--accent-soft)]"
+                  fill="currentColor"
+                />
+              )}
               {a.category && (
                 <span
                   className="shrink-0 rounded-md px-2 py-0.5 text-[10.5px] font-semibold"
-                  style={{ background: (a.category.color || "#9d6bff") + "1a", color: a.category.color || "#b89dff" }}
+                  style={{
+                    background: (a.category.color || "#9d6bff") + "1a",
+                    color: a.category.color || "#b89dff",
+                  }}
                 >
                   {a.category.name}
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-text-primary">{a.title || "Ogłoszenie"}</p>
+                <p className="truncate font-medium text-text-primary">
+                  {a.title || "Ogłoszenie"}
+                </p>
                 <p className="text-xs text-text-muted">{timeAgo(a.createdAt)}</p>
               </div>
               <button
                 type="button"
                 aria-label="Edytuj"
                 className="text-text-muted transition-colors hover:text-[var(--accent-soft)]"
-                onClick={() => startEdit(a)}
+                onClick={() => openEdit(a)}
               >
                 <Pencil className="h-4 w-4" />
               </button>

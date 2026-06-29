@@ -8,6 +8,8 @@ import { ProfileActions } from "@/components/profile/profile-actions";
 import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
 import { isOnline } from "@/lib/online-status";
+import { getLearnerStats } from "@/lib/stats";
+import { Flame, Trophy, BookOpen, Lock } from "lucide-react";
 
 export default async function ProfilePage({
   params,
@@ -29,30 +31,33 @@ export default async function ProfilePage({
       avatarUrl: true,
       lastActiveAt: true,
       createdAt: true,
+      progressPrivate: true,
     },
   });
   if (!user) notFound();
 
-  const [completed, total, posts] = await Promise.all([
-    prisma.lessonProgress.count({
-      where: { userId: user.id, completed: true },
-    }),
-    prisma.lesson.count(),
+  const isSelf = user.id === session.user.id;
+  const canSeeProgress = isSelf || viewerIsAdmin || !user.progressPrivate;
+
+  const [stats, posts] = await Promise.all([
+    canSeeProgress ? getLearnerStats(user.id) : null,
     prisma.post.findMany({
       where: { authorId: user.id },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 10,
     }),
   ]);
 
-  const recentPosts = posts.slice(0, 10);
   const name = user.username || user.email;
   const initials = name.slice(0, 2).toUpperCase();
-  const isSelf = user.id === session.user.id;
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const pct =
+    stats && stats.total > 0
+      ? Math.round((stats.completed / stats.total) * 100)
+      : 0;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
+      {/* Header card */}
       <div className="glow-card glow-border p-6">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
           <Avatar className="h-20 w-20">
@@ -98,36 +103,82 @@ export default async function ProfilePage({
         </div>
       </div>
 
-      <div className="glow-card p-6">
-        <h2 className="mb-3 text-lg font-semibold text-text-primary">
-          Postęp w kursie
-        </h2>
-        <div className="flex items-center justify-between text-sm text-text-secondary">
-          <span>
-            Ukończono {completed} z {total} lekcji
-          </span>
-          <span className="font-medium text-text-primary">{pct}%</span>
-        </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]">
-          <div
-            className="h-full rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent-glow)]"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
+      {/* Stats */}
+      {canSeeProgress && stats ? (
+        <>
+          {/* Quick stats row */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="glow-card flex flex-col items-center gap-1 p-4 text-center">
+              <BookOpen className="h-5 w-5 text-[var(--accent)]" />
+              <span className="text-xl font-bold text-text-primary">
+                {stats.completed}
+              </span>
+              <span className="text-xs text-text-muted">Lekcji</span>
+            </div>
+            <div className="glow-card flex flex-col items-center gap-1 p-4 text-center">
+              <Flame className="h-5 w-5 text-orange-400" />
+              <span className="text-xl font-bold text-text-primary">
+                {stats.streak}
+              </span>
+              <span className="text-xs text-text-muted">Passa (dni)</span>
+            </div>
+            <div className="glow-card flex flex-col items-center gap-1 p-4 text-center">
+              <Trophy className="h-5 w-5 text-yellow-400" />
+              <span className="text-xl font-bold text-text-primary">
+                #{stats.rank}
+              </span>
+              <span className="text-xs text-text-muted">
+                z {stats.rankTotal}
+              </span>
+            </div>
+          </div>
 
+          {/* Progress bar */}
+          <div className="glow-card p-6">
+            <h2 className="mb-3 text-lg font-semibold text-text-primary">
+              Postęp w kursie
+            </h2>
+            <div className="flex items-center justify-between text-sm text-text-secondary">
+              <span>
+                Ukończono {stats.completed} z {stats.total} lekcji
+              </span>
+              <span className="font-medium text-text-primary">{pct}%</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--bg-elevated)]">
+              <div
+                className="h-full rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent-glow)]"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        !canSeeProgress && (
+          <div className="glow-card flex items-center gap-3 p-6 text-text-muted">
+            <Lock className="h-5 w-5 shrink-0" />
+            <p className="text-sm">
+              Ten użytkownik ukrył swoje statystyki nauki.
+            </p>
+          </div>
+        )
+      )}
+
+      {/* Posts */}
       <div className="glow-card p-6">
         <h2 className="mb-4 text-lg font-semibold text-text-primary">
           Posty w społeczności
         </h2>
-        {recentPosts.length === 0 ? (
+        {posts.length === 0 ? (
           <p className="text-sm text-text-muted">
             Ten użytkownik nie dodał jeszcze żadnych postów.
           </p>
         ) : (
           <ul className="space-y-3">
-            {recentPosts.map((p) => (
-              <li key={p.id} className="border-t border-[var(--border-subtle)] pt-3 first:border-0 first:pt-0">
+            {posts.map((p) => (
+              <li
+                key={p.id}
+                className="border-t border-[var(--border-subtle)] pt-3 first:border-0 first:pt-0"
+              >
                 {p.title && (
                   <p className="font-medium text-text-primary">{p.title}</p>
                 )}

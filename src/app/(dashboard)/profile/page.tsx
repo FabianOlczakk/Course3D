@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
+import { PrivacyForm } from "@/components/profile/privacy-form";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -10,7 +11,7 @@ export default async function ProfilePage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { username: true, avatarUrl: true, email: true },
+    select: { username: true, avatarUrl: true, email: true, progressPrivate: true },
   });
 
   if (!user) redirect("/login");
@@ -30,6 +31,7 @@ export default async function ProfilePage() {
         email={user.email}
       />
       <ChangePasswordForm />
+      <PrivacyForm initialProgressPrivate={user.progressPrivate ?? false} />
     </div>
   );
 }

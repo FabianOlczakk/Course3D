@@ -11,6 +11,7 @@ const patchSchema = z.object({
     .optional(),
   // base64 data URL lub zwykły URL
   avatarUrl: z.string().max(3_000_000).nullable().optional(),
+  progressPrivate: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -34,10 +35,10 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const data: { username?: string; avatarUrl?: string | null } = {};
+  const data: { username?: string; avatarUrl?: string | null; progressPrivate?: boolean } = {};
   if (parsed.data.username !== undefined) data.username = parsed.data.username;
-  if (parsed.data.avatarUrl !== undefined)
-    data.avatarUrl = parsed.data.avatarUrl;
+  if (parsed.data.avatarUrl !== undefined) data.avatarUrl = parsed.data.avatarUrl;
+  if (parsed.data.progressPrivate !== undefined) data.progressPrivate = parsed.data.progressPrivate;
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Brak zmian." }, { status: 400 });
