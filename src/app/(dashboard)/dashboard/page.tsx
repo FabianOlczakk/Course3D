@@ -48,6 +48,7 @@ export default async function DashboardPage() {
           author: {
             select: { id: true, username: true, email: true, avatarUrl: true },
           },
+          category: { select: { name: true, color: true } },
           _count: { select: { comments: true } },
         },
       }),
@@ -199,9 +200,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* Wiadomości + Ogłoszenia (dwie kolumny) */}
-      <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-2">
         {/* Ostatnie wiadomości */}
-        <Card>
+        <Card className="h-full">
           <CardHeader title="Ostatnie wiadomości">
             <DashboardMessagesButton />
           </CardHeader>
@@ -232,7 +233,7 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Ogłoszenia */}
-        <Card>
+        <Card className="h-full">
           <CardHeader title="Ogłoszenia">
             <Link href="/ogloszenia" className="text-[12.5px] font-semibold text-[var(--accent-soft)]">
               Wszystkie
@@ -266,8 +267,19 @@ export default async function DashboardPage() {
                 >
                   <AvatarCircle url={p.author.avatarUrl} label={label} size={36} />
                   <div className="min-w-0 flex-1">
-                    <div className="mb-[3px] text-[11.5px] text-[#8a8a8a]">
+                    <div className="mb-[3px] flex items-center gap-[6px] text-[11.5px] text-[#8a8a8a]">
                       {label} · {timeAgo(p.createdAt)}
+                      {p.category && (
+                        <span
+                          className="shrink-0 rounded-[4px] px-[6px] py-[1px] text-[10px] font-semibold"
+                          style={{
+                            background: (p.category.color || "#9d6bff") + "1a",
+                            color: p.category.color || "var(--accent-soft)",
+                          }}
+                        >
+                          {p.category.name}
+                        </span>
+                      )}
                     </div>
                     <div className="truncate text-[13.5px] font-semibold text-[#ededed]">
                       {p.title || p.content}
