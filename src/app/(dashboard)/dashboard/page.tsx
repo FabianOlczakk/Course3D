@@ -138,9 +138,10 @@ export default async function DashboardPage() {
         </span>
       </p>
 
-      {/* HERO + Twój postęp (równa wysokość) */}
-      <div className="mt-5 grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-[1fr_352px]">
-      <div className="flex overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]">
+      {/* Układ: lewa kolumna treści + prawy rail „Twój postęp" */}
+      <div className="mt-5 grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-[1fr_320px]">
+       <div className="flex min-w-0 flex-col gap-[18px]">
+        <div className="flex overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]">
         <div className="flex-1 p-[24px_26px]">
           <span className="inline-block rounded-[5px] bg-[#9d6bff1a] px-[9px] py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--accent-soft)]">
             {currentLessonId
@@ -176,48 +177,8 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-        {/* Twój postęp — równa wysokość z hero */}
-        <Card className="flex max-h-[460px] flex-col overflow-hidden">
-          <CardHeader title="Twój postęp">
-            <Link
-              href={currentLessonId ? `/kurs/${currentLessonId}` : "/dashboard"}
-              className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
-            >
-              Kurs
-            </Link>
-          </CardHeader>
-          <div className="-mr-1 min-h-0 flex-1 overflow-auto pr-1">
-            {modules.length === 0 ? (
-              <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak rozdziałów.</p>
-            ) : (
-              modules.map((m) => (
-                <div key={m.n} className="py-[9px]">
-                  <div className="mb-[7px] flex items-center gap-[10px]">
-                    <span className="font-display text-[11px] font-semibold text-[#6e6e6e]">
-                      {m.n}
-                    </span>
-                    <span className="flex-1 truncate text-[12.5px] font-medium text-[#cfcfcf]">
-                      {m.title}
-                    </span>
-                    <span className="text-[11px] font-semibold" style={{ color: m.color }}>
-                      {m.pct}%
-                    </span>
-                  </div>
-                  <div className="h-[5px] overflow-hidden rounded-[3px] bg-[#2b2b2b]">
-                    <div
-                      className="h-full rounded-[3px]"
-                      style={{ width: `${m.pct}%`, background: m.color }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-      </div>
-
       {/* STATS */}
-      <div className="mt-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Ukończone lekcje" value={`${stats.completed}`} suffix={`/ ${stats.total}`} />
         <StatCard label="Passa nauki" value={`${stats.streak}`} suffix="dni" />
         <StatCard
@@ -228,7 +189,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Wiadomości + Ogłoszenia (dwie kolumny) */}
-      <div className="mt-[18px] grid grid-cols-1 items-start gap-[18px] lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-2">
         {/* Ostatnie wiadomości */}
         <Card>
           <CardHeader title="Ostatnie wiadomości">
@@ -292,7 +253,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Aktywność społeczności (pełna szerokość) */}
-      <div className="mt-[18px]">
+      <div>
         <Card>
           <CardHeader title="Aktywność społeczności">
             <Link href="/spolecznosc" className="text-[12.5px] font-semibold text-[var(--accent-soft)]">
@@ -327,6 +288,47 @@ export default async function DashboardPage() {
             })
           )}
         </Card>
+      </div>
+       </div>
+
+       {/* PRAWY RAIL — Twój postęp (rozciąga się na całą wysokość kolumny) */}
+       <Card className="flex h-full flex-col overflow-hidden">
+         <CardHeader title="Twój postęp">
+           <Link
+             href={currentLessonId ? `/kurs/${currentLessonId}` : "/dashboard"}
+             className="text-[12.5px] font-semibold text-[var(--accent-soft)]"
+           >
+             Kurs
+           </Link>
+         </CardHeader>
+         <div className="-mr-1 min-h-0 flex-1 overflow-auto pr-1">
+           {modules.length === 0 ? (
+             <p className="py-2 text-[12.5px] text-[#8a8a8a]">Brak rozdziałów.</p>
+           ) : (
+             modules.map((m) => (
+               <div key={m.n} className="py-[9px]">
+                 <div className="mb-[7px] flex items-center gap-[10px]">
+                   <span className="font-display text-[11px] font-semibold text-[#6e6e6e]">
+                     {m.n}
+                   </span>
+                   <span className="flex-1 truncate text-[12.5px] font-medium text-[#cfcfcf]">
+                     {m.title}
+                   </span>
+                   <span className="text-[11px] font-semibold" style={{ color: m.color }}>
+                     {m.pct}%
+                   </span>
+                 </div>
+                 <div className="h-[5px] overflow-hidden rounded-[3px] bg-[#2b2b2b]">
+                   <div
+                     className="h-full rounded-[3px]"
+                     style={{ width: `${m.pct}%`, background: m.color }}
+                   />
+                 </div>
+               </div>
+             ))
+           )}
+         </div>
+       </Card>
       </div>
     </div>
   );
