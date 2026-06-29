@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PostCard } from "@/components/community/post-card";
+import { PostDetailClient } from "@/components/community/post-detail-client";
 
 export async function generateMetadata({
   params,
@@ -78,11 +78,10 @@ export default async function PostDetailPage({
         Społeczność
       </Link>
 
-      <PostCard
+      <PostDetailClient
         post={postItem}
         currentUserId={session.user.id}
         isAdmin={isAdmin}
-        onDeleted={() => {}}
       />
     </div>
   );

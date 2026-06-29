@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, MessageCircle, Trash2 } from "lucide-react";
+import { ChevronRight, Loader2, MessageCircle, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
@@ -116,6 +116,13 @@ export function PostCard({
         </div>
         <div className="ml-auto flex items-center gap-2">
           {isAdmin && <CopyLinkButton path={`/spolecznosc/${post.id}`} />}
+          <Link
+            href={`/spolecznosc/${post.id}`}
+            aria-label="Otwórz post"
+            className="shrink-0 text-text-muted transition-colors hover:text-[var(--accent)]"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Link>
           {canDelete && (
             <button
               type="button"
