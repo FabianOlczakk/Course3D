@@ -21,6 +21,7 @@ export default async function AdminLessonsPage({
     id: l.id,
     title: l.title,
     description: l.description,
+    extraDescription: l.extraDescription,
     videoUrl: l.videoUrl,
     contentJson: l.contentJson,
     timestamps: (l.timestamps as ManagedLesson["timestamps"]) ?? null,

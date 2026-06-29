@@ -18,6 +18,7 @@ const timestampsSchema = z
 const patchSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().nullable().optional(),
+  extraDescription: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   contentJson: z.string().nullable().optional(),
   timestamps: timestampsSchema,
@@ -76,6 +77,8 @@ export async function PATCH(
   if (parsed.data.title !== undefined) data.title = parsed.data.title;
   if (parsed.data.description !== undefined)
     data.description = parsed.data.description;
+  if (parsed.data.extraDescription !== undefined)
+    data.extraDescription = parsed.data.extraDescription;
   if (parsed.data.videoUrl !== undefined) data.videoUrl = parsed.data.videoUrl;
   if (parsed.data.contentJson !== undefined)
     data.contentJson = parsed.data.contentJson ?? undefined;

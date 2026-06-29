@@ -93,21 +93,6 @@ export default async function WikiArticlePage({ params }: { params: { slug: stri
             </a>
             .
           </p>
-          <p className="italic">
-            All content and data on the original website (including but not
-            limited to text, images, audio, video, etc.) are protected by
-            applicable copyright law and/or equivalent laws and regulations. You
-            may not use any &quot;deep-link&quot;, &quot;page-scrape&quot;,
-            &quot;robot&quot;, &quot;spider&quot; or other automatic devices,
-            program, algorithm or methodology, or any similar or equivalent
-            manual process, to access, acquire, copy or monitor any portion of
-            the site or any content, or in any way reproduce or circumvent the
-            navigational structure or presentation of the site or any content,
-            to obtain or attempt to obtain any materials, documents or
-            information through any means not purposely made available through
-            the site. The owner reserves the right to pursue legal
-            responsibilities for any behavior that violates this statement.
-          </p>
         </div>
       </div>
     </div>

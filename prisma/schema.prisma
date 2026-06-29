@@ -59,6 +59,7 @@ model User {
   role         Role     @default(STUDENT)
   avatarUrl    String?
   lastActiveAt DateTime?
+  progressPrivate Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -142,7 +143,8 @@ model Lesson {
   description   String?
   order         Int
   chapterId     String
-  videoUrl      String?
+  videoUrl         String?
+  extraDescription String? @db.Text // dodatkowy opis pod wideo (pod przyciskami)
   muxAssetId    String?
   muxPlaybackId String?
   contentJson   Json? // Tiptap JSON content

@@ -419,17 +419,14 @@ export function MessagesPanel({
                         key={m.id}
                         className={cn("flex flex-col", mine ? "items-end" : "items-start")}
                       >
-                        {m.fromSystem && (
-                          <span className="mb-1 rounded bg-[#9d6bff1a] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[var(--accent-soft)]">
-                            WYSŁANE JAKO SYSTEM
-                          </span>
-                        )}
                         <div
                           className={cn(
                             "max-w-[70%] px-[14px] py-[10px] text-[13.5px] leading-[1.5]",
-                            mine
-                              ? "rounded-[10px_10px_3px_10px] bg-[var(--accent)] text-white"
-                              : "rounded-[10px_10px_10px_3px] bg-[#242424] text-[#e0e0e0]"
+                            m.fromSystem
+                              ? "rounded-[10px_10px_3px_10px] bg-[var(--green)] text-[#06281c]"
+                              : mine
+                                ? "rounded-[10px_10px_3px_10px] bg-[var(--accent)] text-white"
+                                : "rounded-[10px_10px_10px_3px] bg-[#242424] text-[#e0e0e0]"
                           )}
                         >
                           {m.content && (
@@ -442,11 +439,20 @@ export function MessagesPanel({
                           )}
                           <span
                             className={cn(
-                              "mt-1 block text-[10px]",
-                              mine ? "text-white/70" : "text-text-muted"
+                              "mt-1 flex items-center gap-1.5 text-[10px]",
+                              m.fromSystem
+                                ? "text-[#06281c]/70"
+                                : mine
+                                  ? "text-white/70"
+                                  : "text-text-muted"
                             )}
                           >
                             {shortTime(m.createdAt)}
+                            {m.fromSystem && (
+                              <span className="rounded bg-[#06281c]/20 px-1 py-0.5 text-[8px] font-bold tracking-wide">
+                                SYSTEM
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>

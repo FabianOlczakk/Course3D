@@ -28,12 +28,7 @@ export default function RootLayout({
       lang="pl"
       className={`dark ${dmSans.variable} ${spaceGrotesk.variable}`}
     >
-      <body className="font-sans">
-        {children}
-        <div className="fixed bottom-2 right-2 text-xs text-muted-foreground/40 select-none pointer-events-none">
-          v0.9.1
-        </div>
-      </body>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

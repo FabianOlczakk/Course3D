@@ -22,6 +22,7 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { useProgress } from "@/lib/use-progress";
+import { APP_VERSION } from "@/lib/version";
 import {
   ChapterList,
   type SidebarChapter,
@@ -323,8 +324,15 @@ export function Sidebar({
       {/* HEADER — branding bez ikony (wysokość = topbar, aby border się równał) */}
       <div className="flex h-14 items-center justify-between gap-2 border-b border-[#2b2b2b] px-[18px]">
         <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
-          <div className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[#f0f0f0]">
-            Kurs druku 3D
+          <div className="flex items-baseline gap-1.5">
+            <span className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[#f0f0f0]">
+              Kurs druku 3D
+            </span>
+            {role === "ADMIN" && (
+              <span className="shrink-0 text-[9px] leading-none text-[#3d3d3d]">
+                v{APP_VERSION}
+              </span>
+            )}
           </div>
           <div className="mt-[2px] text-[11px] text-[#6e6e6e]">
             BambuLab A1 mini
@@ -601,9 +609,13 @@ export function Sidebar({
           <div className="absolute -bottom-[1px] -right-[1px] h-[11px] w-[11px] rounded-full border-2 border-[#1c1c1c] bg-[var(--green)]" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-semibold text-[#ededed]">
+          <Link
+            href="/profile"
+            onClick={onMobileClose}
+            className="block truncate text-[13px] font-semibold text-[#ededed] hover:text-[var(--accent-soft)]"
+          >
             {username || "Użytkownik"}
-          </div>
+          </Link>
           <div className="mt-0.5">
             <span
               className={

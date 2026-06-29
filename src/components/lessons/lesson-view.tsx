@@ -79,6 +79,7 @@ interface LessonViewProps {
   lessonId: string;
   title: string;
   description: string | null;
+  extraDescription: string | null;
   videoUrl: string | null;
   html: string;
   chapterTitle: string;
@@ -91,6 +92,7 @@ export function LessonView({
   lessonId,
   title,
   description,
+  extraDescription,
   videoUrl,
   html,
   chapterTitle,
@@ -291,6 +293,13 @@ export function LessonView({
                 )}
               </div>
             </div>
+
+            {extraDescription && (
+              <div
+                className="lesson-content border-t border-[var(--border-subtle)] pt-4"
+                dangerouslySetInnerHTML={{ __html: extraDescription }}
+              />
+            )}
           </div>
         </div>
 

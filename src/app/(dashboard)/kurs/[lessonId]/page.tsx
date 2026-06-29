@@ -90,6 +90,7 @@ export default async function LessonPage({
       lessonId={lesson.id}
       title={lesson.title}
       description={lesson.description}
+      extraDescription={lesson.extraDescription}
       videoUrl={lesson.videoUrl}
       html={contentToHtml(lesson.contentJson)}
       chapterTitle={lesson.chapter.title}

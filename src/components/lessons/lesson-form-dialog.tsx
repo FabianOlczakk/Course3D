@@ -25,6 +25,7 @@ export interface LessonData {
   id: string;
   title: string;
   description: string | null;
+  extraDescription: string | null;
   videoUrl: string | null;
   contentJson: unknown;
   timestamps?: LessonTimestampData[] | null;
@@ -85,6 +86,7 @@ export function LessonFormDialog({
   const editing = !!lesson;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [extraDescription, setExtraDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [content, setContent] = useState("");
   const [timestampsText, setTimestampsText] = useState("");
@@ -95,6 +97,7 @@ export function LessonFormDialog({
     if (open) {
       setTitle(lesson?.title ?? "");
       setDescription(lesson?.description ?? "");
+      setExtraDescription(lesson?.extraDescription ?? "");
       setVideoUrl(lesson?.videoUrl ?? "");
       setContent(contentToString(lesson?.contentJson));
       setTimestampsText(serializeTimestamps(lesson?.timestamps));
@@ -116,6 +119,7 @@ export function LessonFormDialog({
         body: JSON.stringify({
           title,
           description: description || null,
+          extraDescription: extraDescription || null,
           videoUrl: videoUrl || null,
           contentJson: content || null,
           timestamps: parseTimestamps(timestampsText),
@@ -170,6 +174,16 @@ export function LessonFormDialog({
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ls-extra">Dodatkowy opis (pod wideo, pod przyciskami)</Label>
+            <Textarea
+              id="ls-extra"
+              value={extraDescription}
+              onChange={(e) => setExtraDescription(e.target.value)}
+              rows={3}
+              placeholder="Dodatkowe informacje, linki, materiały do pobrania… (obsługuje HTML)"
             />
           </div>
           <div className="space-y-2">

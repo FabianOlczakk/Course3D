@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin-guard";
 const createSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany."),
   description: z.string().nullable().optional(),
+  extraDescription: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   contentJson: z.string().nullable().optional(),
   timestamps: z
@@ -89,6 +90,7 @@ export async function POST(
       chapterId: params.id,
       title: parsed.data.title,
       description: parsed.data.description ?? null,
+      extraDescription: parsed.data.extraDescription ?? null,
       videoUrl: parsed.data.videoUrl ?? null,
       contentJson: parsed.data.contentJson ?? undefined,
       timestamps: parsed.data.timestamps ?? undefined,
