@@ -6,15 +6,19 @@ import { attachmentsSchema } from "@/lib/attachments";
 import { getSystemUserId } from "@/lib/system-user";
 
 // Wiadomości pomiędzy bieżącym użytkownikiem a :userId (rosnąco wg daty).
+// ?system=1 (tylko admin): wątek między kontem SYSTEM a :userId.
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { userId: string } }
 ) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
   }
-  const me = session.user.id;
+  const systemMode =
+    new URL(req.url).searchParams.get("system") === "1" &&
+    session.user.role === "ADMIN";
+  const me = systemMode ? await getSystemUserId() : session.user.id;
   const other = params.userId;
 
   const messages = await prisma.message.findMany({

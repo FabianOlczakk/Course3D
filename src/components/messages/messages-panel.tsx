@@ -22,6 +22,7 @@ interface UserMini {
   avatarUrl: string | null;
   role?: string;
   lastActiveAt?: string | Date | null;
+  system?: boolean;
 }
 
 interface Conversation {
@@ -34,6 +35,7 @@ interface Conversation {
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
+  system?: boolean;
 }
 
 interface MessageItem {
@@ -96,14 +98,18 @@ export function MessagesPanel({
   }, []);
 
   const loadMessages = useCallback(
-    async (userId: string) => {
+    async (userId: string, system = false) => {
       try {
-        const res = await fetch(`/api/messages/${userId}`);
+        const res = await fetch(
+          `/api/messages/${userId}${system ? "?system=1" : ""}`
+        );
         if (!res.ok) return;
         const data = await res.json();
         setMessages(data.messages ?? []);
-        // Oznacz jako przeczytane.
-        await fetch(`/api/messages/${userId}/read`, { method: "POST" });
+        if (!system) {
+          // Oznacz jako przeczytane (tylko własne wątki).
+          await fetch(`/api/messages/${userId}/read`, { method: "POST" });
+        }
         void loadConversations();
       } catch {
         /* ignore */
@@ -118,14 +124,14 @@ export function MessagesPanel({
     void loadConversations();
     const id = setInterval(() => {
       void loadConversations();
-      if (active) void loadMessages(active.id);
+      if (active) void loadMessages(active.id, active.system);
     }, 3000);
     return () => clearInterval(id);
   }, [open, active, loadConversations, loadMessages]);
 
   // Otwórz rozmowę.
   useEffect(() => {
-    if (active) void loadMessages(active.id);
+    if (active) void loadMessages(active.id, active.system);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 
@@ -182,7 +188,11 @@ export function MessagesPanel({
       const res = await fetch(`/api/messages/${active.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, attachments: pendingAttachments, asSystem }),
+        body: JSON.stringify({
+          content,
+          attachments: pendingAttachments,
+          asSystem: asSystem || !!active.system,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -191,7 +201,7 @@ export function MessagesPanel({
       }
       setDraft("");
       setPendingAttachments([]);
-      await loadMessages(active.id);
+      await loadMessages(active.id, active.system);
     } catch {
       setError("Nie udało się wysłać wiadomości.");
     } finally {
@@ -309,7 +319,8 @@ export function MessagesPanel({
                     preview={c.lastMessage}
                     time={timeAgo(c.lastMessageAt)}
                     unread={c.unreadCount}
-                    activeRow={active?.id === c.userId}
+                    system={c.system}
+                    activeRow={active?.id === c.userId && !!active?.system === !!c.system}
                     onClick={() =>
                       startConversation({
                         id: c.userId,
@@ -318,6 +329,7 @@ export function MessagesPanel({
                         avatarUrl: c.avatarUrl,
                         role: c.role,
                         lastActiveAt: c.lastActiveAt,
+                        system: c.system,
                       })
                     }
                   />
@@ -559,6 +571,7 @@ function ConversationRow({
   preview,
   time,
   unread,
+  system,
   activeRow,
   onClick,
 }: {
@@ -569,6 +582,7 @@ function ConversationRow({
   preview: string;
   time?: string;
   unread?: number;
+  system?: boolean;
   activeRow?: boolean;
   onClick: () => void;
 }) {
@@ -595,8 +609,15 @@ function ConversationRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium text-text-primary">
-            {name}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-sm font-medium text-text-primary">
+              {name}
+            </span>
+            {system && (
+              <span className="shrink-0 rounded bg-[#9d6bff1a] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[var(--accent-soft)]">
+                SYSTEM
+              </span>
+            )}
           </span>
           {time && (
             <span className="shrink-0 text-[10px] text-text-muted">{time}</span>

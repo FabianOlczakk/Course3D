@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users2, Menu, Search, X, BookOpen, FileText, Loader2 } from "lucide-react";
+import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare } from "lucide-react";
 import type { Role } from "@prisma/client";
 
 interface SearchResult {
@@ -13,31 +13,42 @@ interface SearchResult {
   url: string;
 }
 
+interface UserResult {
+  id: string;
+  username: string | null;
+  email: string;
+  avatarUrl: string | null;
+}
+
 interface SearchResults {
   lessons: SearchResult[];
   posts: SearchResult[];
   wiki: SearchResult[];
 }
 
+type FilterKey = "all" | "lesson" | "post" | "wiki" | "user";
+
 function SearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults | null>(null);
+  const [users, setUsers] = useState<UserResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<"all" | "lesson" | "post" | "wiki">("all");
+  const [filter, setFilter] = useState<FilterKey>("all");
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const search = useCallback(async (q: string) => {
-    if (q.length < 2) { setResults(null); return; }
+    if (q.length < 2) { setResults(null); setUsers([]); return; }
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setResults(data.results);
-      }
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/search?q=${encodeURIComponent(q)}`),
+        fetch(`/api/users/search?q=${encodeURIComponent(q)}`),
+      ]);
+      if (r1.ok) setResults((await r1.json()).results);
+      if (r2.ok) setUsers((await r2.json()).users ?? []);
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, []);
@@ -53,12 +64,14 @@ function SearchBar() {
       ? [...(results.lessons ?? []), ...(results.wiki ?? []), ...(results.posts ?? [])]
       : []
   ).filter((r) => filter === "all" || r.type === filter);
+  const showUsers = filter === "all" || filter === "user";
 
-  const FILTERS: { key: "all" | "lesson" | "post" | "wiki"; label: string }[] = [
+  const FILTERS: { key: FilterKey; label: string }[] = [
     { key: "all", label: "Wszystko" },
     { key: "lesson", label: "Lekcje" },
     { key: "post", label: "Posty" },
     { key: "wiki", label: "Wiki" },
+    { key: "user", label: "Użytkownicy" },
   ];
 
   const typeIcon = (type: SearchResult["type"]) => {
@@ -115,28 +128,61 @@ function SearchBar() {
               </button>
             ))}
           </div>
-          {allResults.length === 0 && !loading && (
+          {allResults.length === 0 && (!showUsers || users.length === 0) && !loading && (
             <p className="px-4 py-3 text-sm text-text-muted">Brak wyników dla „{query}"</p>
           )}
-          {allResults.length > 0 && (
-            <ul className="divide-y divide-[var(--border-subtle)]">
-              {allResults.map((r) => (
-                <li key={`${r.type}-${r.id}`}>
-                  <button
-                    type="button"
-                    className="flex w-full items-start gap-3 px-4 py-2.5 text-left hover:bg-[var(--bg-elevated)] transition-colors"
-                    onClick={() => { router.push(r.url); setOpen(false); setQuery(""); }}
-                  >
-                    {typeIcon(r.type)}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-text-primary">{r.title}</p>
-                      <p className="text-xs text-text-muted">{typeLabel(r.type)} · {r.description}</p>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="divide-y divide-[var(--border-subtle)]">
+            {allResults.map((r) => (
+              <li key={`${r.type}-${r.id}`}>
+                <button
+                  type="button"
+                  className="flex w-full items-start gap-3 px-4 py-2.5 text-left hover:bg-[var(--bg-elevated)] transition-colors"
+                  onClick={() => { router.push(r.url); setOpen(false); setQuery(""); }}
+                >
+                  {typeIcon(r.type)}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-text-primary">{r.title}</p>
+                    <p className="text-xs text-text-muted">{typeLabel(r.type)} · {r.description}</p>
+                  </div>
+                </button>
+              </li>
+            ))}
+            {showUsers &&
+              users.map((u) => {
+                const name = u.username || u.email;
+                return (
+                  <li key={`user-${u.id}`} className="flex items-center gap-2 px-4 py-2">
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      onClick={() => { router.push(`/profil/${u.id}`); setOpen(false); setQuery(""); }}
+                    >
+                      {u.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={u.avatarUrl} alt={name} className="h-7 w-7 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-semibold text-white">
+                          {name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-text-primary">{name}</p>
+                        <p className="text-xs text-text-muted">Użytkownik</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      title="Wyślij wiadomość"
+                      aria-label="Wyślij wiadomość"
+                      className="shrink-0 rounded-md p-1.5 text-text-muted transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--accent-soft)]"
+                      onClick={() => { router.push(`/wiadomosci?u=${u.id}`); setOpen(false); setQuery(""); }}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                    </button>
+                  </li>
+                );
+              })}
+          </ul>
         </div>
       )}
     </div>
