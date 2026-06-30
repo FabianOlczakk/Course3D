@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
-  type: z.enum(["HELP", "BUG"]),
+  type: z.enum(["HELP", "BUG", "FEATURE"]),
   message: z.string().min(5).max(2000),
   pageUrl: z.string().max(500),
 });

@@ -4,8 +4,8 @@ import Link from "next/link";
 import type { MentionMap } from "@/components/community/types";
 
 // Dzieli treść na segmenty: znaczniki @[uid:ID], surowe @nazwa oraz zwykły tekst.
-const SPLIT_RE = /(@\[uid:[a-z0-9]+\]|@[\w.]+)/g;
-const MARKER_RE = /^@\[uid:([a-z0-9]+)\]$/;
+const SPLIT_RE = /(@\[uid:[\w-]+\]|@[\w.]+)/g;
+const MARKER_RE = /^@\[uid:([\w-]+)\]$/;
 const PLAIN_RE = /^@[\w.]+$/;
 
 // Renderuje treść posta/komentarza z klikalnymi wzmiankami.

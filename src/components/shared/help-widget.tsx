@@ -2,9 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
-import { HelpCircle, X, Send, Loader2, CheckCircle2, Bug, LifeBuoy } from "lucide-react";
+import { HelpCircle, X, Send, Loader2, CheckCircle2, Bug, LifeBuoy, Lightbulb } from "lucide-react";
 
-type TicketType = "HELP" | "BUG";
+type TicketType = "HELP" | "BUG" | "FEATURE";
 
 const TYPES: { key: TicketType; label: string; icon: React.ReactNode; desc: string }[] = [
   {
@@ -18,6 +18,12 @@ const TYPES: { key: TicketType; label: string; icon: React.ReactNode; desc: stri
     label: "Błąd strony",
     icon: <Bug className="h-4 w-4" />,
     desc: "Coś nie działa lub wygląda źle",
+  },
+  {
+    key: "FEATURE",
+    label: "Nowa funkcja",
+    icon: <Lightbulb className="h-4 w-4" />,
+    desc: "Mam pomysł na nową funkcję lub ulepszenie",
   },
 ];
 

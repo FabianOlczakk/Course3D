@@ -14,8 +14,8 @@ import { prisma } from "@/lib/prisma";
 
 // Surowa wzmianka wpisana przez użytkownika: @nazwa (litery, cyfry, _, .).
 const PLAIN_RE = /@([\w.]+)/g;
-// Trwały znacznik w bazie: @[uid:cuid]
-const MARKER_RE = /@\[uid:([a-z0-9]+)\]/g;
+// Trwały znacznik w bazie: @[uid:ID] — ID może być cuid lub UUID (z myślnikami)
+const MARKER_RE = /@\[uid:([\w-]+)\]/g;
 
 export interface MentionUser {
   id: string;
