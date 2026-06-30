@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare, Sun, Moon, Monitor } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { useTheme, type Theme } from "@/components/theme-provider";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 interface SearchResult {
   type: "lesson" | "post" | "wiki";
@@ -288,6 +289,7 @@ export function Topbar({
 
       {/* Prawa strona: switcher motywu + plakietka roli */}
       <div className="absolute right-4 flex items-center gap-2 sm:right-6">
+        <NotificationBell />
         <ThemeSwitcher />
         <span
           className={

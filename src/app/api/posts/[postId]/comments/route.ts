@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
+import { notifyComment } from "@/lib/notifications";
 
 const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
@@ -60,17 +61,19 @@ export async function POST(
 
   const post = await prisma.post.findUnique({
     where: { id: params.postId },
-    select: { id: true },
+    select: { id: true, authorId: true },
   });
   if (!post) {
     return NextResponse.json({ error: "Nie znaleziono posta." }, { status: 404 });
   }
 
+  let parentAuthorId: string | undefined;
   if (parsed.data.parentId) {
     const parent = await prisma.comment.findUnique({
       where: { id: parsed.data.parentId },
-      select: { postId: true },
+      select: { postId: true, authorId: true },
     });
+    parentAuthorId = parent?.authorId;
     if (!parent || parent.postId !== params.postId) {
       return NextResponse.json(
         { error: "Nie znaleziono komentarza nadrzędnego." },
@@ -88,6 +91,16 @@ export async function POST(
       attachments: parsed.data.attachments ?? undefined,
     },
     include: { author: authorSelect },
+  });
+
+  // Powiadomienia w tle
+  void notifyComment({
+    actorId: session.user.id,
+    postId: params.postId,
+    commentId: comment.id,
+    content: parsed.data.content,
+    postAuthorId: post.authorId,
+    parentAuthorId,
   });
 
   return NextResponse.json({ comment }, { status: 201 });

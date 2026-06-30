@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
-
+import { notifyPostMentions } from "@/lib/notifications";
 
 const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
@@ -31,7 +31,8 @@ export async function GET(req: Request) {
     include: {
       author: authorSelect,
       category: categorySelect,
-      _count: { select: { comments: true } },
+      _count: { select: { comments: true, votes: true } },
+      votes: { where: { userId: session.user.id }, select: { value: true }, take: 1 },
     },
   });
 
@@ -40,7 +41,23 @@ export async function GET(req: Request) {
   const items = hasMore ? visible.slice(0, limit) : visible;
   const nextCursor = hasMore ? items[items.length - 1]?.id : null;
 
-  return NextResponse.json({ posts: items, nextCursor });
+  // Compute vote counts per post
+  const postIds = items.map((p) => p.id);
+  const voteCounts = await prisma.postVote.groupBy({
+    by: ["postId", "value"],
+    where: { postId: { in: postIds } },
+    _count: true,
+  });
+
+  const enriched = items.map((p) => {
+    const up = voteCounts.find((v) => v.postId === p.id && v.value === "UP")?._count ?? 0;
+    const down = voteCounts.find((v) => v.postId === p.id && v.value === "DOWN")?._count ?? 0;
+    const myVote = p.votes[0]?.value ?? null;
+    const { votes: _v, ...rest } = p;
+    return { ...rest, votes: { up, down, myVote } };
+  });
+
+  return NextResponse.json({ posts: enriched, nextCursor });
 }
 
 const createSchema = z.object({
@@ -87,5 +104,8 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ post }, { status: 201 });
+  void notifyPostMentions(session.user.id, post.id, parsed.data.content);
+
+  const postWithVotes = { ...post, votes: { up: 0, down: 0, myVote: null } };
+  return NextResponse.json({ post: postWithVotes }, { status: 201 });
 }

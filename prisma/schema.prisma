@@ -24,6 +24,19 @@ enum SupportTicketType {
   BUG
 }
 
+enum VoteValue {
+  UP
+  DOWN
+}
+
+enum NotificationType {
+  MENTION_POST
+  MENTION_COMMENT
+  REPLY_POST
+  REPLY_COMMENT
+  NEW_MESSAGE
+}
+
 // Kategorie tworzone przez instruktora (admina) — wspólny model dla
 // postów społeczności i ogłoszeń, rozróżniany polem `type`.
 model Category {
@@ -96,6 +109,13 @@ model User {
 
   // Zgłoszenia pomocy
   supportTickets SupportTicket[]
+
+  // Głosowania na posty
+  votes PostVote[]
+
+  // Powiadomienia
+  notifications     Notification[] @relation("ReceivedNotifications")
+  sentNotifications Notification[] @relation("SentNotifications")
 }
 
 model Account {
@@ -207,6 +227,8 @@ model Post {
   author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   comments Comment[]
+  votes    PostVote[]
+  notifications Notification[]
 }
 
 model Comment {
@@ -223,6 +245,7 @@ model Comment {
   post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies Comment[] @relation("CommentReplies")
+  notifications Notification[]
 }
 
 model WikiArticle {
@@ -250,4 +273,37 @@ model SupportTicket {
   createdAt DateTime          @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PostVote {
+  id        String    @id @default(cuid())
+  userId    String
+  postId    String
+  value     VoteValue
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  actorId   String
+  postId    String?
+  commentId String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user    User     @relation("ReceivedNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor   User     @relation("SentNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt(sort: Desc)])
 }

@@ -26,6 +26,7 @@ export interface PostItem {
   author: AuthorMini;
   category?: CategoryMini | null;
   _count: { comments: number };
+  votes?: { up: number; down: number; myVote: "UP" | "DOWN" | null };
 }
 
 export interface CommentItem {

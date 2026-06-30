@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Paperclip, Send, X } from "lucide-react";
+import { AtSign, Loader2, Paperclip, Send, X } from "lucide-react";
+import { MentionTextarea } from "@/components/shared/mention-textarea";
 import {
   readAttachments,
   formatFileSize,
   type Attachment,
 } from "@/lib/attachments-client";
 
-// Formularz dodawania komentarza / odpowiedzi (inline).
 export function CommentForm({
   postId,
   parentId,
@@ -29,6 +29,7 @@ export function CommentForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -40,6 +41,15 @@ export function CommentForm({
       setError(e instanceof Error ? e.message : "Błąd pliku.");
     }
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function insertAt() {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart ?? content.length;
+    const newContent = content.slice(0, start) + "@" + content.slice(start);
+    setContent(newContent);
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + 1, start + 1); }, 0);
   }
 
   async function submit() {
@@ -88,13 +98,22 @@ export function CommentForm({
         >
           <Paperclip className="h-4 w-4" />
         </button>
-        <textarea
-          autoFocus={autoFocus}
+        <button
+          type="button"
+          className="glow-icon-btn h-9 w-9 shrink-0"
+          aria-label="Oznacz użytkownika"
+          onClick={insertAt}
+        >
+          <AtSign className="h-4 w-4" />
+        </button>
+        <MentionTextarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           rows={1}
           placeholder="Odpowiedz..."
-          className="max-h-32 min-h-[2.25rem] flex-1 resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
+          autoFocus={autoFocus}
+          textareaRef={textareaRef}
+          className="max-h-32 min-h-[2.25rem] w-full resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <button
           type="button"
@@ -103,19 +122,10 @@ export function CommentForm({
           disabled={submitting}
           onClick={() => void submit()}
         >
-          {submitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
         {onCancel && (
-          <button
-            type="button"
-            className="glow-icon-btn h-9 w-9 shrink-0"
-            aria-label="Anuluj"
-            onClick={onCancel}
-          >
+          <button type="button" className="glow-icon-btn h-9 w-9 shrink-0" aria-label="Anuluj" onClick={onCancel}>
             <X className="h-4 w-4" />
           </button>
         )}
@@ -125,15 +135,13 @@ export function CommentForm({
           {attachments.map((a, i) => (
             <span
               key={i}
-              className="flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-1 text-xs text-text-secondary"
+              className="flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-1 text-xs text-[var(--text-secondary)]"
             >
               {a.name} ({formatFileSize(a.size)})
               <button
                 type="button"
                 aria-label="Usuń"
-                onClick={() =>
-                  setAttachments((prev) => prev.filter((_, idx) => idx !== i))
-                }
+                onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
               >
                 <X className="h-3 w-3" />
               </button>
