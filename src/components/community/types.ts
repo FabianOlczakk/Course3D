@@ -38,6 +38,7 @@ export interface CommentItem {
   attachments: Attachment[] | null;
   createdAt: string;
   author: AuthorMini;
+  votes?: { up: number; down: number; myVote: "UP" | "DOWN" | null };
 }
 
 export function authorName(a: AuthorMini): string {

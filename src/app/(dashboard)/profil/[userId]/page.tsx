@@ -32,12 +32,14 @@ export default async function ProfilePage({
       lastActiveAt: true,
       createdAt: true,
       progressPrivate: true,
+      activityPrivate: true,
     },
   });
   if (!user) notFound();
 
   const isSelf = user.id === session.user.id;
   const canSeeProgress = isSelf || viewerIsAdmin || !user.progressPrivate;
+  const canSeeActivity = isSelf || viewerIsAdmin || !user.activityPrivate;
 
   const [stats, posts] = await Promise.all([
     canSeeProgress ? getLearnerStats(user.id) : null,
@@ -78,9 +80,9 @@ export default async function ProfilePage({
               )}
             </div>
             <p className="mt-1 text-sm text-text-muted">
-              {isOnline(user.lastActiveAt) ? (
+              {canSeeActivity && isOnline(user.lastActiveAt) ? (
                 <span className="text-green-400">● Aktywny teraz</span>
-              ) : user.lastActiveAt ? (
+              ) : canSeeActivity && user.lastActiveAt ? (
                 <>Ostatnio aktywny {timeAgo(user.lastActiveAt.toISOString())}</>
               ) : (
                 <>Dołączył(a) {timeAgo(user.createdAt.toISOString())}</>

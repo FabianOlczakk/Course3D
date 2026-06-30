@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
@@ -22,7 +22,6 @@ interface TreeNode extends CommentItem {
   children: TreeNode[];
 }
 
-// Buduje drzewo komentarzy z płaskiej listy (po parentId).
 function buildTree(comments: CommentItem[]): TreeNode[] {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
@@ -36,6 +35,25 @@ function buildTree(comments: CommentItem[]): TreeNode[] {
     }
   }
   return roots;
+}
+
+function renderMentions(text: string) {
+  const parts = text.split(/(@[\w.]+)/g);
+  return parts.map((part, i) => {
+    if (/^@[\w.]+$/.test(part)) {
+      const username = part.slice(1);
+      return (
+        <Link
+          key={i}
+          href={`/profil/u/${encodeURIComponent(username)}`}
+          className="font-medium text-[var(--accent)] hover:underline"
+        >
+          {part}
+        </Link>
+      );
+    }
+    return part;
+  });
 }
 
 export function CommentTree({
@@ -85,13 +103,51 @@ function CommentNode({
   onChange: () => void;
 }) {
   const [replying, setReplying] = useState(false);
+  const [voteUp, setVoteUp] = useState(node.votes?.up ?? 0);
+  const [voteDown, setVoteDown] = useState(node.votes?.down ?? 0);
+  const [myVote, setMyVote] = useState<"UP" | "DOWN" | null>(node.votes?.myVote ?? null);
+  const [voting, setVoting] = useState(false);
+
   const canDelete = node.authorId === currentUserId || isAdmin;
   const indent = Math.min(depth, MAX_INDENT);
+  const score = voteUp - voteDown;
 
   async function handleDelete() {
     if (!confirm("Usunąć ten komentarz?")) return;
     const res = await fetch(`/api/comments/${node.id}`, { method: "DELETE" });
     if (res.ok) onChange();
+  }
+
+  async function handleVote(value: "UP" | "DOWN") {
+    if (voting) return;
+    setVoting(true);
+    const prevUp = voteUp, prevDown = voteDown, prevMy = myVote;
+    if (myVote === value) {
+      setMyVote(null);
+      value === "UP" ? setVoteUp((v) => v - 1) : setVoteDown((v) => v - 1);
+    } else {
+      if (myVote === "UP") setVoteUp((v) => v - 1);
+      if (myVote === "DOWN") setVoteDown((v) => v - 1);
+      setMyVote(value);
+      value === "UP" ? setVoteUp((v) => v + 1) : setVoteDown((v) => v + 1);
+    }
+    try {
+      const res = await fetch(`/api/comments/${node.id}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVoteUp(data.up); setVoteDown(data.down); setMyVote(data.myVote);
+      } else {
+        setVoteUp(prevUp); setVoteDown(prevDown); setMyVote(prevMy);
+      }
+    } catch {
+      setVoteUp(prevUp); setVoteDown(prevDown); setMyVote(prevMy);
+    } finally {
+      setVoting(false);
+    }
   }
 
   return (
@@ -124,9 +180,7 @@ function CommentNode({
               {authorName(node.author)}
             </Link>
             <AdminBadge role={node.author.role} />
-            <span className="text-xs text-text-muted">
-              {timeAgo(node.createdAt)}
-            </span>
+            <span className="text-xs text-text-muted">{timeAgo(node.createdAt)}</span>
             <div className="ml-auto flex items-center gap-2">
               {isAdmin && (
                 <CopyLinkButton
@@ -147,16 +201,42 @@ function CommentNode({
             </div>
           </div>
           <p className="whitespace-pre-wrap break-words text-sm text-text-secondary">
-            {node.content}
+            {renderMentions(node.content)}
           </p>
           {node.attachments && <AttachmentView attachments={node.attachments} />}
-          <button
-            type="button"
-            className="mt-1 text-xs font-medium text-[var(--accent)] hover:underline"
-            onClick={() => setReplying((r) => !r)}
-          >
-            Odpowiedz
-          </button>
+          <div className="mt-1.5 flex items-center gap-3">
+            {/* Vote buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={voting}
+                onClick={() => void handleVote("UP")}
+                aria-label="Głosuj w górę"
+                className={`rounded p-0.5 transition-colors disabled:opacity-50 ${myVote === "UP" ? "text-orange-400" : "text-[var(--text-muted)] hover:text-orange-400"}`}
+              >
+                <ArrowBigUp className="h-4 w-4" fill={myVote === "UP" ? "currentColor" : "none"} />
+              </button>
+              <span className={`text-[11px] font-semibold tabular-nums ${score > 0 ? "text-orange-400" : score < 0 ? "text-blue-400" : "text-[var(--text-muted)]"}`}>
+                {score}
+              </span>
+              <button
+                type="button"
+                disabled={voting}
+                onClick={() => void handleVote("DOWN")}
+                aria-label="Głosuj w dół"
+                className={`rounded p-0.5 transition-colors disabled:opacity-50 ${myVote === "DOWN" ? "text-blue-400" : "text-[var(--text-muted)] hover:text-blue-400"}`}
+              >
+                <ArrowBigDown className="h-4 w-4" fill={myVote === "DOWN" ? "currentColor" : "none"} />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="text-xs font-medium text-[var(--accent)] hover:underline"
+              onClick={() => setReplying((r) => !r)}
+            >
+              Odpowiedz
+            </button>
+          </div>
           {replying && (
             <CommentForm
               postId={postId}

@@ -22,15 +22,16 @@ import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
 import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
-// Parsuje @username w treści i linkuje do profilu
+// Parsuje @username w treści i linkuje do profilu użytkownika
 function renderMentions(text: string) {
   const parts = text.split(/(@[\w.]+)/g);
   return parts.map((part, i) => {
     if (/^@[\w.]+$/.test(part)) {
+      const username = part.slice(1);
       return (
         <Link
           key={i}
-          href={`/spolecznosc?search=${encodeURIComponent(part)}`}
+          href={`/profil/u/${encodeURIComponent(username)}`}
           className="font-medium text-[var(--accent)] hover:underline"
         >
           {part}
@@ -46,15 +47,17 @@ export function PostCard({
   currentUserId,
   isAdmin,
   highlight,
+  defaultExpanded,
   onDeleted,
 }: {
   post: PostItem;
   currentUserId: string;
   isAdmin: boolean;
   highlight?: string;
+  defaultExpanded?: boolean;
   onDeleted: (id: string) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [count, setCount] = useState(post._count.comments);
@@ -110,7 +113,6 @@ export function PostCard({
   async function handleVote(value: "UP" | "DOWN") {
     if (voting) return;
     setVoting(true);
-    // Optymistyczna aktualizacja
     const prevUp = voteUp, prevDown = voteDown, prevMy = myVote;
     if (myVote === value) {
       setMyVote(null);
@@ -245,9 +247,7 @@ export function PostCard({
           {/* Tytuł */}
           {post.title && (
             <h3 className="mb-1.5 font-display text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
-              {highlight
-                ? post.title
-                : post.title}
+              {post.title}
             </h3>
           )}
 

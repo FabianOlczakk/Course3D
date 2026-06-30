@@ -9,7 +9,6 @@ const authorSelect = {
   select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
 } as const;
 
-// Wszystkie komentarze posta (płaska lista z parentId — drzewo budowane po stronie klienta).
 export async function GET(
   _req: Request,
   { params }: { params: { postId: string } }
@@ -25,16 +24,39 @@ export async function GET(
     include: { author: authorSelect },
   });
 
-  return NextResponse.json({ comments });
+  // Dołącz liczby głosów i głos aktualnego użytkownika
+  const commentIds = comments.map((c) => c.id);
+  const [voteCounts, myVotes] = await Promise.all([
+    prisma.commentVote.groupBy({
+      by: ["commentId", "value"],
+      where: { commentId: { in: commentIds } },
+      _count: true,
+    }),
+    prisma.commentVote.findMany({
+      where: { userId: session.user.id, commentId: { in: commentIds } },
+      select: { commentId: true, value: true },
+    }),
+  ]);
+
+  const myVoteMap = new Map(myVotes.map((v) => [v.commentId, v.value]));
+  const enriched = comments.map((c) => ({
+    ...c,
+    votes: {
+      up: voteCounts.filter((v) => v.commentId === c.id && v.value === "UP").reduce((s, v) => s + v._count, 0),
+      down: voteCounts.filter((v) => v.commentId === c.id && v.value === "DOWN").reduce((s, v) => s + v._count, 0),
+      myVote: myVoteMap.get(c.id) ?? null,
+    },
+  }));
+
+  return NextResponse.json({ comments: enriched });
 }
 
 const createSchema = z.object({
-  content: z.string().trim().min(1, "Treść nie może być pusta.").max(10000),
+  content: z.string().trim().min(1).max(10000),
   parentId: z.string().optional(),
   attachments: attachmentsSchema,
 });
 
-// Utwórz komentarz (opcjonalnie odpowiedź na inny komentarz).
 export async function POST(
   req: Request,
   { params }: { params: { postId: string } }
@@ -45,18 +67,13 @@ export async function POST(
   }
 
   let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
+  try { body = await req.json(); } catch {
     return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
   }
 
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.errors[0]?.message ?? "Nieprawidłowe dane." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Nieprawidłowe dane." }, { status: 400 });
   }
 
   const post = await prisma.post.findUnique({
@@ -75,10 +92,7 @@ export async function POST(
     });
     parentAuthorId = parent?.authorId;
     if (!parent || parent.postId !== params.postId) {
-      return NextResponse.json(
-        { error: "Nie znaleziono komentarza nadrzędnego." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Nie znaleziono komentarza nadrzędnego." }, { status: 400 });
     }
   }
 
@@ -93,7 +107,6 @@ export async function POST(
     include: { author: authorSelect },
   });
 
-  // Powiadomienia w tle
   void notifyComment({
     actorId: session.user.id,
     postId: params.postId,
@@ -103,5 +116,5 @@ export async function POST(
     parentAuthorId,
   });
 
-  return NextResponse.json({ comment }, { status: 201 });
+  return NextResponse.json({ comment: { ...comment, votes: { up: 0, down: 0, myVote: null } } }, { status: 201 });
 }

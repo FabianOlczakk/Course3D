@@ -17,6 +17,7 @@ export function PostDetailClient({ post, currentUserId, isAdmin }: Props) {
       post={post}
       currentUserId={currentUserId}
       isAdmin={isAdmin}
+      defaultExpanded
       onDeleted={() => router.push("/spolecznosc")}
     />
   );

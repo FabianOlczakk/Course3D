@@ -77,7 +77,8 @@ model User {
   role         Role     @default(STUDENT)
   avatarUrl    String?
   lastActiveAt DateTime?
-  progressPrivate Boolean @default(false)
+  progressPrivate  Boolean @default(false)
+  activityPrivate  Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -110,8 +111,9 @@ model User {
   // Zgłoszenia pomocy
   supportTickets SupportTicket[]
 
-  // Głosowania na posty
-  votes PostVote[]
+  // Głosowania na posty i komentarze
+  votes        PostVote[]
+  commentVotes CommentVote[]
 
   // Powiadomienia
   notifications     Notification[] @relation("ReceivedNotifications")
@@ -241,11 +243,12 @@ model Comment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies Comment[] @relation("CommentReplies")
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[]     @relation("CommentReplies")
   notifications Notification[]
+  votes   CommentVote[]
 }
 
 model WikiArticle {
@@ -287,6 +290,20 @@ model PostVote {
 
   @@unique([userId, postId])
   @@index([postId])
+}
+
+model CommentVote {
+  id        String    @id @default(cuid())
+  userId    String
+  commentId String
+  value     VoteValue
+  createdAt DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
 }
 
 model Notification {

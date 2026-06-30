@@ -457,7 +457,7 @@ export function MessagesPanel({
                               ? "rounded-[10px_10px_3px_10px] bg-[var(--green)] text-[#06281c]"
                               : mine
                                 ? "rounded-[10px_10px_3px_10px] bg-[var(--accent)] text-white"
-                                : "rounded-[10px_10px_10px_3px] bg-[var(--bg-elevated)] text-[#e0e0e0]"
+                                : "rounded-[10px_10px_10px_3px] bg-[var(--bg-elevated)] text-[var(--text-primary)]"
                           )}
                         >
                           {m.content && (
