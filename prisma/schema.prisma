@@ -19,6 +19,26 @@ enum CategoryType {
   ANNOUNCEMENT
 }
 
+enum SupportTicketType {
+  HELP
+  BUG
+  FEATURE
+  OTHER
+}
+
+enum VoteValue {
+  UP
+  DOWN
+}
+
+enum NotificationType {
+  MENTION_POST
+  MENTION_COMMENT
+  REPLY_POST
+  REPLY_COMMENT
+  NEW_MESSAGE
+}
+
 // Kategorie tworzone przez instruktora (admina) — wspólny model dla
 // postów społeczności i ogłoszeń, rozróżniany polem `type`.
 model Category {
@@ -59,7 +79,8 @@ model User {
   role         Role     @default(STUDENT)
   avatarUrl    String?
   lastActiveAt DateTime?
-  progressPrivate Boolean @default(false)
+  progressPrivate  Boolean @default(false)
+  activityPrivate  Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -88,6 +109,17 @@ model User {
 
   // Ogłoszenia (autor)
   announcements Announcement[]
+
+  // Zgłoszenia pomocy
+  supportTickets SupportTicket[]
+
+  // Głosowania na posty i komentarze
+  votes        PostVote[]
+  commentVotes CommentVote[]
+
+  // Powiadomienia
+  notifications     Notification[] @relation("ReceivedNotifications")
+  sentNotifications Notification[] @relation("SentNotifications")
 }
 
 model Account {
@@ -199,6 +231,8 @@ model Post {
   author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   comments Comment[]
+  votes    PostVote[]
+  notifications Notification[]
 }
 
 model Comment {
@@ -211,10 +245,12 @@ model Comment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies Comment[] @relation("CommentReplies")
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[]     @relation("CommentReplies")
+  notifications Notification[]
+  votes   CommentVote[]
 }
 
 model WikiArticle {
@@ -231,3 +267,62 @@ model WikiArticle {
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
+
+model SupportTicket {
+  id        String            @id @default(cuid())
+  userId    String
+  type      SupportTicketType
+  message   String            @db.Text
+  pageUrl   String
+  resolved  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PostVote {
+  id        String    @id @default(cuid())
+  userId    String
+  postId    String
+  value     VoteValue
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model CommentVote {
+  id        String    @id @default(cuid())
+  userId    String
+  commentId String
+  value     VoteValue
+  createdAt DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  actorId   String
+  postId    String?
+  commentId String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user    User     @relation("ReceivedNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor   User     @relation("SentNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt(sort: Desc)])
+}

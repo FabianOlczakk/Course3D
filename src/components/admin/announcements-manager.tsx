@@ -194,7 +194,7 @@ export function AnnouncementsManager() {
             type="color"
             value={newCatColor}
             onChange={(e) => setNewCatColor(e.target.value)}
-            className="h-9 w-12 cursor-pointer rounded-md border border-[#2e2e2e] bg-transparent p-1 [&::-moz-color-swatch]:rounded [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
+            className="h-9 w-12 cursor-pointer rounded-md border border-[var(--border-subtle)] bg-transparent p-1 [&::-moz-color-swatch]:rounded [&::-moz-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
           />
           <button
             type="button"

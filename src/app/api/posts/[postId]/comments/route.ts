@@ -3,9 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
+import { notifyComment } from "@/lib/notifications";
+import { attachMentions, encodeMentions } from "@/lib/mentions";
+import { maskActivity } from "@/lib/online-status";
 
 const authorSelect = {
-  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
+  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true, activityPrivate: true },
 } as const;
 
 // Wszystkie komentarze posta (płaska lista z parentId — drzewo budowane po stronie klienta).
@@ -18,13 +21,57 @@ export async function GET(
     return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
   }
 
+  const viewerId = session.user.id;
+  const viewerIsAdmin = session.user.role === "ADMIN";
+
   const comments = await prisma.comment.findMany({
     where: { postId: params.postId },
     orderBy: { createdAt: "asc" },
     include: { author: authorSelect },
   });
 
-  return NextResponse.json({ comments });
+  // Głosy komentarzy — zbiorczo dla wszystkich komentarzy posta.
+  const commentIds = comments.map((c) => c.id);
+  const [voteCounts, myVotes] = await Promise.all([
+    commentIds.length
+      ? prisma.commentVote.groupBy({
+          by: ["commentId", "value"],
+          where: { commentId: { in: commentIds } },
+          _count: true,
+        })
+      : Promise.resolve([] as { commentId: string; value: "UP" | "DOWN"; _count: number }[]),
+    commentIds.length
+      ? prisma.commentVote.findMany({
+          where: { commentId: { in: commentIds }, userId: viewerId },
+          select: { commentId: true, value: true },
+        })
+      : Promise.resolve([] as { commentId: string; value: "UP" | "DOWN" }[]),
+  ]);
+  const myVoteByComment = new Map(myVotes.map((v) => [v.commentId, v.value]));
+
+  const enriched = comments.map((c) => {
+    const up = voteCounts.find((v) => v.commentId === c.id && v.value === "UP")?._count ?? 0;
+    const down = voteCounts.find((v) => v.commentId === c.id && v.value === "DOWN")?._count ?? 0;
+    return {
+      ...c,
+      author: maskActivity(c.author, viewerId, viewerIsAdmin),
+      votes: { up, down, myVote: myVoteByComment.get(c.id) ?? null },
+    };
+  });
+
+  // Wzmianki: migracja starych @nazwa → znaczniki + mapa ID → użytkownik.
+  const { items: withMentions, mentions } = await attachMentions(
+    enriched.map((c) => ({ id: c.id, content: c.content })),
+    (id, content) => prisma.comment.update({ where: { id }, data: { content } })
+  );
+  const contentById = new Map(withMentions.map((i) => [i.id, i.content]));
+  const result = enriched.map((c) => ({
+    ...c,
+    content: contentById.get(c.id) ?? c.content,
+    mentions,
+  }));
+
+  return NextResponse.json({ comments: result });
 }
 
 const createSchema = z.object({
@@ -60,17 +107,19 @@ export async function POST(
 
   const post = await prisma.post.findUnique({
     where: { id: params.postId },
-    select: { id: true },
+    select: { id: true, authorId: true },
   });
   if (!post) {
     return NextResponse.json({ error: "Nie znaleziono posta." }, { status: 404 });
   }
 
+  let parentAuthorId: string | undefined;
   if (parsed.data.parentId) {
     const parent = await prisma.comment.findUnique({
       where: { id: parsed.data.parentId },
-      select: { postId: true },
+      select: { postId: true, authorId: true },
     });
+    parentAuthorId = parent?.authorId;
     if (!parent || parent.postId !== params.postId) {
       return NextResponse.json(
         { error: "Nie znaleziono komentarza nadrzędnego." },
@@ -79,15 +128,36 @@ export async function POST(
     }
   }
 
-  const comment = await prisma.comment.create({
+  const encoded = await encodeMentions(parsed.data.content);
+
+  const created = await prisma.comment.create({
     data: {
       authorId: session.user.id,
       postId: params.postId,
       parentId: parsed.data.parentId || null,
-      content: parsed.data.content,
+      content: encoded,
       attachments: parsed.data.attachments ?? undefined,
     },
     include: { author: authorSelect },
+  });
+
+  const { mentions } = await attachMentions([{ id: created.id, content: created.content }]);
+  const { author, ...restComment } = created;
+  const comment = {
+    ...restComment,
+    author: maskActivity(author, session.user.id, session.user.role === "ADMIN"),
+    votes: { up: 0, down: 0, myVote: null },
+    mentions,
+  };
+
+  // Powiadomienia w tle
+  void notifyComment({
+    actorId: session.user.id,
+    postId: params.postId,
+    commentId: comment.id,
+    content: parsed.data.content,
+    postAuthorId: post.authorId,
+    parentAuthorId,
   });
 
   return NextResponse.json({ comment }, { status: 201 });

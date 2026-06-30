@@ -1,15 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, MessageCircle, Trash2 } from "lucide-react";
+import {
+  ArrowBigUp, ArrowBigDown, ChevronRight,
+  Loader2, MessageCircle, Trash2,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
-import { Highlight } from "@/components/shared/highlight";
 import { CommentForm } from "@/components/community/comment-form";
 import { CommentTree } from "@/components/community/comment-tree";
+import { MentionText } from "@/components/community/mention-text";
 import {
   authorInitials,
   authorName,
@@ -26,20 +29,29 @@ export function PostCard({
   isAdmin,
   highlight,
   onDeleted,
+  defaultExpanded = false,
 }: {
   post: PostItem;
   currentUserId: string;
   isAdmin: boolean;
   highlight?: string;
   onDeleted: (id: string) => void;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [count, setCount] = useState(post._count.comments);
 
+  const [voteUp, setVoteUp] = useState(post.votes?.up ?? 0);
+  const [voteDown, setVoteDown] = useState(post.votes?.down ?? 0);
+  const [myVote, setMyVote] = useState<"UP" | "DOWN" | null>(post.votes?.myVote ?? null);
+  const [voting, setVoting] = useState(false);
+
+  const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const loadComments = useCallback(async () => {
-    setLoading(true);
+    setCommentsLoading(true);
     try {
       const res = await fetch(`/api/posts/${post.id}/comments`);
       if (res.ok) {
@@ -48,21 +60,25 @@ export function PostCard({
         setCount((data.comments ?? []).length);
       }
     } finally {
-      setLoading(false);
+      setCommentsLoading(false);
     }
   }, [post.id]);
 
+  // Auto-refresh komentarzy co 20s kiedy są otwarte
   useEffect(() => {
-    if (expanded) void loadComments();
+    if (expanded) {
+      void loadComments();
+      autoRefreshRef.current = setInterval(() => void loadComments(), 20000);
+    } else {
+      if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
+    }
+    return () => { if (autoRefreshRef.current) clearInterval(autoRefreshRef.current); };
   }, [expanded, loadComments]);
 
-  // Bezpośredni link do komentarza — rozwiń ten post automatycznie.
+  // Rozwiń jeśli URL ma ?post=...&comment=...
   const searchParams = useSearchParams();
   useEffect(() => {
-    if (
-      searchParams.get("comment") &&
-      searchParams.get("post") === post.id
-    ) {
+    if (searchParams.get("comment") && searchParams.get("post") === post.id) {
       setExpanded(true);
     }
   }, [searchParams, post.id]);
@@ -75,99 +91,191 @@ export function PostCard({
     if (res.ok) onDeleted(post.id);
   }
 
+  async function handleVote(value: "UP" | "DOWN") {
+    if (voting) return;
+    setVoting(true);
+    // Optymistyczna aktualizacja
+    const prevUp = voteUp, prevDown = voteDown, prevMy = myVote;
+    if (myVote === value) {
+      setMyVote(null);
+      value === "UP" ? setVoteUp((v) => v - 1) : setVoteDown((v) => v - 1);
+    } else {
+      if (myVote === "UP") setVoteUp((v) => v - 1);
+      if (myVote === "DOWN") setVoteDown((v) => v - 1);
+      setMyVote(value);
+      value === "UP" ? setVoteUp((v) => v + 1) : setVoteDown((v) => v + 1);
+    }
+    try {
+      const res = await fetch(`/api/posts/${post.id}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVoteUp(data.up);
+        setVoteDown(data.down);
+        setMyVote(data.myVote);
+      } else {
+        setVoteUp(prevUp); setVoteDown(prevDown); setMyVote(prevMy);
+      }
+    } catch {
+      setVoteUp(prevUp); setVoteDown(prevDown); setMyVote(prevMy);
+    } finally {
+      setVoting(false);
+    }
+  }
+
+  const score = voteUp - voteDown;
+
   return (
-    <article id={`post-${post.id}`} className="glow-card p-4">
-      <div className="flex items-center gap-3">
-        <Link href={`/profil/${post.author.id}`} className="relative shrink-0">
-          <Avatar className="h-9 w-9">
-            {post.author.avatarUrl && (
-              <AvatarImage src={post.author.avatarUrl} alt={authorName(post.author)} />
-            )}
-            <AvatarFallback className="text-xs">
-              {authorInitials(post.author)}
-            </AvatarFallback>
-          </Avatar>
-          <OnlineDot
-            lastActiveAt={post.author.lastActiveAt}
-            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-2 border-[#1e1e1e]"
-          />
-        </Link>
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <Link
-            href={`/profil/${post.author.id}`}
-            className="flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-[var(--accent)] hover:underline"
+    <article id={`post-${post.id}`} className="glow-card overflow-hidden">
+      <div className="flex gap-0">
+        {/* Kolumna głosowania — lewa */}
+        <div className="flex w-10 shrink-0 flex-col items-center gap-0.5 bg-[var(--bg-elevated)] px-1 py-3">
+          <button
+            type="button"
+            aria-label="Głosuj w górę"
+            disabled={voting}
+            onClick={() => void handleVote("UP")}
+            className={`rounded-[4px] p-0.5 transition-colors disabled:opacity-50 ${
+              myVote === "UP"
+                ? "text-orange-400"
+                : "text-[var(--text-muted)] hover:text-orange-400"
+            }`}
           >
-            {authorName(post.author)}
-          </Link>
-          <AdminBadge role={post.author.role} />
-          <span className="text-text-muted">·</span>
-          <span className="text-xs text-text-muted">{timeAgo(post.createdAt)}</span>
-          {post.category && (
-            <span
-              className="rounded-[5px] px-2 py-0.5 text-[10.5px] font-semibold"
-              style={{
-                background: (post.category.color || "#9d6bff") + "1a",
-                color: post.category.color || "var(--accent-soft)",
-              }}
-            >
-              {post.category.name}
-            </span>
-          )}
+            <ArrowBigUp className="h-5 w-5" fill={myVote === "UP" ? "currentColor" : "none"} />
+          </button>
+          <span
+            className={`text-[12px] font-bold tabular-nums leading-none ${
+              score > 0 ? "text-orange-400" : score < 0 ? "text-blue-400" : "text-[var(--text-muted)]"
+            }`}
+          >
+            {score}
+          </span>
+          <button
+            type="button"
+            aria-label="Głosuj w dół"
+            disabled={voting}
+            onClick={() => void handleVote("DOWN")}
+            className={`rounded-[4px] p-0.5 transition-colors disabled:opacity-50 ${
+              myVote === "DOWN"
+                ? "text-blue-400"
+                : "text-[var(--text-muted)] hover:text-blue-400"
+            }`}
+          >
+            <ArrowBigDown className="h-5 w-5" fill={myVote === "DOWN" ? "currentColor" : "none"} />
+          </button>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          {isAdmin && <CopyLinkButton path={`/spolecznosc/${post.id}`} />}
-          {canDelete && (
+
+        {/* Treść główna */}
+        <div className="min-w-0 flex-1 p-4">
+          {/* Nagłówek */}
+          <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11.5px] text-[var(--text-muted)]">
+            <Link href={`/profil/${post.author.id}`} className="relative shrink-0">
+              <Avatar className="h-6 w-6">
+                {post.author.avatarUrl && (
+                  <AvatarImage src={post.author.avatarUrl} alt={authorName(post.author)} />
+                )}
+                <AvatarFallback className="text-[9px]">{authorInitials(post.author)}</AvatarFallback>
+              </Avatar>
+              <OnlineDot
+                lastActiveAt={post.author.lastActiveAt}
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 border border-[var(--bg-elevated)]"
+              />
+            </Link>
+            <Link
+              href={`/profil/${post.author.id}`}
+              className="font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:underline"
+            >
+              {authorName(post.author)}
+            </Link>
+            <AdminBadge role={post.author.role} />
+            <span>·</span>
+            <span>{timeAgo(post.createdAt)}</span>
+            {post.category && (
+              <span
+                className="rounded-[4px] px-1.5 py-[1px] text-[10px] font-semibold"
+                style={{
+                  background: (post.category.color || "#9d6bff") + "1a",
+                  color: post.category.color || "var(--accent-soft)",
+                }}
+              >
+                {post.category.name}
+              </span>
+            )}
+            <div className="ml-auto flex items-center gap-1.5">
+              {isAdmin && <CopyLinkButton path={`/spolecznosc/${post.id}`} />}
+              <Link
+                href={`/spolecznosc/${post.id}`}
+                aria-label="Otwórz post"
+                className="shrink-0 text-[var(--text-muted)] transition-colors hover:text-[var(--accent)]"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+              {canDelete && (
+                <button
+                  type="button"
+                  aria-label="Usuń post"
+                  className="text-[var(--text-muted)] transition-colors hover:text-red-400"
+                  onClick={() => void handleDelete()}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Tytuł */}
+          {post.title && (
+            <h3 className="mb-1.5 font-display text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
+              {highlight
+                ? post.title
+                : post.title}
+            </h3>
+          )}
+
+          {/* Treść */}
+          <div className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-[var(--text-secondary)]">
+            <MentionText content={post.content} mentions={post.mentions} />
+          </div>
+
+          {post.attachments && <AttachmentView attachments={post.attachments} />}
+
+          {/* Stopka */}
+          <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
-              aria-label="Usuń post"
-              className="text-text-muted transition-colors hover:text-red-400"
-              onClick={() => void handleDelete()}
+              className="flex items-center gap-1.5 rounded-[5px] px-2 py-1 text-[12px] font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+              onClick={() => setExpanded((e) => !e)}
             >
-              <Trash2 className="h-4 w-4" />
+              <MessageCircle className="h-4 w-4" />
+              {count} {count === 1 ? "komentarz" : count < 5 ? "komentarze" : "komentarzy"}
             </button>
+          </div>
+
+          {expanded && (
+            <div className="mt-3 border-t border-[var(--border-subtle)] pt-3">
+              <CommentForm postId={post.id} onCreated={loadComments} />
+              {commentsLoading && comments.length === 0 ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-[var(--text-muted)]" />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <CommentTree
+                    postId={post.id}
+                    comments={comments}
+                    currentUserId={currentUserId}
+                    isAdmin={isAdmin}
+                    onChange={loadComments}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
-
-      {post.title && (
-        <h3 className="mt-3 text-base font-semibold text-text-primary">
-          <Highlight text={post.title} query={highlight} />
-        </h3>
-      )}
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-text-secondary">
-        <Highlight text={post.content} query={highlight} />
-      </p>
-      {post.attachments && <AttachmentView attachments={post.attachments} />}
-
-      <button
-        type="button"
-        className="mt-3 flex items-center gap-1.5 text-sm font-medium text-text-secondary transition-colors hover:text-[var(--accent)]"
-        onClick={() => setExpanded((e) => !e)}
-      >
-        <MessageCircle className="h-4 w-4" />
-        {count} {count === 1 ? "komentarz" : "komentarzy"}
-      </button>
-
-      {expanded && (
-        <div className="mt-3 border-t border-[var(--border-subtle)] pt-3">
-          <CommentForm postId={post.id} onCreated={loadComments} />
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-text-muted" />
-            </div>
-          ) : (
-            <div className="mt-3">
-              <CommentTree
-                postId={post.id}
-                comments={comments}
-                currentUserId={currentUserId}
-                isAdmin={isAdmin}
-                onChange={loadComments}
-              />
-            </div>
-          )}
-        </div>
-      )}
     </article>
   );
 }

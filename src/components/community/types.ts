@@ -16,6 +16,15 @@ export interface CategoryMini {
   color: string | null;
 }
 
+// Użytkownik wzmiankowany (@) — do renderowania nazw na żywo.
+export interface MentionUser {
+  id: string;
+  username: string | null;
+  email: string;
+}
+
+export type MentionMap = Record<string, MentionUser>;
+
 export interface PostItem {
   id: string;
   authorId: string;
@@ -26,6 +35,8 @@ export interface PostItem {
   author: AuthorMini;
   category?: CategoryMini | null;
   _count: { comments: number };
+  votes?: { up: number; down: number; myVote: "UP" | "DOWN" | null };
+  mentions?: MentionMap;
 }
 
 export interface CommentItem {
@@ -37,6 +48,8 @@ export interface CommentItem {
   attachments: Attachment[] | null;
   createdAt: string;
   author: AuthorMini;
+  votes?: { up: number; down: number; myVote: "UP" | "DOWN" | null };
+  mentions?: MentionMap;
 }
 
 export function authorName(a: AuthorMini): string {

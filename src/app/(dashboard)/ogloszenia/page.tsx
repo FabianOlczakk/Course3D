@@ -62,11 +62,11 @@ export default async function AnnouncementsPage({
     <div className="p-[26px] md:px-[30px]">
       <HighlightTarget param="a" prefix="a-" />
       <div className="mx-auto max-w-[760px]">
-        <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[#f0f0f0]">
+        <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[var(--text-primary)]">
           <Bell className="h-6 w-6 text-[var(--accent)]" />
           Ogłoszenia
         </h1>
-        <p className="mb-[18px] mt-[6px] text-[13.5px] text-[#8a8a8a]">
+        <p className="mb-[18px] mt-[6px] text-[13.5px] text-[var(--text-muted)]">
           Najważniejsze informacje od zespołu kursu
         </p>
 
@@ -77,7 +77,7 @@ export default async function AnnouncementsPage({
               className={
                 !activeCat
                   ? "rounded-md bg-[#9d6bff1a] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--accent-soft)]"
-                  : "rounded-md border border-[#2b2b2b] bg-[#1e1e1e] px-3 py-1.5 text-[12.5px] font-semibold text-[#b4b4b4] hover:text-[#ededed]"
+                  : "rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }
             >
               Wszystko
@@ -86,7 +86,7 @@ export default async function AnnouncementsPage({
               <Link
                 key={c.id}
                 href={`/ogloszenia?cat=${c.id}`}
-                className="rounded-md border border-[#2b2b2b] px-3 py-1.5 text-[12.5px] font-semibold"
+                className="rounded-md border border-[var(--border-subtle)] px-3 py-1.5 text-[12.5px] font-semibold"
                 style={
                   activeCat === c.id
                     ? { background: (c.color || "#9d6bff") + "1a", color: c.color || "#b89dff", borderColor: "transparent" }
@@ -100,7 +100,7 @@ export default async function AnnouncementsPage({
         )}
 
         {shown.length === 0 ? (
-          <div className="rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e] p-8 text-center text-[13.5px] text-[#8a8a8a]">
+          <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-8 text-center text-[13.5px] text-[var(--text-muted)]">
             Brak ogłoszeń.
           </div>
         ) : (

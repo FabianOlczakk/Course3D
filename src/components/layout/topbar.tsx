@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare, Sun, Moon, Monitor } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { useTheme, type Theme } from "@/components/theme-provider";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 interface SearchResult {
   type: "lesson" | "post" | "wiki";
@@ -90,13 +91,13 @@ function SearchBar() {
   return (
     <div className="relative w-full max-w-[460px]">
       <div className="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 focus-within:border-[var(--accent)]">
-        <Search className="h-4 w-4 shrink-0 text-[#6e6e6e]" />
+        <Search className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
         <input
           ref={inputRef}
           type="text"
           value={query}
           placeholder="Szukaj lekcji, postów, użytkowników..."
-          className="flex-1 bg-transparent text-[13.5px] text-text-primary outline-none placeholder:text-[#6e6e6e]"
+          className="flex-1 bg-transparent text-[13.5px] text-text-primary outline-none placeholder:text-[var(--text-muted)]"
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -288,6 +289,7 @@ export function Topbar({
 
       {/* Prawa strona: switcher motywu + plakietka roli */}
       <div className="absolute right-4 flex items-center gap-2 sm:right-6">
+        <NotificationBell />
         <ThemeSwitcher />
         <span
           className={
