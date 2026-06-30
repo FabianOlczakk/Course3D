@@ -42,7 +42,7 @@ export function StyledSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 w-full items-center gap-2 rounded-md border border-[#2e2e2e] bg-[#141414] pl-3 pr-9 text-left text-sm text-text-primary outline-none transition-colors hover:border-[#3a3a3a] focus:border-[var(--accent)]"
+        className="flex h-9 w-full items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] pl-3 pr-9 text-left text-sm text-text-primary outline-none transition-colors hover:border-[var(--border-glow)] focus:border-[var(--accent)]"
       >
         {selected?.color && (
           <span
@@ -50,14 +50,14 @@ export function StyledSelect({
             style={{ background: selected.color }}
           />
         )}
-        <span className={cn("truncate", !selected && "text-[#6e6e6e]")}>
+        <span className={cn("truncate", !selected && "text-[var(--text-muted)]")}>
           {selected ? selected.label : placeholder}
         </span>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e6e6e]" />
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full min-w-[180px] overflow-auto rounded-md border border-[#2b2b2b] bg-[#1e1e1e] py-1 shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full min-w-[180px] overflow-auto rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] py-1 shadow-xl">
           {options.map((o) => {
             const active = o.value === value;
             return (

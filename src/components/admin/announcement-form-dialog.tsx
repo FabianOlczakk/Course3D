@@ -147,7 +147,7 @@ export function AnnouncementFormDialog({
                 className={`flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
                   pinned
                     ? "border-[var(--accent)] bg-[var(--accent)]"
-                    : "border-[#2e2e2e] bg-[#141414]"
+                    : "border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
                 }`}
               >
                 {pinned && (

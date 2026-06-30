@@ -75,6 +75,7 @@ export function MessagesPanel({
   const [asSystem, setAsSystem] = useState(false);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [convsLoading, setConvsLoading] = useState(true);
   const [active, setActive] = useState<UserMini | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [search, setSearch] = useState("");
@@ -96,6 +97,8 @@ export function MessagesPanel({
       setConversations(data.conversations ?? []);
     } catch {
       /* ignore polling errors */
+    } finally {
+      setConvsLoading(false);
     }
   }, []);
 
@@ -281,7 +284,7 @@ export function MessagesPanel({
             className={cn(
               "flex w-full flex-col md:w-[290px] md:shrink-0",
               variant === "page"
-                ? "overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]"
+                ? "overflow-hidden rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)]"
                 : "border-r border-[var(--border-subtle)]",
               !showList && "hidden md:flex"
             )}
@@ -293,7 +296,7 @@ export function MessagesPanel({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Szukaj użytkownika..."
-                  className="w-full rounded-md border border-[#2e2e2e] bg-[#141414] py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
+                  className="w-full rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
                 />
               </div>
             </div>
@@ -316,6 +319,18 @@ export function MessagesPanel({
                     Brak wyników.
                   </p>
                 )
+              ) : convsLoading ? (
+                <div className="space-y-0 divide-y divide-[var(--border-subtle)]">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-3">
+                      <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[var(--bg-elevated)]" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-24 animate-pulse rounded bg-[var(--bg-elevated)]" style={{ animationDelay: `${i * 80}ms` }} />
+                        <div className="h-2.5 w-36 animate-pulse rounded bg-[var(--bg-elevated)]" style={{ animationDelay: `${i * 80 + 40}ms` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : conversations.length ? (
                 conversations.map((c) => (
                   <ConversationRow
@@ -355,7 +370,7 @@ export function MessagesPanel({
             className={cn(
               "flex min-w-0 flex-1 flex-col",
               variant === "page" &&
-                "overflow-hidden rounded-[10px] border border-[#2b2b2b] bg-[#1e1e1e]",
+                "overflow-hidden rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)]",
               showList && "hidden md:flex"
             )}
           >
@@ -389,10 +404,10 @@ export function MessagesPanel({
                       {isOnline(active.lastActiveAt ? new Date(active.lastActiveAt) : null) ? (
                         <span className="text-[var(--green)]">● Online</span>
                       ) : (
-                        <span className="text-[#6e6e6e]">Offline</span>
+                        <span className="text-[var(--text-muted)]">Offline</span>
                       )}
                       {active.role === "ADMIN" && (
-                        <span className="text-[#6e6e6e]">· Instruktor</span>
+                        <span className="text-[var(--text-muted)]">· Instruktor</span>
                       )}
                     </div>
                   </div>
@@ -410,10 +425,10 @@ export function MessagesPanel({
                           className={`flex gap-2 ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
                         >
                           {i % 2 === 0 && (
-                            <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-[#2e2e2e]" />
+                            <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-[var(--bg-elevated)]" />
                           )}
                           <div
-                            className="animate-pulse rounded-[14px] bg-[#2e2e2e]"
+                            className="animate-pulse rounded-[14px] bg-[var(--bg-elevated)]"
                             style={{
                               height: 36,
                               width: `${[120, 180, 90, 150, 110][i]}px`,
@@ -442,7 +457,7 @@ export function MessagesPanel({
                               ? "rounded-[10px_10px_3px_10px] bg-[var(--green)] text-[#06281c]"
                               : mine
                                 ? "rounded-[10px_10px_3px_10px] bg-[var(--accent)] text-white"
-                                : "rounded-[10px_10px_10px_3px] bg-[#242424] text-[#e0e0e0]"
+                                : "rounded-[10px_10px_10px_3px] bg-[var(--bg-elevated)] text-[var(--text-primary)]"
                           )}
                         >
                           {m.content && (
@@ -487,7 +502,7 @@ export function MessagesPanel({
                         className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
                           asSystem
                             ? "border-[var(--accent)] bg-[var(--accent)]"
-                            : "border-[#2e2e2e] bg-[#141414]"
+                            : "border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
                         }`}
                       >
                         {asSystem && <Check className="h-3 w-3 text-white" />}
@@ -551,7 +566,7 @@ export function MessagesPanel({
                       }}
                       rows={1}
                       placeholder="Napisz wiadomość..."
-                      className="max-h-32 min-h-[2.5rem] flex-1 resize-none rounded-md border border-[#2e2e2e] bg-[#141414] px-3 py-2 text-[13.5px] text-text-primary placeholder:text-[#6e6e6e] focus:border-[var(--accent)] focus:outline-none"
+                      className="max-h-32 min-h-[2.5rem] flex-1 resize-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-[13.5px] text-text-primary placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
                     />
                     <button
                       type="button"
@@ -583,7 +598,7 @@ export function MessagesPanel({
 
   if (variant === "page") {
     return (
-      <div className="flex h-[calc(100vh-3.5rem)] w-full flex-col bg-[#181818] p-[26px] md:px-[30px]">
+      <div className="flex h-[calc(100vh-3.5rem)] w-full flex-col bg-[var(--bg-base)] p-[26px] md:px-[30px]">
         {body}
       </div>
     );

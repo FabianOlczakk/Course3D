@@ -77,7 +77,7 @@ export function WikiArticleForm({ initial }: { initial?: WikiArticleData }) {
       <div className="flex items-center gap-3">
         <Link
           href="/wiki"
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-[#2e2e2e] bg-[#1e1e1e] text-text-secondary transition-colors hover:border-[var(--accent)] hover:text-text-primary"
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-card)] text-text-secondary transition-colors hover:border-[var(--accent)] hover:text-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>

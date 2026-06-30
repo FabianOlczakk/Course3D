@@ -5,18 +5,29 @@ export const SYSTEM_USERNAME = "SYSTEM";
 
 /**
  * Zwraca id konta systemowego „SYSTEM" (tworzy je przy pierwszym użyciu).
- * Konto nie ma hasła, więc nie można się na nie zalogować — służy wyłącznie
- * do wysyłania wiadomości incognito przez administratora.
+ * Konto nie ma hasła — służy wyłącznie do incognito-wiadomości administratora.
  */
 export async function getSystemUserId(): Promise<string> {
-  const existing = await prisma.user.findUnique({
-    where: { email: SYSTEM_EMAIL },
+  // Szukaj po emailu lub nazwie użytkownika (zabezpieczenie po ręcznym resecie tabeli).
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email: SYSTEM_EMAIL }, { username: SYSTEM_USERNAME }] },
     select: { id: true },
   });
   if (existing) return existing.id;
-  const created = await prisma.user.create({
-    data: { email: SYSTEM_EMAIL, username: SYSTEM_USERNAME, role: "STUDENT" },
-    select: { id: true },
-  });
-  return created.id;
+
+  try {
+    const created = await prisma.user.create({
+      data: { email: SYSTEM_EMAIL, username: SYSTEM_USERNAME, role: "STUDENT" },
+      select: { id: true },
+    });
+    return created.id;
+  } catch {
+    // Wyścig między dwoma równoczesnymi żądaniami — znajdź istniejący rekord.
+    const fallback = await prisma.user.findFirst({
+      where: { OR: [{ email: SYSTEM_EMAIL }, { username: SYSTEM_USERNAME }] },
+      select: { id: true },
+    });
+    if (fallback) return fallback.id;
+    throw new Error("Nie można utworzyć ani znaleźć konta SYSTEM.");
+  }
 }

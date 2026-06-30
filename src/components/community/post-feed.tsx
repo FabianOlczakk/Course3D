@@ -21,6 +21,8 @@ export function PostFeed({
   const [loading, setLoading] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
+  const [newPostsCount, setNewPostsCount] = useState(0);
+
   const [query, setQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
   const [searchResults, setSearchResults] = useState<PostItem[]>([]);
@@ -95,6 +97,28 @@ export function PostFeed({
   useEffect(() => {
     void loadMore(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Poll for new posts every 30s
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/posts?limit=5");
+        if (!res.ok) return;
+        const data = await res.json();
+        const newest: PostItem[] = data.posts ?? [];
+        setPosts((prev) => {
+          if (!prev.length || !newest.length) return prev;
+          const latestKnownId = prev[0].id;
+          const newOnes = newest.filter(
+            (p) => p.createdAt > prev[0].createdAt && p.id !== latestKnownId
+          );
+          if (newOnes.length > 0) setNewPostsCount((c) => c + newOnes.length);
+          return prev;
+        });
+      } catch { /* ignore */ }
+    }, 30000);
+    return () => clearInterval(id);
   }, []);
 
   // Bezpośredni link do posta (?post=ID) — dociągnij, jeśli nie jest na liście.
@@ -267,7 +291,17 @@ export function PostFeed({
         </div>
       )}
 
-      <NewPostForm onCreated={(p) => setPosts((prev) => [p, ...prev])} />
+      {newPostsCount > 0 && (
+        <button
+          type="button"
+          onClick={() => { setNewPostsCount(0); void loadMore(true); }}
+          className="w-full rounded-md border border-[var(--accent)] bg-[var(--accent-glow)] py-2 text-[12.5px] font-semibold text-[var(--accent-soft)] transition-colors hover:bg-[var(--accent-glow)]"
+        >
+          ↑ {newPostsCount} {newPostsCount === 1 ? "nowy post" : "nowe posty"} — kliknij aby odświeżyć
+        </button>
+      )}
+
+      <NewPostForm onCreated={(p) => { setNewPostsCount(0); setPosts((prev) => [p, ...prev]); }} />
 
       {shownPosts.map((post) => (
         <PostCard

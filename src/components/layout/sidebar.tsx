@@ -12,11 +12,13 @@ import {
   Boxes,
   Users,
   SlidersHorizontal,
+  UserCircle,
   ChevronRight,
   X,
   Pencil,
   LogOut,
   Loader2,
+  Terminal,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -265,9 +267,61 @@ export function Sidebar({
       onToggle,
       badge,
       badgeAccent,
-    }: { open?: boolean; onToggle: () => void; badge?: number; badgeAccent?: boolean }
+      href,
+    }: {
+      open?: boolean;
+      onToggle: () => void;
+      badge?: number;
+      badgeAccent?: boolean;
+      href?: string;
+    }
   ) => {
     const Icon = icon;
+    const badgeNode = badge ? (
+      <span
+        className={cn(
+          "flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] px-[5px] text-[10.5px] font-semibold",
+          badgeAccent
+            ? "bg-[var(--accent)] text-white"
+            : "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+        )}
+      >
+        {badge > 99 ? "99+" : badge}
+      </span>
+    ) : null;
+
+    if (href) {
+      return (
+        <div className="relative flex w-full items-center gap-[11px] rounded-[7px] px-[11px] py-2 text-[13.5px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]">
+          <Link
+            href={href}
+            onClick={onMobileClose}
+            className="flex flex-1 items-center gap-[11px] text-left"
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
+            <span className="flex-1">{label}</span>
+          </Link>
+          {badgeNode}
+          <button
+            type="button"
+            aria-label={open ? "Zwiń listę" : "Rozwiń listę"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            className="-mr-1 shrink-0 rounded-[5px] p-1 hover:bg-[var(--bg-elevated)]"
+          >
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 shrink-0 text-[#6e6e6e] transition-transform",
+                open && "rotate-90"
+              )}
+            />
+          </button>
+        </div>
+      );
+    }
+
     return (
       <button
         onClick={onToggle}
@@ -275,18 +329,7 @@ export function Sidebar({
       >
         <Icon className="h-[18px] w-[18px] shrink-0 text-[#8a8a8a]" />
         <span className="flex-1">{label}</span>
-        {badge ? (
-          <span
-            className={cn(
-              "flex h-[17px] min-w-[17px] items-center justify-center rounded-[5px] px-[5px] text-[10.5px] font-semibold",
-              badgeAccent
-                ? "bg-[var(--accent)] text-white"
-                : "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
-            )}
-          >
-            {badge > 99 ? "99+" : badge}
-          </span>
-        ) : null}
+        {badgeNode}
         <ChevronRight
           className={cn(
             "h-4 w-4 shrink-0 text-[#6e6e6e] transition-transform",
@@ -327,16 +370,16 @@ export function Sidebar({
       <div className="flex h-14 items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-[18px]">
         <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
           <div className="flex items-baseline gap-1.5">
-            <span className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[#f0f0f0]">
+            <span className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[var(--text-primary)]">
               Kurs druku 3D
             </span>
             {role === "ADMIN" && (
-              <span className="shrink-0 text-[9px] leading-none text-[#3d3d3d]">
+              <span className="shrink-0 text-[9px] leading-none text-[var(--text-muted)]">
                 v{APP_VERSION}
               </span>
             )}
           </div>
-          <div className="mt-[2px] text-[11px] text-[#6e6e6e]">
+          <div className="mt-[2px] text-[11px] text-[var(--text-muted)]">
             BambuLab A1 mini
           </div>
         </Link>
@@ -383,6 +426,7 @@ export function Sidebar({
             open: wiadOpen,
             onToggle: () => setWiadOpen((o) => !o),
             badge: unreadMsg,
+            href: "/wiadomosci",
           })}
           {wiadOpen &&
             subgroup(
@@ -447,6 +491,7 @@ export function Sidebar({
           {expandRow("Wiki", BookOpen, {
             open: wikiOpen,
             onToggle: () => setWikiOpen((o) => !o),
+            href: "/wiki",
           })}
           {wikiOpen &&
             subgroup(
@@ -551,6 +596,7 @@ export function Sidebar({
                 { label: "Rozdziały", icon: Boxes, href: "/admin/chapters" },
                 { label: "Ogłoszenia", icon: Bell, href: "/admin/ogloszenia" },
                 { label: "Wiki", icon: Pencil, href: "/admin/wiki/new" },
+                { label: "Deweloper", icon: Terminal, href: "/admin/developer" },
               ].map((it) => {
                 const Icon = it.icon;
                 const active = isActive(it.href);
@@ -648,7 +694,7 @@ export function Sidebar({
               }}
               className="flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <UserCircle className="h-4 w-4" />
               Mój profil
             </Link>
             <Link

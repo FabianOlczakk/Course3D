@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { HelpWidget } from "@/components/shared/help-widget";
 import type { SidebarChapter } from "@/components/chapters/chapter-list";
 import type { Role } from "@prisma/client";
 
@@ -52,6 +53,7 @@ export function ShellFrame({
           <div className="mx-auto w-full max-w-[1200px]">{children}</div>
         </main>
       </div>
+      <HelpWidget />
     </div>
   );
 }
