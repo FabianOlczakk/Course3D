@@ -23,6 +23,7 @@ enum SupportTicketType {
   HELP
   BUG
   FEATURE
+  OTHER
 }
 
 enum VoteValue {

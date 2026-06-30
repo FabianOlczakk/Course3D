@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
 }
 
 const createSchema = z.object({
-  type: z.enum(["HELP", "BUG", "FEATURE"]),
+  type: z.enum(["HELP", "BUG", "FEATURE", "OTHER"]),
   message: z.string().min(5).max(2000),
   pageUrl: z.string().max(500).default("admin"),
 });

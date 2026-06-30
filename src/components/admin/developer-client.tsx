@@ -43,7 +43,7 @@ interface TicketUser {
 }
 interface Ticket {
   id: string;
-  type: "HELP" | "BUG" | "FEATURE";
+  type: "HELP" | "BUG" | "FEATURE" | "OTHER";
   message: string;
   pageUrl: string;
   resolved: boolean;
@@ -56,7 +56,7 @@ function TicketsPanel() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "open" | "resolved">("open");
   const [creating, setCreating] = useState(false);
-  const [newType, setNewType] = useState<"HELP" | "BUG" | "FEATURE">("BUG");
+  const [newType, setNewType] = useState<"HELP" | "BUG" | "FEATURE" | "OTHER">("BUG");
   const [newMessage, setNewMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -169,6 +169,13 @@ function TicketsPanel() {
             >
               <Plus className="h-3.5 w-3.5" /> Nowa funkcja
             </button>
+            <button
+              type="button"
+              onClick={() => setNewType("OTHER")}
+              className={`flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[12px] font-semibold transition-colors ${newType === "OTHER" ? "bg-[var(--text-muted)]/20 text-[var(--text-secondary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"}`}
+            >
+              <Circle className="h-3.5 w-3.5" /> Inne
+            </button>
           </div>
           <textarea
             value={newMessage}
@@ -207,8 +214,8 @@ function TicketsPanel() {
         {shown.map((t) => (
           <div key={t.id} className={`px-4 py-3 ${t.resolved ? "opacity-60" : ""}`}>
             <div className="flex flex-wrap items-start gap-2">
-              <span className={`mt-0.5 shrink-0 rounded-[4px] px-2 py-0.5 text-[10px] font-semibold ${t.type === "BUG" ? "bg-red-500/15 text-red-400" : t.type === "FEATURE" ? "bg-green-500/15 text-green-400" : "bg-blue-500/15 text-blue-400"}`}>
-                {t.type === "BUG" ? "Błąd" : t.type === "FEATURE" ? "Nowa funkcja" : "Pomoc"}
+              <span className={`mt-0.5 shrink-0 rounded-[4px] px-2 py-0.5 text-[10px] font-semibold ${t.type === "BUG" ? "bg-red-500/15 text-red-400" : t.type === "FEATURE" ? "bg-green-500/15 text-green-400" : t.type === "OTHER" ? "bg-[var(--text-muted)]/15 text-[var(--text-secondary)]" : "bg-blue-500/15 text-blue-400"}`}>
+                {t.type === "BUG" ? "Błąd" : t.type === "FEATURE" ? "Nowa funkcja" : t.type === "OTHER" ? "Inne" : "Pomoc"}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="whitespace-pre-wrap break-words text-[13px] text-[var(--text-primary)]">{t.message}</p>
