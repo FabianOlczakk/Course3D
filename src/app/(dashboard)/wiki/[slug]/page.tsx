@@ -74,15 +74,30 @@ export default async function WikiArticlePage({ params }: { params: { slug: stri
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
-        {/* Nota o źródle (po angielsku) — uczciwe przypisanie BambuLab */}
+        {/* Nota o źródle — uczciwe przypisanie BambuLab */}
         <div className="mt-8 border-t border-[var(--border-subtle)] pt-4 text-xs leading-relaxed text-text-muted">
-          <p className="mb-2 font-semibold text-text-secondary">Source &amp; attribution</p>
+          <p className="mb-2 font-semibold text-text-secondary">Źródło i prawa autorskie</p>
           <p className="mb-2">
-            This article is a Polish translation of official Bambu Lab
-            documentation. The original content and images belong to Bambu Lab
-            and are reproduced here <strong>solely</strong> to translate them
-            into Polish and provide easier access for participants of this
-            course. No ownership is claimed. Original source:{" "}
+            Ten artykuł jest polskim tłumaczeniem oficjalnej dokumentacji Bambu Lab.
+            Oryginalne treści i grafiki należą do Bambu Lab i zostały tu zamieszczone
+            wyłącznie w celu udostępnienia ich w języku polskim uczestnikom tego kursu.
+            Nie rościmy sobie żadnych praw własności. Oryginalne źródło:{" "}
+            <a
+              href="https://wiki.bambulab.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--accent)] underline"
+            >
+              wiki.bambulab.com
+            </a>
+            .
+          </p>
+          <p className="mb-2 mt-3 font-semibold text-text-secondary">Source &amp; attribution</p>
+          <p>
+            This article is a Polish translation of official Bambu Lab documentation.
+            The original content and images belong to Bambu Lab and are reproduced here{" "}
+            <strong>solely</strong> to translate them into Polish and provide easier
+            access for participants of this course. No ownership is claimed. Original source:{" "}
             <a
               href="https://wiki.bambulab.com"
               target="_blank"

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { attachMentions } from "@/lib/mentions";
+import { maskActivity } from "@/lib/online-status";
 
 // Pojedynczy post (np. dla bezpośredniego linku).
 export async function GET(
@@ -22,6 +24,7 @@ export async function GET(
           avatarUrl: true,
           role: true,
           lastActiveAt: true,
+          activityPrivate: true,
         },
       },
       category: { select: { id: true, name: true, color: true } },
@@ -31,7 +34,32 @@ export async function GET(
   if (!post) {
     return NextResponse.json({ error: "Nie znaleziono posta." }, { status: 404 });
   }
-  return NextResponse.json({ post });
+
+  const userId = session.user.id;
+  const [up, down, myVote] = await Promise.all([
+    prisma.postVote.count({ where: { postId: post.id, value: "UP" } }),
+    prisma.postVote.count({ where: { postId: post.id, value: "DOWN" } }),
+    prisma.postVote.findUnique({
+      where: { userId_postId: { userId, postId: post.id } },
+      select: { value: true },
+    }),
+  ]);
+
+  const { items, mentions } = await attachMentions(
+    [{ id: post.id, content: post.content }],
+    (id, content) => prisma.post.update({ where: { id }, data: { content } })
+  );
+  const { author, ...rest } = post;
+
+  const enriched = {
+    ...rest,
+    content: items[0]?.content ?? post.content,
+    author: maskActivity(author, userId, session.user.role === "ADMIN"),
+    votes: { up, down, myVote: myVote?.value ?? null },
+    mentions,
+  };
+
+  return NextResponse.json({ post: enriched });
 }
 
 // Usuń własny post (lub dowolny — jeśli administrator).

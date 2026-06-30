@@ -16,11 +16,11 @@ export default async function CommunityPage() {
     <div className="mx-auto max-w-[740px] p-[26px] md:px-[30px]">
       <HighlightTarget param="post" prefix="post-" />
       <HighlightTarget param="comment" prefix="comment-" />
-      <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[#f0f0f0]">
+      <h1 className="flex items-center gap-2 font-display text-[23px] font-semibold text-[var(--text-primary)]">
         <Users2 className="h-6 w-6 text-[var(--accent)]" />
         Społeczność
       </h1>
-      <p className="mb-[18px] mt-[6px] text-[13.5px] text-[#8a8a8a]">
+      <p className="mb-[18px] mt-[6px] text-[13.5px] text-[var(--text-muted)]">
         Zadawaj pytania, dziel się wydrukami i pomagaj innym kursantom
       </p>
       <PostFeed
