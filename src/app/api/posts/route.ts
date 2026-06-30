@@ -4,9 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
 import { notifyPostMentions } from "@/lib/notifications";
+import { attachMentions, encodeMentions } from "@/lib/mentions";
+import { maskActivity } from "@/lib/online-status";
 
 const authorSelect = {
-  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
+  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true, activityPrivate: true },
 } as const;
 const categorySelect = { select: { id: true, name: true, color: true } } as const;
 
@@ -49,15 +51,34 @@ export async function GET(req: Request) {
     _count: true,
   });
 
+  const viewerId = session.user.id;
+  const viewerIsAdmin = session.user.role === "ADMIN";
+
   const enriched = items.map((p) => {
     const up = voteCounts.find((v) => v.postId === p.id && v.value === "UP")?._count ?? 0;
     const down = voteCounts.find((v) => v.postId === p.id && v.value === "DOWN")?._count ?? 0;
     const myVote = p.votes[0]?.value ?? null;
     const { votes: _v, ...rest } = p;
-    return { ...rest, votes: { up, down, myVote } };
+    return {
+      ...rest,
+      author: maskActivity(p.author, viewerId, viewerIsAdmin),
+      votes: { up, down, myVote },
+    };
   });
 
-  return NextResponse.json({ posts: enriched, nextCursor });
+  // Wzmianki: migracja starych @nazwa → znaczniki + mapa ID → użytkownik.
+  const { items: withMentions, mentions } = await attachMentions(
+    enriched.map((p) => ({ id: p.id, content: p.content })),
+    (id, content) => prisma.post.update({ where: { id }, data: { content } })
+  );
+  const contentById = new Map(withMentions.map((i) => [i.id, i.content]));
+  const enrichedWithMentions = enriched.map((p) => ({
+    ...p,
+    content: contentById.get(p.id) ?? p.content,
+    mentions,
+  }));
+
+  return NextResponse.json({ posts: enrichedWithMentions, nextCursor });
 }
 
 const createSchema = z.object({
@@ -89,10 +110,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // Powiadomienia liczymy z surowej treści (@nazwa), a w bazie zapisujemy
+  // treść ze znacznikami @[uid:ID] (trwałe wzmianki).
+  const encoded = await encodeMentions(parsed.data.content);
+
   const post = await prisma.post.create({
     data: {
       authorId: session.user.id,
-      content: parsed.data.content,
+      content: encoded,
       title: parsed.data.title || null,
       categoryId: parsed.data.categoryId || null,
       attachments: parsed.data.attachments ?? undefined,
@@ -106,6 +131,13 @@ export async function POST(req: Request) {
 
   void notifyPostMentions(session.user.id, post.id, parsed.data.content);
 
-  const postWithVotes = { ...post, votes: { up: 0, down: 0, myVote: null } };
+  const { mentions } = await attachMentions([{ id: post.id, content: post.content }]);
+  const { author, ...restPost } = post;
+  const postWithVotes = {
+    ...restPost,
+    author: maskActivity(author, session.user.id, session.user.role === "ADMIN"),
+    votes: { up: 0, down: 0, myVote: null },
+    mentions,
+  };
   return NextResponse.json({ post: postWithVotes }, { status: 201 });
 }

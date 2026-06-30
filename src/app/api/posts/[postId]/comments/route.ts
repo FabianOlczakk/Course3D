@@ -4,11 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { attachmentsSchema } from "@/lib/attachments";
 import { notifyComment } from "@/lib/notifications";
+import { attachMentions, encodeMentions } from "@/lib/mentions";
+import { maskActivity } from "@/lib/online-status";
 
 const authorSelect = {
-  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true },
+  select: { id: true, username: true, email: true, avatarUrl: true, role: true, lastActiveAt: true, activityPrivate: true },
 } as const;
 
+// Wszystkie komentarze posta (płaska lista z parentId — drzewo budowane po stronie klienta).
 export async function GET(
   _req: Request,
   { params }: { params: { postId: string } }
@@ -18,45 +21,66 @@ export async function GET(
     return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
   }
 
+  const viewerId = session.user.id;
+  const viewerIsAdmin = session.user.role === "ADMIN";
+
   const comments = await prisma.comment.findMany({
     where: { postId: params.postId },
     orderBy: { createdAt: "asc" },
     include: { author: authorSelect },
   });
 
-  // Dołącz liczby głosów i głos aktualnego użytkownika
+  // Głosy komentarzy — zbiorczo dla wszystkich komentarzy posta.
   const commentIds = comments.map((c) => c.id);
   const [voteCounts, myVotes] = await Promise.all([
-    prisma.commentVote.groupBy({
-      by: ["commentId", "value"],
-      where: { commentId: { in: commentIds } },
-      _count: true,
-    }),
-    prisma.commentVote.findMany({
-      where: { userId: session.user.id, commentId: { in: commentIds } },
-      select: { commentId: true, value: true },
-    }),
+    commentIds.length
+      ? prisma.commentVote.groupBy({
+          by: ["commentId", "value"],
+          where: { commentId: { in: commentIds } },
+          _count: true,
+        })
+      : Promise.resolve([] as { commentId: string; value: "UP" | "DOWN"; _count: number }[]),
+    commentIds.length
+      ? prisma.commentVote.findMany({
+          where: { commentId: { in: commentIds }, userId: viewerId },
+          select: { commentId: true, value: true },
+        })
+      : Promise.resolve([] as { commentId: string; value: "UP" | "DOWN" }[]),
   ]);
+  const myVoteByComment = new Map(myVotes.map((v) => [v.commentId, v.value]));
 
-  const myVoteMap = new Map(myVotes.map((v) => [v.commentId, v.value]));
-  const enriched = comments.map((c) => ({
+  const enriched = comments.map((c) => {
+    const up = voteCounts.find((v) => v.commentId === c.id && v.value === "UP")?._count ?? 0;
+    const down = voteCounts.find((v) => v.commentId === c.id && v.value === "DOWN")?._count ?? 0;
+    return {
+      ...c,
+      author: maskActivity(c.author, viewerId, viewerIsAdmin),
+      votes: { up, down, myVote: myVoteByComment.get(c.id) ?? null },
+    };
+  });
+
+  // Wzmianki: migracja starych @nazwa → znaczniki + mapa ID → użytkownik.
+  const { items: withMentions, mentions } = await attachMentions(
+    enriched.map((c) => ({ id: c.id, content: c.content })),
+    (id, content) => prisma.comment.update({ where: { id }, data: { content } })
+  );
+  const contentById = new Map(withMentions.map((i) => [i.id, i.content]));
+  const result = enriched.map((c) => ({
     ...c,
-    votes: {
-      up: voteCounts.filter((v) => v.commentId === c.id && v.value === "UP").reduce((s, v) => s + v._count, 0),
-      down: voteCounts.filter((v) => v.commentId === c.id && v.value === "DOWN").reduce((s, v) => s + v._count, 0),
-      myVote: myVoteMap.get(c.id) ?? null,
-    },
+    content: contentById.get(c.id) ?? c.content,
+    mentions,
   }));
 
-  return NextResponse.json({ comments: enriched });
+  return NextResponse.json({ comments: result });
 }
 
 const createSchema = z.object({
-  content: z.string().trim().min(1).max(10000),
+  content: z.string().trim().min(1, "Treść nie może być pusta.").max(10000),
   parentId: z.string().optional(),
   attachments: attachmentsSchema,
 });
 
+// Utwórz komentarz (opcjonalnie odpowiedź na inny komentarz).
 export async function POST(
   req: Request,
   { params }: { params: { postId: string } }
@@ -67,13 +91,18 @@ export async function POST(
   }
 
   let body: unknown;
-  try { body = await req.json(); } catch {
+  try {
+    body = await req.json();
+  } catch {
     return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
   }
 
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Nieprawidłowe dane." }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message ?? "Nieprawidłowe dane." },
+      { status: 400 }
+    );
   }
 
   const post = await prisma.post.findUnique({
@@ -92,21 +121,36 @@ export async function POST(
     });
     parentAuthorId = parent?.authorId;
     if (!parent || parent.postId !== params.postId) {
-      return NextResponse.json({ error: "Nie znaleziono komentarza nadrzędnego." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Nie znaleziono komentarza nadrzędnego." },
+        { status: 400 }
+      );
     }
   }
 
-  const comment = await prisma.comment.create({
+  const encoded = await encodeMentions(parsed.data.content);
+
+  const created = await prisma.comment.create({
     data: {
       authorId: session.user.id,
       postId: params.postId,
       parentId: parsed.data.parentId || null,
-      content: parsed.data.content,
+      content: encoded,
       attachments: parsed.data.attachments ?? undefined,
     },
     include: { author: authorSelect },
   });
 
+  const { mentions } = await attachMentions([{ id: created.id, content: created.content }]);
+  const { author, ...restComment } = created;
+  const comment = {
+    ...restComment,
+    author: maskActivity(author, session.user.id, session.user.role === "ADMIN"),
+    votes: { up: 0, down: 0, myVote: null },
+    mentions,
+  };
+
+  // Powiadomienia w tle
   void notifyComment({
     actorId: session.user.id,
     postId: params.postId,
@@ -116,5 +160,5 @@ export async function POST(
     parentAuthorId,
   });
 
-  return NextResponse.json({ comment: { ...comment, votes: { up: 0, down: 0, myVote: null } } }, { status: 201 });
+  return NextResponse.json({ comment }, { status: 201 });
 }

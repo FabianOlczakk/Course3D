@@ -12,6 +12,7 @@ import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
 import { CommentForm } from "@/components/community/comment-form";
 import { CommentTree } from "@/components/community/comment-tree";
+import { MentionText } from "@/components/community/mention-text";
 import {
   authorInitials,
   authorName,
@@ -22,42 +23,22 @@ import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
 import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
-// Parsuje @username w treści i linkuje do profilu użytkownika
-function renderMentions(text: string) {
-  const parts = text.split(/(@[\w.]+)/g);
-  return parts.map((part, i) => {
-    if (/^@[\w.]+$/.test(part)) {
-      const username = part.slice(1);
-      return (
-        <Link
-          key={i}
-          href={`/profil/u/${encodeURIComponent(username)}`}
-          className="font-medium text-[var(--accent)] hover:underline"
-        >
-          {part}
-        </Link>
-      );
-    }
-    return part;
-  });
-}
-
 export function PostCard({
   post,
   currentUserId,
   isAdmin,
   highlight,
-  defaultExpanded,
   onDeleted,
+  defaultExpanded = false,
 }: {
   post: PostItem;
   currentUserId: string;
   isAdmin: boolean;
   highlight?: string;
-  defaultExpanded?: boolean;
   onDeleted: (id: string) => void;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [count, setCount] = useState(post._count.comments);
@@ -113,6 +94,7 @@ export function PostCard({
   async function handleVote(value: "UP" | "DOWN") {
     if (voting) return;
     setVoting(true);
+    // Optymistyczna aktualizacja
     const prevUp = voteUp, prevDown = voteDown, prevMy = myVote;
     if (myVote === value) {
       setMyVote(null);
@@ -247,13 +229,15 @@ export function PostCard({
           {/* Tytuł */}
           {post.title && (
             <h3 className="mb-1.5 font-display text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
-              {post.title}
+              {highlight
+                ? post.title
+                : post.title}
             </h3>
           )}
 
           {/* Treść */}
           <div className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-[var(--text-secondary)]">
-            {renderMentions(post.content)}
+            <MentionText content={post.content} mentions={post.mentions} />
           </div>
 
           {post.attachments && <AttachmentView attachments={post.attachments} />}

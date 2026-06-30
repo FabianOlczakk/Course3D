@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
 import { CommentForm } from "@/components/community/comment-form";
+import { MentionText } from "@/components/community/mention-text";
 import {
   authorInitials,
   authorName,
@@ -22,6 +23,7 @@ interface TreeNode extends CommentItem {
   children: TreeNode[];
 }
 
+// Buduje drzewo komentarzy z płaskiej listy (po parentId).
 function buildTree(comments: CommentItem[]): TreeNode[] {
   const map = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
@@ -35,25 +37,6 @@ function buildTree(comments: CommentItem[]): TreeNode[] {
     }
   }
   return roots;
-}
-
-function renderMentions(text: string) {
-  const parts = text.split(/(@[\w.]+)/g);
-  return parts.map((part, i) => {
-    if (/^@[\w.]+$/.test(part)) {
-      const username = part.slice(1);
-      return (
-        <Link
-          key={i}
-          href={`/profil/u/${encodeURIComponent(username)}`}
-          className="font-medium text-[var(--accent)] hover:underline"
-        >
-          {part}
-        </Link>
-      );
-    }
-    return part;
-  });
 }
 
 export function CommentTree({
@@ -103,13 +86,13 @@ function CommentNode({
   onChange: () => void;
 }) {
   const [replying, setReplying] = useState(false);
+  const canDelete = node.authorId === currentUserId || isAdmin;
+  const indent = Math.min(depth, MAX_INDENT);
+
   const [voteUp, setVoteUp] = useState(node.votes?.up ?? 0);
   const [voteDown, setVoteDown] = useState(node.votes?.down ?? 0);
   const [myVote, setMyVote] = useState<"UP" | "DOWN" | null>(node.votes?.myVote ?? null);
   const [voting, setVoting] = useState(false);
-
-  const canDelete = node.authorId === currentUserId || isAdmin;
-  const indent = Math.min(depth, MAX_INDENT);
   const score = voteUp - voteDown;
 
   async function handleDelete() {
@@ -138,8 +121,8 @@ function CommentNode({
         body: JSON.stringify({ value }),
       });
       if (res.ok) {
-        const data = await res.json();
-        setVoteUp(data.up); setVoteDown(data.down); setMyVote(data.myVote);
+        const d = await res.json();
+        setVoteUp(d.up); setVoteDown(d.down); setMyVote(d.myVote);
       } else {
         setVoteUp(prevUp); setVoteDown(prevDown); setMyVote(prevMy);
       }
@@ -180,7 +163,9 @@ function CommentNode({
               {authorName(node.author)}
             </Link>
             <AdminBadge role={node.author.role} />
-            <span className="text-xs text-text-muted">{timeAgo(node.createdAt)}</span>
+            <span className="text-xs text-text-muted">
+              {timeAgo(node.createdAt)}
+            </span>
             <div className="ml-auto flex items-center gap-2">
               {isAdmin && (
                 <CopyLinkButton
@@ -200,31 +185,43 @@ function CommentNode({
               )}
             </div>
           </div>
-          <p className="whitespace-pre-wrap break-words text-sm text-text-secondary">
-            {renderMentions(node.content)}
-          </p>
+          <div className="whitespace-pre-wrap break-words text-sm text-text-secondary">
+            <MentionText content={node.content} mentions={node.mentions} />
+          </div>
           {node.attachments && <AttachmentView attachments={node.attachments} />}
-          <div className="mt-1.5 flex items-center gap-3">
-            {/* Vote buttons */}
+          <div className="mt-1 flex items-center gap-3">
+            {/* Głosy komentarza (like / dislike) */}
             <div className="flex items-center gap-1">
               <button
                 type="button"
+                aria-label="Głosuj w górę"
                 disabled={voting}
                 onClick={() => void handleVote("UP")}
-                aria-label="Głosuj w górę"
-                className={`rounded p-0.5 transition-colors disabled:opacity-50 ${myVote === "UP" ? "text-orange-400" : "text-[var(--text-muted)] hover:text-orange-400"}`}
+                className={`rounded-[4px] p-0.5 transition-colors disabled:opacity-50 ${
+                  myVote === "UP"
+                    ? "text-orange-400"
+                    : "text-[var(--text-muted)] hover:text-orange-400"
+                }`}
               >
                 <ArrowBigUp className="h-4 w-4" fill={myVote === "UP" ? "currentColor" : "none"} />
               </button>
-              <span className={`text-[11px] font-semibold tabular-nums ${score > 0 ? "text-orange-400" : score < 0 ? "text-blue-400" : "text-[var(--text-muted)]"}`}>
+              <span
+                className={`min-w-[1ch] text-center text-[11px] font-bold tabular-nums ${
+                  score > 0 ? "text-orange-400" : score < 0 ? "text-blue-400" : "text-[var(--text-muted)]"
+                }`}
+              >
                 {score}
               </span>
               <button
                 type="button"
+                aria-label="Głosuj w dół"
                 disabled={voting}
                 onClick={() => void handleVote("DOWN")}
-                aria-label="Głosuj w dół"
-                className={`rounded p-0.5 transition-colors disabled:opacity-50 ${myVote === "DOWN" ? "text-blue-400" : "text-[var(--text-muted)] hover:text-blue-400"}`}
+                className={`rounded-[4px] p-0.5 transition-colors disabled:opacity-50 ${
+                  myVote === "DOWN"
+                    ? "text-blue-400"
+                    : "text-[var(--text-muted)] hover:text-blue-400"
+                }`}
               >
                 <ArrowBigDown className="h-4 w-4" fill={myVote === "DOWN" ? "currentColor" : "none"} />
               </button>
