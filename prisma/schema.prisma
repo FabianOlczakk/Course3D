@@ -19,6 +19,11 @@ enum CategoryType {
   ANNOUNCEMENT
 }
 
+enum SupportTicketType {
+  HELP
+  BUG
+}
+
 // Kategorie tworzone przez instruktora (admina) — wspólny model dla
 // postów społeczności i ogłoszeń, rozróżniany polem `type`.
 model Category {
@@ -88,6 +93,9 @@ model User {
 
   // Ogłoszenia (autor)
   announcements Announcement[]
+
+  // Zgłoszenia pomocy
+  supportTickets SupportTicket[]
 }
 
 model Account {
@@ -231,3 +239,15 @@ model WikiArticle {
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
+
+model SupportTicket {
+  id        String            @id @default(cuid())
+  userId    String
+  type      SupportTicketType
+  message   String            @db.Text
+  pageUrl   String
+  resolved  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
