@@ -78,6 +78,7 @@ model User {
   avatarUrl    String?
   lastActiveAt DateTime?
   progressPrivate Boolean @default(false)
+  activityPrivate Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -112,6 +113,9 @@ model User {
 
   // Głosowania na posty
   votes PostVote[]
+
+  // Głosowania na komentarze
+  commentVotes CommentVote[]
 
   // Powiadomienia
   notifications     Notification[] @relation("ReceivedNotifications")
@@ -246,6 +250,7 @@ model Comment {
   parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies Comment[] @relation("CommentReplies")
   notifications Notification[]
+  votes   CommentVote[]
 }
 
 model WikiArticle {
@@ -287,6 +292,20 @@ model PostVote {
 
   @@unique([userId, postId])
   @@index([postId])
+}
+
+model CommentVote {
+  id        String    @id @default(cuid())
+  userId    String
+  commentId String
+  value     VoteValue
+  createdAt DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
 }
 
 model Notification {

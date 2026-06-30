@@ -15,6 +15,31 @@ interface ProfileFormProps {
 }
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024; // 2 MB
+const AVATAR_SIZE = 512; // docelowy bok kwadratu (px)
+
+// Przycina obraz do kwadratu (środek) i skaluje do AVATAR_SIZE — bez rozciągania.
+function cropToSquare(dataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = AVATAR_SIZE;
+      canvas.height = AVATAR_SIZE;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Brak obsługi canvas."));
+        return;
+      }
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+      resolve(canvas.toDataURL("image/jpeg", 0.9));
+    };
+    img.onerror = () => reject(new Error("Nie udało się wczytać obrazu."));
+    img.src = dataUrl;
+  });
+}
 
 export function ProfileForm({
   initialUsername,
@@ -40,7 +65,14 @@ export function ProfileForm({
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setAvatar(reader.result as string);
+    reader.onload = async () => {
+      try {
+        const square = await cropToSquare(reader.result as string);
+        setAvatar(square);
+      } catch {
+        setError("Nie udało się przetworzyć zdjęcia. Spróbuj inny plik.");
+      }
+    };
     reader.readAsDataURL(file);
   }
 
@@ -101,7 +133,9 @@ export function ProfileForm({
             <Camera className="h-4 w-4" />
             Zmień zdjęcie
           </Button>
-          <p className="mt-1 text-xs text-text-muted">PNG/JPG do 2 MB.</p>
+          <p className="mt-1 text-xs text-text-muted">
+            PNG/JPG do 2 MB. Zdjęcie zostanie przycięte do kwadratu.
+          </p>
         </div>
       </div>
 

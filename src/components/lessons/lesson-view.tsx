@@ -314,9 +314,9 @@ export function LessonView({
               title="Treść lekcji"
             />
           ) : (
-            <div className="flex h-full items-center justify-center p-8 text-center text-text-secondary">
-              <div>
-                <FileText className="mx-auto mb-3 h-10 w-10 opacity-40" />
+            <div className="flex h-full w-full flex-1 items-center justify-center p-8 text-center text-text-secondary">
+              <div className="flex flex-col items-center">
+                <FileText className="mb-3 h-10 w-10 opacity-40" />
                 <p>Treść tej lekcji nie została jeszcze dodana.</p>
               </div>
             </div>

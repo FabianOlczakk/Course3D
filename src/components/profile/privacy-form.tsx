@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Radio, EyeOff as ActivityOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PrivacyFormProps {
   initialProgressPrivate: boolean;
+  initialActivityPrivate: boolean;
 }
 
-export function PrivacyForm({ initialProgressPrivate }: PrivacyFormProps) {
+export function PrivacyForm({
+  initialProgressPrivate,
+  initialActivityPrivate,
+}: PrivacyFormProps) {
   const [progressPrivate, setProgressPrivate] = useState(initialProgressPrivate);
+  const [activityPrivate, setActivityPrivate] = useState(initialActivityPrivate);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -23,7 +28,7 @@ export function PrivacyForm({ initialProgressPrivate }: PrivacyFormProps) {
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progressPrivate }),
+        body: JSON.stringify({ progressPrivate, activityPrivate }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -83,6 +88,45 @@ export function PrivacyForm({ initialProgressPrivate }: PrivacyFormProps) {
           <span
             className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
               progressPrivate ? "translate-x-4" : "translate-x-0.5"
+            }`}
+          />
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setActivityPrivate((v) => !v)}
+        className="flex w-full items-center gap-4 rounded-lg border border-[var(--border-subtle)] p-4 text-left transition-colors hover:border-[var(--border-glow)]"
+      >
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors ${
+            activityPrivate
+              ? "bg-[var(--accent)]/20 text-[var(--accent)]"
+              : "bg-[var(--bg-elevated)] text-text-muted"
+          }`}
+        >
+          {activityPrivate ? (
+            <ActivityOff className="h-5 w-5" />
+          ) : (
+            <Radio className="h-5 w-5" />
+          )}
+        </div>
+        <div className="flex-1">
+          <p className="font-medium text-text-primary">Ukryj aktywność</p>
+          <p className="text-sm text-text-muted">
+            {activityPrivate
+              ? "Inni kursanci nie widzą Twojego statusu „aktywny teraz". Instruktor widzi zawsze."
+              : "Inni widzą, kiedy jesteś aktywny(a) (zielona kropka, „aktywny teraz")."}
+          </p>
+        </div>
+        <div
+          className={`h-5 w-9 rounded-full transition-colors ${
+            activityPrivate ? "bg-[var(--accent)]" : "bg-[#2e2e2e]"
+          } relative`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              activityPrivate ? "translate-x-4" : "translate-x-0.5"
             }`}
           />
         </div>

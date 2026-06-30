@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PostDetailClient } from "@/components/community/post-detail-client";
+import { attachMentions } from "@/lib/mentions";
+import { maskActivity } from "@/lib/online-status";
 
 export async function generateMetadata({
   params,
@@ -38,6 +40,7 @@ export default async function PostDetailPage({
           avatarUrl: true,
           role: true,
           lastActiveAt: true,
+          activityPrivate: true,
         },
       },
       category: { select: { id: true, name: true, color: true } },
@@ -48,24 +51,47 @@ export default async function PostDetailPage({
   if (!post) notFound();
 
   const isAdmin = session.user.role === "ADMIN";
+  const viewerId = session.user.id;
+
+  // Głosy posta — wcześniej brakujące na widoku izolowanym (pokazywało 0).
+  const [up, down, myVote] = await Promise.all([
+    prisma.postVote.count({ where: { postId: post.id, value: "UP" } }),
+    prisma.postVote.count({ where: { postId: post.id, value: "DOWN" } }),
+    prisma.postVote.findUnique({
+      where: { userId_postId: { userId: viewerId, postId: post.id } },
+      select: { value: true },
+    }),
+  ]);
+
+  // Wzmianki: migracja + mapa ID → użytkownik.
+  const { items: mItems, mentions } = await attachMentions(
+    [{ id: post.id, content: post.content }],
+    (id, content) => prisma.post.update({ where: { id }, data: { content } })
+  );
+
+  const maskedAuthor = maskActivity(post.author, viewerId, isAdmin);
 
   const postItem = {
     id: post.id,
     authorId: post.authorId,
     title: post.title,
-    content: post.content,
+    content: mItems[0]?.content ?? post.content,
     createdAt: post.createdAt.toISOString(),
     author: {
-      id: post.author.id,
-      username: post.author.username,
-      email: post.author.email,
-      avatarUrl: post.author.avatarUrl,
-      role: post.author.role,
-      lastActiveAt: post.author.lastActiveAt?.toISOString() ?? null,
+      id: maskedAuthor.id,
+      username: maskedAuthor.username,
+      email: maskedAuthor.email,
+      avatarUrl: maskedAuthor.avatarUrl,
+      role: maskedAuthor.role,
+      lastActiveAt: maskedAuthor.lastActiveAt
+        ? new Date(maskedAuthor.lastActiveAt).toISOString()
+        : null,
     },
     category: post.category,
     attachments: post.attachments as { name: string; url: string; type: string; size: number }[] | null,
     _count: post._count,
+    votes: { up, down, myVote: myVote?.value ?? null },
+    mentions,
   };
 
   return (

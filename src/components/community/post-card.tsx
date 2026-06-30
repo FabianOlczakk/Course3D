@@ -12,6 +12,7 @@ import { AttachmentView } from "@/components/shared/attachment-view";
 import { AdminBadge } from "@/components/shared/admin-badge";
 import { CommentForm } from "@/components/community/comment-form";
 import { CommentTree } from "@/components/community/comment-tree";
+import { MentionText } from "@/components/community/mention-text";
 import {
   authorInitials,
   authorName,
@@ -22,39 +23,22 @@ import { timeAgo } from "@/lib/format-time";
 import { OnlineDot } from "@/components/shared/online-dot";
 import { CopyLinkButton } from "@/components/shared/copy-link-button";
 
-// Parsuje @username w treści i linkuje do profilu
-function renderMentions(text: string) {
-  const parts = text.split(/(@[\w.]+)/g);
-  return parts.map((part, i) => {
-    if (/^@[\w.]+$/.test(part)) {
-      return (
-        <Link
-          key={i}
-          href={`/spolecznosc?search=${encodeURIComponent(part)}`}
-          className="font-medium text-[var(--accent)] hover:underline"
-        >
-          {part}
-        </Link>
-      );
-    }
-    return part;
-  });
-}
-
 export function PostCard({
   post,
   currentUserId,
   isAdmin,
   highlight,
   onDeleted,
+  defaultExpanded = false,
 }: {
   post: PostItem;
   currentUserId: string;
   isAdmin: boolean;
   highlight?: string;
   onDeleted: (id: string) => void;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [count, setCount] = useState(post._count.comments);
@@ -253,7 +237,7 @@ export function PostCard({
 
           {/* Treść */}
           <div className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-[var(--text-secondary)]">
-            {renderMentions(post.content)}
+            <MentionText content={post.content} mentions={post.mentions} />
           </div>
 
           {post.attachments && <AttachmentView attachments={post.attachments} />}
