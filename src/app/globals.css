@@ -169,10 +169,21 @@
     border-radius: 10px;
     transition:
       border-color 0.2s ease,
-      background 0.2s ease;
+      background 0.2s ease,
+      box-shadow 0.2s ease;
   }
   .glow-card:hover {
     border-color: var(--border-glow);
+  }
+
+  /* Neobrutalist card style */
+  .neo-brutal-card {
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .neo-brutal-card:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 5px 5px 0 #000 !important;
   }
 
   .glow-border {
@@ -184,10 +195,28 @@
   /* Główny przycisk akcji (fioletowy) */
   .glow-btn {
     background: var(--accent);
-    transition: background 0.15s ease;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
   }
   .glow-btn:hover {
     background: #8a5af0;
+    transform: translate(1px, 1px);
+  }
+
+  /* Neobrutalist button */
+  .neo-brutal-btn {
+    border: 2px solid #000;
+    box-shadow: 4px 4px 0 #000;
+    transition: all 0.2s ease;
+    font-weight: 600;
+  }
+  .neo-brutal-btn:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #000;
+  }
+  .neo-brutal-btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 #000;
   }
 
   .glow-icon-btn {
@@ -206,6 +235,17 @@
   .glow-icon-btn:hover {
     color: var(--text-primary);
     background: var(--bg-elevated);
+  }
+
+  /* Shadow utilities for neobrutalism */
+  .shadow-brutal {
+    box-shadow: 5px 5px 0 #000;
+  }
+  .shadow-brutal-lg {
+    box-shadow: 8px 8px 0 #000;
+  }
+  .shadow-brutal-sm {
+    box-shadow: 3px 3px 0 #000;
   }
 }
 
@@ -226,6 +266,72 @@
     }
     100% {
       background-position: -200% 0;
+    }
+  }
+
+  /* FDM Printer Animations */
+  @keyframes fdmFill {
+    0% { height: 0; }
+    4% { height: 0; }
+    86% { height: 176px; }
+    100% { height: 176px; }
+  }
+
+  @keyframes fdmRise {
+    0% { transform: translateY(0); }
+    4% { transform: translateY(0); }
+    86% { transform: translateY(-176px); }
+    100% { transform: translateY(-176px); }
+  }
+
+  @keyframes fdmScan {
+    0% { transform: translateX(-56px); }
+    50% { transform: translateX(56px); }
+    100% { transform: translateX(-56px); }
+  }
+
+  @keyframes fdmFade {
+    0% { opacity: 0; }
+    5% { opacity: 1; }
+    92% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes fdmGlow {
+    0%, 100% {
+      opacity: 0.5;
+      transform: translateX(-50%) scale(0.9);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.15);
+    }
+  }
+
+  /* Floating particles */
+  @keyframes float-up {
+    0% {
+      transform: translateY(0) translateX(0);
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(-400px) translateX(20px);
+      opacity: 0;
+    }
+  }
+
+  /* Pulse animation for indicators */
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.2);
     }
   }
 }
