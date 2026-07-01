@@ -1,4 +1,4 @@
-import LandingClient from "./landing-client";
+import { LandingClient } from "./landing-client";
 
 export const metadata = {
   title: "Course3D — Kurs druku 3D z Bambu Lab A1 Mini",

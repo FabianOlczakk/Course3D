@@ -2,994 +2,267 @@
 
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
-import { motion, useInView, AnimatePresence } from "framer-motion";
-import {
-  ArrowRight,
-  CheckCircle2,
-  GraduationCap,
-  Printer,
-  Sparkles,
-  Award,
-  BookOpen,
-  Users,
-  Zap,
-  Layers,
-  Wifi,
-  Box,
-  Clock,
-  Trophy,
-  MessageCircle,
-  Headphones,
-  ChevronDown,
-  Mail,
-  Phone,
-} from "lucide-react";
+import { motion, useInView } from "framer-motion";
 
-// Theme hook
+// ── Theme (same as platform) ──────────────────────────────────────────────────
 function useLandingTheme() {
-  const [theme, setThemeState] = useState<"dark" | "light">("dark");
-
   useEffect(() => {
     const raw = localStorage.getItem("theme") ?? "dark";
-    const resolved: "dark" | "light" = raw === "light" ? "light" : "dark";
-    setThemeState(resolved);
+    const resolved = raw === "light" ? "light" : "dark";
     document.documentElement.classList.remove("dark", "light");
     document.documentElement.classList.add(resolved);
   }, []);
-
-  return { theme };
 }
 
-// Countdown Timer Hook
+// ── Countdown ─────────────────────────────────────────────────────────────────
 function useCountdown(target: Date) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
+  const [t, setT] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
     const calc = () => {
-      const diff = target.getTime() - Date.now();
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft({ days, hours, minutes, seconds });
+      const diff = Math.max(0, target.getTime() - Date.now());
+      setT({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor(diff / 3600000) % 24,
+        minutes: Math.floor(diff / 60000) % 60,
+        seconds: Math.floor(diff / 1000) % 60,
+      });
     };
     calc();
     const id = setInterval(calc, 1000);
     return () => clearInterval(id);
   }, [target]);
-
-  return timeLeft;
+  return t;
 }
 
-// FDM Animation with masked shape
+// ── FDM Animation ─────────────────────────────────────────────────────────────
 function FdmAnimation() {
   const [progress, setProgress] = useState(0);
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-    }, 35);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setProgress((p) => (p >= 100 ? 0 : p + 0.5)), 35);
+    return () => clearInterval(id);
   }, []);
 
   const height = (progress / 100) * 176;
 
   return (
-    <div className="relative">
-      <div
-        className="neo-brutal-card rounded-2xl border-2 border-black p-6"
-        style={{
-          background: "#1e1e1e",
-          boxShadow: "8px 8px 0 #000",
-        }}
-      >
-        <div className="mb-3 flex items-center justify-center gap-2">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-[#9d6bff]" />
-          <p className="text-center text-xs font-bold uppercase tracking-widest text-[#9d6bff]">
-            FDM · druk na żywo
-          </p>
-        </div>
-
-        <div className="relative mx-auto h-[280px] w-full max-w-[320px]">
-          <svg viewBox="0 0 320 280" className="h-full w-full">
-            <defs>
-              <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
-                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"/>
-              </pattern>
-
-              <mask id="print-mask">
-                <rect width="320" height="280" fill="black" />
-                <path
-                  d="M 160 60 L 150 75 L 155 90 L 145 120 L 140 160 L 135 200 L 125 240 L 195 240 L 185 200 L 180 160 L 175 120 L 165 90 L 170 75 Z"
-                  fill="white"
-                />
-              </mask>
-            </defs>
-
-            <rect width="320" height="280" fill="url(#grid)" />
-
-            {/* Frame */}
-            <rect x="30" y="20" width="6" height="220" rx="3" fill="#2b2b2b" stroke="#000" strokeWidth="1" />
-            <rect x="284" y="20" width="6" height="220" rx="3" fill="#2b2b2b" stroke="#000" strokeWidth="1" />
-
-            {/* Animated printed object with mask */}
-            <g mask="url(#print-mask)">
-              <rect
-                x="60"
-                y={240 - height}
-                width="200"
-                height={height}
-                fill="url(#grad)"
-                opacity="0.8"
-              />
-            </g>
-
-            <defs>
-              <linearGradient id="grad" x1="0%" y1="100%" x2="0%" y2="0%">
-                <stop offset="0%" stopColor="#9d6bff" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#9d6bff" stopOpacity="0.9" />
-              </linearGradient>
-            </defs>
-
-            {/* Bed */}
-            <rect x="28" y="240" width="264" height="10" rx="4" fill="#1e1e1e" stroke="#000" strokeWidth="2" />
-
-            {/* Print head */}
-            <rect
-              x="140"
-              y={240 - height - 35}
-              width="40"
-              height="30"
-              rx="6"
-              fill="#9d6bff"
-              stroke="#000"
-              strokeWidth="2"
-            />
-
-            <circle
-              cx="160"
-              cy={240 - height - 10}
-              r="4"
-              fill="#fff"
-              className="animate-pulse"
-            />
-
-            <text x="160" y="268" textAnchor="middle" fontSize="11" fontWeight="600" fill="#8a8a8a" fontFamily="monospace">
-              Warstwa {Math.floor(progress / 5)}/20
-            </text>
-          </svg>
-        </div>
-
-        <motion.div
-          animate={{ y: [0, -6, 0] }}
-          transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
-          className="absolute -right-4 -top-4 rounded-xl border-2 border-black bg-[#9d6bff] px-4 py-2 text-xs font-bold text-white"
-          style={{ boxShadow: "4px 4px 0 #000" }}
-        >
-          do 500 mm/s
-        </motion.div>
+    <div style={{ position: "relative", height: 400, background: "#141414", border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden" }}>
+      {/* grid */}
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px)", backgroundSize: "26px 26px" }} />
+      {/* live badge */}
+      <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 7, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "5px 12px", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", boxShadow: "2px 2px 0 #000" }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", display: "inline-block" }} /> FDM · druk na żywo
       </div>
+      {/* SVG print */}
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg viewBox="0 0 280 300" style={{ width: "100%", maxWidth: 280, height: "auto" }}>
+          <defs>
+            <linearGradient id="fdm-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#9d6bff" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#9d6bff" stopOpacity="0.9" />
+            </linearGradient>
+            <mask id="fdm-mask">
+              <rect width="280" height="300" fill="black" />
+              <path d="M 140 60 L 130 75 L 135 92 L 125 125 L 120 165 L 115 210 L 105 255 L 175 255 L 165 210 L 160 165 L 155 125 L 145 92 L 150 75 Z" fill="white" />
+            </mask>
+          </defs>
+          {/* frame */}
+          <rect x="28" y="20" width="5" height="220" rx="2" fill="#2b2b2b" stroke="#000" strokeWidth="1" />
+          <rect x="247" y="20" width="5" height="220" rx="2" fill="#2b2b2b" stroke="#000" strokeWidth="1" />
+          {/* printed fill */}
+          <g mask="url(#fdm-mask)">
+            <rect x="55" y={255 - height} width="170" height={height} fill="url(#fdm-grad)" opacity="0.85" />
+          </g>
+          {/* bed */}
+          <rect x="26" y="255" width="228" height="9" rx="3" fill="#1e1e1e" stroke="#000" strokeWidth="2" />
+          {/* gantry */}
+          <rect x="26" y={255 - height - 38} width="228" height="6" rx="2" fill="#2b2b2b" stroke="#000" strokeWidth="1" />
+          {/* print head */}
+          <rect x="122" y={255 - height - 52} width="36" height="26" rx="5" fill="#9d6bff" stroke="#000" strokeWidth="2" />
+          <circle cx="140" cy={255 - height - 26} r="4" fill="#fff" style={{ animation: "pulse 1s ease-in-out infinite" }} />
+          <text x="140" y="282" textAnchor="middle" fontSize="11" fontWeight="600" fill="#8a8a8a" fontFamily="monospace">
+            Warstwa {Math.floor(progress / 5)}/20
+          </text>
+        </svg>
+      </div>
+      {/* speed badge */}
+      <motion.div
+        animate={{ y: [0, -6, 0] }}
+        transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+        style={{ position: "absolute", bottom: 14, right: 14, background: "#161616", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "#b89dff", boxShadow: "3px 3px 0 #000" }}
+      >
+        do 500 mm/s
+      </motion.div>
     </div>
   );
 }
 
-// Animation helpers
-function FadeUp({
-  children,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-}) {
+// ── FadeUp animation helper ───────────────────────────────────────────────────
+function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay }}
-    >
+    <motion.div ref={ref} initial={{ opacity: 0, y: 28 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.55, delay }}>
       {children}
     </motion.div>
   );
 }
 
-function StaggerGrid({
-  children,
-  className,
-}: {
-  children: React.ReactNode[];
-  className?: string;
-}) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  return (
-    <div ref={ref} className={className}>
-      {children.map((child, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 28 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.55, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {child}
-        </motion.div>
-      ))}
-    </div>
-  );
-}
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+const faqData: [string, string][] = [
+  ["Co dokładnie dostaję w pakiecie?", "Drukarkę Bambu Lab A1 Mini, filament PLA i PETG na start, dożywotni dostęp do platformy kursowej, dostęp do społeczności i konkursów oraz certyfikat ukończenia."],
+  ["Czy potrzebuję wcześniejszej wiedzy o druku 3D?", "Nie. Kurs prowadzi od zera — od rozpakowania drukarki po zaawansowane modelowanie, krok po kroku."],
+  ["Jak długo mam dostęp do kursu?", "Dożywotnio, wraz ze wszystkimi przyszłymi aktualizacjami materiałów."],
+  ["Czy mogę kupić kurs dla firmy lub szkoły?", "Tak. Przygotujemy ofertę z rabatem od 2 pakietów, fakturą VAT, ratami i szkoleniami live dla zespołu."],
+  ["Jak wygląda wysyłka drukarki?", "Drukarka dostarczana jest kurierem pod wskazany adres, gotowa do pracy po rozpakowaniu."],
+  ["Czy będę mógł modelować własne projekty?", "Tak. Kurs obejmuje moduł modelowania 3D od podstaw, dzięki któremu stworzysz własne projekty."],
+  ["Co to znaczy automatyczne poziomowanie łoża (ABL)?", "Drukarka sama kalibruje wysokość dyszy nad stołem, eliminując żmudne ręczne poziomowanie."],
+  ["Jak wygląda platforma kursowa?", "Lekcje wideo z timestampami, quizy, forum, wiki, wiadomości do prowadzącego i śledzenie postępów — wszystko w jednym miejscu."],
+  ["Czy drukarka wymaga WiFi?", "Nie musisz — możesz drukować przez WiFi lub z karty microSD."],
+  ["Jak długo trwa kurs?", "Uczysz się we własnym tempie, a dostęp jest dożywotni — decydujesz sam, ile czasu potrzebujesz."],
+  ["Czy otrzymam certyfikat?", "Tak. Po ukończeniu modułów otrzymasz certyfikat potwierdzający Twoje umiejętności."],
+  ["Czy kurs będzie aktualizowany?", "Tak. Wszystkie przyszłe aktualizacje materiałów są w cenie pakietu."],
+  ["Co jeśli drukarka będzie miała problem techniczny?", "Bambu Lab oferuje wsparcie techniczne i gwarancję na drukarkę. Kurs obejmuje też moduł diagnostyczny — nauczysz się rozwiązywać najczęstsze problemy samodzielnie. W razie potrzeby napisz do nas na kurs@magbase.pl."],
+  ["Czy mogę kupić tylko dostęp do kursu bez drukarki?", "Napisz do nas na kurs@magbase.pl — ustalimy indywidualne warunki."],
+  ["Jak wygląda płatność?", "Jest to jednorazowa opłata. Dla firm możliwe są raty oraz faktura VAT."],
+];
 
-// Benefits data
 const benefits = [
-  {
-    icon: GraduationCap,
-    title: "Interaktywny kurs po polsku",
-    desc: "Od rozpakowania drukarki po modelowanie — krok po kroku, z zadaniami.",
-    color: "#9d6bff",
-  },
-  {
-    icon: Printer,
-    title: "Bambu Lab A1 Mini w zestawie",
-    desc: "Otrzymujesz fizyczną drukarkę 3D gotową do druku od razu po dostawie.",
-    color: "#3ecf8e",
-  },
-  {
-    icon: Box,
-    title: "Filament PLA + PETG",
-    desc: "Dwa najważniejsze materiały na start — od razu masz z czego drukować.",
-    color: "#5b8def",
-  },
-  {
-    icon: BookOpen,
-    title: "Quizy i zadania praktyczne",
-    desc: "Sprawdź które lekcje masz za sobą i ile zostało Ci do certyfikatu.",
-    color: "#e0944a",
-  },
-  {
-    icon: Award,
-    title: "Certyfikat ukończenia",
-    desc: "Po ukończeniu kursu otrzymasz certyfikat potwierdzający umiejętności.",
-    color: "#9d6bff",
-  },
-  {
-    icon: Trophy,
-    title: "Konkursy z nagrodami",
-    desc: "Regularne konkursy na platformie z realnymi nagrodami dla kursantów.",
-    color: "#3ecf8e",
-  },
-  {
-    icon: Users,
-    title: "Społeczność kursantów",
-    desc: "Zadawaj pytania, dziel się wydrukami i ucz się razem z innymi kursantami.",
-    color: "#5b8def",
-  },
-  {
-    icon: MessageCircle,
-    title: "Wiadomości do instruktora",
-    desc: "Pisz prywatne wiadomości bezpośrednio do instruktora przez platformę.",
-    color: "#e0944a",
-  },
-  {
-    icon: BookOpen,
-    title: "Wiki i baza wiedzy",
-    desc: "Baza wiedzy z poradnikami, profilami slicera i parametrami druku.",
-    color: "#9d6bff",
-  },
-  {
-    icon: Headphones,
-    title: "Wsparcie techniczne",
-    desc: "Pomoc w konfiguracji, rozwiązywaniu problemów i doborze ustawień.",
-    color: "#3ecf8e",
-  },
-  {
-    icon: Sparkles,
-    title: "Aktualizacje w cenie",
-    desc: "Uczysz się we własnym tempie, a wszystkie przyszłe aktualizacje masz w cenie.",
-    color: "#5b8def",
-  },
-  {
-    icon: Clock,
-    title: "Dożywotni dostęp",
-    desc: "Płacisz raz, korzystasz na zawsze — bez subskrypcji ani ukrytych opłat.",
-    color: "#e0944a",
-  },
+  { color: "#9d6bff", icon: "M22 10 12 5 2 10l10 5 10-5ZM6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5", title: "Interaktywny kurs po polsku", desc: "Od rozpakowania drukarki po modelowanie — krok po kroku, z zadaniami." },
+  { color: "#3ecf8e", icon: "M4 9h16v11H4ZM8 9V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4M8 14h8v6H8Z", title: "Bambu Lab A1 Mini w zestawie", desc: "Otrzymujesz fizyczną drukarkę 3D gotową do druku od razu po dostawie." },
+  { color: "#5b8def", icon: "m12 2 9 5v10l-9 5-9-5V7ZM12 12l9-5M12 12v10M12 12 3 7", title: "Filament PLA + PETG", desc: "Dwa najważniejsze materiały na start — od razu masz z czego drukować." },
+  { color: "#e0944a", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Interaktywne quizy", desc: "Sprawdzaj wiedzę po każdym module i dostawaj natychmiastowy feedback." },
+  { color: "#9d6bff", icon: "M3 3v18h18M7 12h3v6M12 8h3v10M17 5h3v13", title: "Śledzenie postępów", desc: "Sprawdź które lekcje masz za sobą i ile zostało Ci do certyfikatu." },
+  { color: "#3ecf8e", icon: "M12 8a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm-3.5 5.5-1.5 8 5-3 5 3-1.5-8", title: "Certyfikat ukończenia", desc: "Po ukończeniu kursu otrzymasz certyfikat potwierdzający umiejętności." },
+  { color: "#e0944a", icon: "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v5a6 6 0 0 1-12 0ZM9 18h6M10 22h4M12 14v4", title: "Konkursy z nagrodami", desc: "Regularne konkursy na platformie z realnymi nagrodami dla kursantów." },
+  { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum i społeczność", desc: "Zadawaj pytania, dziel się wydrukami i ucz się razem z innymi kursantami." },
+  { color: "#9d6bff", icon: "M3 5h18v14H3ZM3 7l9 6 9-6", title: "Kontakt z prowadzącym", desc: "Pisz prywatne wiadomości bezpośrednio do instruktora przez platformę." },
+  { color: "#3ecf8e", icon: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z", title: "Wiki z wiedzą", desc: "Baza wiedzy z poradnikami, profilami slicera i parametrami druku." },
+  { color: "#5b8def", icon: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0", title: "Ogłoszenia i live", desc: "Nie przegap nowych lekcji, sesji live i aktualizacji materiałów." },
+  { color: "#e0944a", icon: "M18.4 5.6A9 9 0 1 0 21 12M21 3v6h-6", title: "Dożywotni dostęp", desc: "Uczysz się we własnym tempie, a wszystkie przyszłe aktualizacje masz w cenie." },
 ];
 
-// Printer specs
-const printerSpecs = [
-  { label: "Prędkość druku", value: "do 500 mm/s", icon: Zap },
-  { label: "Przyspieszenie", value: "10 000 mm/s²", icon: Zap },
-  { label: "Pole robocze", value: "180×180×180 mm", icon: Layers },
-  { label: "Łączność", value: "WiFi + microSD", icon: Wifi },
-  { label: "Kalibracja", value: "Automatyczna", icon: Award },
-  { label: "Rodzaj drukarki", value: "FDM", icon: Printer },
-  { label: "Obsługiwane materiały", value: "PLA · PETG · TPU · PVA", icon: Box },
-  { label: "Głośność", value: "~45 dB", icon: Headphones },
-  { label: "Gwarancja", value: "12 miesięcy", icon: Award },
-];
-
-// Platform features
-const platformFeatures = [
-  {
-    icon: BookOpen,
-    title: "Lekcje wideo i materiały",
-    desc: "Sprawdzaj wiedzę i obserwuj drogę do certyfikatu.",
-  },
-  {
-    icon: Users,
-    title: "Społeczność i forum",
-    desc: "Wymieniaj się pomysłami i rozwiązaniami z innymi kursantami.",
-  },
-  {
-    icon: Trophy,
-    title: "Konkursy i nagrody",
-    desc: "Bierz udział w wyzwaniach i wygrywaj rzeczywiste nagrody.",
-  },
-];
-
-// FAQ data
-const faqItems = [
-  {
-    q: "Czy drukarka jest naprawdę w zestawie?",
-    a: "Tak, drukarka Bambu Lab A1 Mini jest fizycznie wysyłana do Ciebie kurierem na terenie Polski w oryginalnym opakowaniu fabrycznym.",
-  },
-  {
-    q: "Czy mogę kupić tylko kurs bez drukarki?",
-    a: "Obecnie oferujemy jeden pakiet kompletny: drukarka + kurs. To celowy wybór — program jest zaprojektowany tak, żebyś uczył się drukując naprawdę, a nie tylko oglądając filmy.",
-  },
-  {
-    q: "Czy potrzebuję wcześniejszej wiedzy o druku 3D?",
-    a: "Nie. Kurs jest zaprojektowany od zera — prowadzi Cię od pierwszego uruchomienia drukarki aż po zaawansowane techniki modelowania i optymalizację parametrów druku.",
-  },
-  {
-    q: "Jak długo mam dostęp do kursu?",
-    a: "Dostęp jest dożywotni. Płacisz raz, korzystasz na zawsze, włącznie ze wszystkimi przyszłymi aktualizacjami materiałów i nowymi lekcjami.",
-  },
-  {
-    q: "Co to znaczy \"interaktywny kurs\"?",
-    a: "Oprócz filmów dostajesz quizy po każdym module, zadania praktyczne do wykonania, forum społeczności, prywatne wiadomości do instruktora, wiki z wiedzą i system śledzenia postępów.",
-  },
-  {
-    q: "Jakie filamenty są w zestawie?",
-    a: "Dostajesz PLA i PETG — dwa podstawowe materiały. PLA jest łatwy w druku, biodegradowalny, idealny dla początkujących. PETG jest mocniejszy, odporny na temperaturę i wilgoć, nadaje się do części funkcjonalnych.",
-  },
-  {
-    q: "Czym wyróżnia się Bambu Lab A1 Mini?",
-    a: "To jedna z najbardziej zaawansowanych drukarek w swojej klasie: automatyczne poziomowanie, druk wielokolorowy z AMS Lite, prędkość 500 mm/s, WiFi z aplikacją mobilną i pełna auto-kalibracja.",
-  },
-  {
-    q: "Czy będę mógł modelować własne projekty?",
-    a: "Tak. Kurs obejmuje podstawy modelowania 3D w bezpłatnych programach. Pod koniec będziesz potrafić zaprojektować i wydrukować własny projekt od zera.",
-  },
-  {
-    q: "Czy otrzymam certyfikat?",
-    a: "Tak. Po ukończeniu wszystkich modułów i zaliczeniu quizów otrzymujesz certyfikat ukończenia kursu w formie cyfrowej.",
-  },
-  {
-    q: "Czy mogę kupić kurs dla firmy?",
-    a: "Tak! Oferujemy specjalne warunki dla firm i grup. Skontaktuj się z nami na kurs@magbase.pl — przygotujemy ofertę szytą na miarę.",
-  },
-  {
-    q: "Jak wygląda wysyłka drukarki?",
-    a: "Drukarka jest wysyłana kurierem na terenie Polski. Czas dostawy to zazwyczaj 2–5 dni roboczych od potwierdzenia zamówienia.",
-  },
-  {
-    q: "Co jeśli drukarka będzie miała problem?",
-    a: "Bambu Lab oferuje wsparcie techniczne i gwarancję. Kurs obejmuje też moduł diagnostyczny — nauczysz się rozwiązywać najczęstsze problemy samodzielnie.",
-  },
-  {
-    q: "Jak długo trwa kurs?",
-    a: "Program składa się z ponad 40 lekcji. Przy regularnej nauce (3–4 godziny tygodniowo) ukończysz kurs w 6–8 tygodni. Możesz jednak uczyć się w dowolnym tempie.",
-  },
-  {
-    q: "Czy kurs będzie aktualizowany?",
-    a: "Tak. Wraz z pojawieniem się nowych funkcji drukarki lub nowych technik druku, materiały są aktualizowane. Wszystkie aktualizacje są bezpłatne.",
-  },
-  {
-    q: "Jak mogę się skontaktować?",
-    a: "Napisz na kurs@magbase.pl lub zadzwoń pod +48 571 082 475. Odpowiadamy w ciągu 24 godzin w dni robocze.",
-  },
-];
-
-export default function LandingClient() {
-  const { theme } = useLandingTheme();
+// ── Main Component ────────────────────────────────────────────────────────────
+export function LandingClient() {
+  useLandingTheme();
   const target = new Date("2026-09-01T00:00:00");
   const { days, hours, minutes, seconds } = useCountdown(target);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState(1);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const buyUrl = `https://magbase.pl/?add-to-cart=2695&quantity=${quantity}`;
+
+  const s = {
+    body: { fontFamily: "'DM Sans', sans-serif", color: "#ededed", background: "#161616", overflowX: "hidden" as const },
+    maxW: { maxWidth: 1140, margin: "0 auto", padding: "0 24px" },
+  };
 
   return (
-    <div style={{ background: "#161616", color: "#ededed", minHeight: "100vh" }}>
-      {/* Navigation */}
-      <nav
-        className="sticky top-0 z-50 border-b-2 border-black backdrop-blur-md"
-        style={{ background: "rgba(22, 22, 22, 0.95)" }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="flex items-center gap-2 text-xl font-bold text-white">
-            <Sparkles className="h-5 w-5 text-[#9d6bff]" />
-            Interaktywny kurs druku 3D
-          </span>
-          <div className="flex items-center gap-3">
-            <a href="#omnie" className="hidden text-sm text-[#b4b4b4] transition-colors hover:text-white sm:block">
-              O mnie
-            </a>
-            <a href="#cennik" className="hidden text-sm text-[#b4b4b4] transition-colors hover:text-white sm:block">
-              Cennik
-            </a>
-            <a href="#faq" className="hidden text-sm text-[#b4b4b4] transition-colors hover:text-white sm:block">
-              FAQ
-            </a>
-            <Link
-              href="/login"
-              className="neo-brutal-btn rounded-lg border-2 border-black bg-[#9d6bff] px-6 py-2 text-sm font-bold text-white"
-              style={{ boxShadow: "4px 4px 0 #000" }}
-            >
-              Zaloguj się
-            </Link>
+    <div style={s.body}>
+
+      {/* ── NAV ─────────────────────────────────────────────────────────── */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(22,22,22,0.95)", backdropFilter: "blur(8px)", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <a href="#top" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
+            <span style={{ display: "grid", placeItems: "center", width: 34, height: 34, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, boxShadow: "2px 2px 0 #000" }}>3D</span>
+            <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, color: "#f0f0f0", letterSpacing: "-0.01em" }}>Interaktywny kurs druku 3D</span>
+          </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {[["#o-mnie", "O mnie"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
+              <a key={href} href={href} style={{ textDecoration: "none", fontWeight: 600, fontSize: 14.5, color: "#b4b4b4", padding: "9px 13px", borderRadius: 7, transition: "color .15s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "#ededed")}
+                onMouseLeave={e => (e.currentTarget.style.color = "#b4b4b4")}
+              >{label}</a>
+            ))}
+            <Link href="/login" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14.5, color: "#b4b4b4", padding: "9px 13px", borderRadius: 7, transition: "color .15s" }}
+              onMouseEnter={e => (e.currentTarget.style.color = "#ededed")}
+              onMouseLeave={e => (e.currentTarget.style.color = "#b4b4b4")}
+            >Zaloguj się</Link>
+            <a href="#cennik" style={{ textDecoration: "none", fontWeight: 700, fontSize: 14.5, color: "#fff", padding: "10px 18px", marginLeft: 6, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, boxShadow: "3px 3px 0 #000", transition: "transform .1s, box-shadow .1s" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translate(1px,1px)"; e.currentTarget.style.boxShadow = "2px 2px 0 #000"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "3px 3px 0 #000"; }}
+            >Kup kurs</a>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header className="relative overflow-hidden px-6 py-24" style={{ background: "#9d6bff" }}>
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border-2 border-black bg-white px-4 py-1.5 text-sm font-bold text-black"
-            style={{ boxShadow: "3px 3px 0 #000" }}
-          >
-            <Sparkles className="h-4 w-4" />
-            Druk 3D od podstaw
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-extrabold leading-tight text-white md:text-6xl lg:text-7xl"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Interaktywny kurs<br />druku 3D online.<br />
-            <span style={{ color: "#000" }}>Bambu Lab A1 Mini gratis!</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mx-auto mt-6 max-w-2xl text-lg text-white"
-          >
-            Naucz się drukowania 3D od praktyka z realnym biznesem produkcyjnym.
-            Otrzymasz drukarkę Bambu Lab A1 Mini, zestaw filamentów oraz pełny dostęp do interaktywnej platformy kursowej.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
-          >
-            <Link
-              href="/login"
-              className="neo-brutal-btn rounded-lg border-2 border-black bg-white px-8 py-4 text-lg font-bold text-black"
-              style={{ boxShadow: "6px 6px 0 #000" }}
-            >
-              Przejdź do kursu →
-            </Link>
-          </motion.div>
-
-          {/* Countdown Timer */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-12 inline-flex flex-col items-center gap-4 rounded-2xl border-2 border-black bg-white p-6"
-            style={{ boxShadow: "8px 8px 0 #000" }}
-          >
-            <p className="text-sm font-bold uppercase tracking-wider text-black">
-              <Clock className="mr-2 inline h-4 w-4" />
-              Kurs startuje 1 września 2026
+      {/* ── HERO ────────────────────────────────────────────────────────── */}
+      <header id="top" style={{ background: "#9d6bff", borderBottom: "2px solid #000", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.08) 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
+        <div style={{ ...s.maxW, padding: "70px 24px 80px", display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 52, alignItems: "center", position: "relative" }}>
+          {/* left */}
+          <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", boxShadow: "3px 3px 0 #000" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9d6bff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg>
+              Druk 3D od podstaw
+            </span>
+            <h1 style={{ fontSize: 60, lineHeight: 1.08, fontWeight: 700, letterSpacing: "-0.03em", margin: "22px 0 20px", color: "#161616", textWrap: "balance", fontFamily: "'Space Grotesk'" }}>
+              Interaktywny kurs<br />druku 3D online.<br />
+              <span style={{ display: "inline-block", marginTop: 10, background: "#161616", color: "#fff", padding: "2px 12px", border: "2px solid #000", borderRadius: 6 }}>Bambu Lab A1 Mini gratis!</span>
+            </h1>
+            <p style={{ fontSize: 18, lineHeight: 1.55, fontWeight: 500, maxWidth: 520, margin: "0 0 30px", color: "#1c1c1c" }}>
+              Naucz się drukowania 3D od praktyka z realnym biznesem produkcyjnym. Otrzymasz drukarkę Bambu Lab A1 Mini, zestaw filamentów oraz pełny dostęp do interaktywnej platformy kursowej.
             </p>
-            <div className="flex gap-4">
-              {[
-                { val: days, label: "dni" },
-                { val: hours, label: "godz" },
-                { val: minutes, label: "min" },
-                { val: seconds, label: "sek" },
-              ].map(({ val, label }, idx) => (
-                <div key={label} className="flex flex-col items-center">
-                  <div
-                    className="rounded-xl border-2 border-black px-4 py-3 text-2xl font-extrabold tabular-nums"
-                    style={{
-                      background: idx === 3 ? "#9d6bff" : "#1e1e1e",
-                      color: idx === 3 ? "#fff" : "#9d6bff",
-                      boxShadow: "3px 3px 0 #000",
-                      minWidth: "64px",
-                    }}
-                  >
-                    {String(val).padStart(2, "0")}
-                  </div>
-                  <span className="mt-2 text-xs font-semibold uppercase tracking-wide text-black">
-                    {label}
-                  </span>
-                </div>
-              ))}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>
+              <Link href="/login" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #fff"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #fff"; }}
+              >Przejdź do kursu →</Link>
+              <a href="#platforma" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #161616", transition: "transform .1s, box-shadow .1s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #161616"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #161616"; }}
+              >Dowiedz się więcej</a>
             </div>
-            <div
-              className="mt-2 rounded-full border-2 border-black bg-[#161616] px-6 py-2"
-              style={{ boxShadow: "4px 4px 0 #000" }}
-            >
-              <span className="text-2xl font-bold text-white">1 999 zł</span>
+          </motion.div>
+
+          {/* right — countdown card */}
+          <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}>
+            <div style={{ background: "#161616", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: "'Space Grotesk'", fontSize: 12.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#cfcfcf" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9d6bff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                Kurs startuje 1 września 2026
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 9, marginTop: 18 }}>
+                {[
+                  { val: days, label: "dni", accent: false },
+                  { val: hours, label: "godz", accent: false },
+                  { val: minutes, label: "min", accent: false },
+                  { val: seconds, label: "sek", accent: true },
+                ].map(({ val, label, accent }) => (
+                  <div key={label} style={{ background: accent ? "#9d6bff" : "#242424", border: "2px solid #000", borderRadius: 11, padding: "15px 4px", textAlign: "center" }}>
+                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, lineHeight: 1, color: accent ? "#fff" : "#f0f0f0" }}>{pad(val)}</div>
+                    <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6, color: accent ? "#f0e9ff" : "#8a8a8a" }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 18, paddingTop: 16, borderTop: "2px dashed #333", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, color: "#7a7a7a" }}>Cena pakietu indywidualnego</span>
+                <span style={{ fontFamily: "'Space Grotesk'", fontSize: 25, fontWeight: 700, color: "#f0f0f0" }}>1 999 zł</span>
+              </div>
             </div>
           </motion.div>
         </div>
       </header>
 
-      {/* Benefits Section */}
-      <section className="px-6 py-24" style={{ background: "#161616" }}>
-        <div className="mx-auto max-w-6xl">
+      {/* ── BENEFITS ────────────────────────────────────────────────────── */}
+      <section style={{ background: "#161616", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "70px 24px" }}>
           <FadeUp>
-            <h2 className="mb-4 text-center text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Co dostajesz w pakiecie?
-            </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-center text-lg text-[#b4b4b4]">
-              Kompleksowy program nauczania połączony z prawdziwym sprzętem, społecznością i konkursami z nagrodami.
-            </p>
-          </FadeUp>
-
-          <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {benefits.map((benefit) => (
-              <div
-                key={benefit.title}
-                className="neo-brutal-card rounded-xl border-2 border-black p-6"
-                style={{
-                  background: "#1e1e1e",
-                  boxShadow: "5px 5px 0 #000",
-                }}
-              >
-                <div
-                  className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg border-2 border-black"
-                  style={{ background: benefit.color }}
-                >
-                  <benefit.icon className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-white">{benefit.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#b4b4b4]">{benefit.desc}</p>
-              </div>
-            ))}
-          </StaggerGrid>
-        </div>
-      </section>
-
-      {/* Printer Section */}
-      <section className="px-6 py-24" style={{ background: "#1c1c1c" }}>
-        <div className="mx-auto max-w-6xl">
-          <FadeUp>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border-2 border-black bg-[#3ecf8e] px-4 py-1.5 text-sm font-bold text-black">
-              <Printer className="h-4 w-4" />
-              Drukarka w zestawie
+            <div style={{ maxWidth: 660 }}>
+              <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Co dostajesz</span>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Wszystko czego potrzebujesz</h2>
+              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Kompleksowy program nauczania połączony z prawdziwym sprzętem, społecznością i konkursami z nagrodami.</p>
             </div>
           </FadeUp>
-
-          <div className="mt-8 grid gap-12 lg:grid-cols-2 lg:items-center">
-            <FadeUp>
-              <FdmAnimation />
-            </FadeUp>
-
-            <FadeUp delay={0.1}>
-              <h2 className="text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                Bambu Lab A1 Mini — najlepsza drukarka na start
-              </h2>
-              <p className="mt-4 text-lg leading-relaxed text-[#b4b4b4]">
-                Bambu Lab A1 Mini to <strong className="text-white">najlepsza drukarka dla początkujących na świecie</strong> — łączy prostotę obsługi z jakością znaną z maszyn profesjonalnych. Auto-poziomowanie, cicha praca i błyskawiczny druk sprawiają, że pierwszy udany wydruk zrobisz dosłownie w kilkanaście minut po rozpakowaniu.
-              </p>
-              <p className="mt-3 text-base leading-relaxed text-[#8a8a8a]">
-                Nie musisz niczego składać ani kalibrować ręcznie — drukarka sama przygotowuje się do pracy, a Ty od razu skupiasz się na nauce i tworzeniu.
-              </p>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                {printerSpecs.slice(0, 6).map((spec) => (
-                  <div
-                    key={spec.label}
-                    className="flex items-start gap-3 rounded-xl border-2 border-black p-4"
-                    style={{
-                      background: "#161616",
-                      boxShadow: "3px 3px 0 #000",
-                    }}
-                  >
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-black"
-                      style={{ background: "#9d6bff" }}
-                    >
-                      <spec.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[#8a8a8a]">{spec.label}</p>
-                      <p className="mt-1 text-sm font-bold text-white">{spec.value}</p>
-                    </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 40 }}>
+            {benefits.map((b, i) => (
+              <FadeUp key={b.title} delay={i * 0.05}>
+                <div style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 14, boxShadow: "5px 5px 0 #000", padding: 22 }}>
+                  <div style={{ display: "grid", placeItems: "center", width: 48, height: 48, background: b.color, border: "2px solid #000", borderRadius: 11, color: "#161616" }}>
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={b.icon} /></svg>
                   </div>
-                ))}
-              </div>
-            </FadeUp>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            {printerSpecs.slice(6).map((spec) => (
-              <div
-                key={spec.label}
-                className="flex items-start gap-3 rounded-xl border-2 border-black p-4"
-                style={{
-                  background: "#161616",
-                  boxShadow: "3px 3px 0 #000",
-                }}
-              >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-black"
-                  style={{ background: "#5b8def" }}
-                >
-                  <spec.icon className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8a8a8a]">{spec.label}</p>
-                  <p className="mt-1 text-sm font-bold text-white">{spec.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Filament Section */}
-      <section className="px-6 py-24" style={{ background: "#161616" }}>
-        <div className="mx-auto max-w-6xl">
-          <FadeUp>
-            <h2 className="mb-4 text-center text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Filament PLA i PETG — w zestawie
-            </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-center text-lg text-[#b4b4b4]">
-              Dwa podstawowe i najważniejsze materiały do druku 3D, każdy z unikalnym zastosowaniem.
-            </p>
-          </FadeUp>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <FadeUp delay={0.05}>
-              <div
-                className="neo-brutal-card rounded-2xl border-2 border-black p-8"
-                style={{
-                  background: "#1e1e1e",
-                  boxShadow: "6px 6px 0 #000",
-                }}
-              >
-                <div className="mb-4 flex items-center gap-3">
-                  <div
-                    className="h-12 w-12 rounded-full border-2 border-black"
-                    style={{ background: "#a855f7" }}
-                  />
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">PLA</h3>
-                    <p className="text-sm text-[#8a8a8a]">Polilaktyd — idealny dla początkujących</p>
-                  </div>
-                </div>
-                <ul className="space-y-2">
-                  {[
-                    "Najłatwiejszy do drukowania materiał",
-                    "Biodegradowalny — przyjazny środowisku",
-                    "Dostępny w dziesiątkach kolorów",
-                    "Świetna dokładność wymiarowa",
-                    "Niskie temperatury druku (190–220°C)",
-                    "Idealne do figurek i dekoracji",
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#a855f7]" />
-                      <span className="text-sm text-[#b4b4b4]">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </FadeUp>
-
-            <FadeUp delay={0.15}>
-              <div
-                className="neo-brutal-card rounded-2xl border-2 border-black p-8"
-                style={{
-                  background: "#1e1e1e",
-                  boxShadow: "6px 6px 0 #000",
-                }}
-              >
-                <div className="mb-4 flex items-center gap-3">
-                  <div
-                    className="h-12 w-12 rounded-full border-2 border-black"
-                    style={{ background: "#22d3ee" }}
-                  />
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">PETG</h3>
-                    <p className="text-sm text-[#8a8a8a]">Wytrzymałość i funkcjonalność</p>
-                  </div>
-                </div>
-                <ul className="space-y-2">
-                  {[
-                    "Znacznie mocniejszy od PLA",
-                    "Odporny na temperaturę do ~80°C",
-                    "Odporny na wilgoć i chemikalia",
-                    "Dopuszczony do kontaktu z żywnością",
-                    "Elastyczniejszy, mniej kruchy",
-                    "Idealny do części mechanicznych",
-                  ].map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#22d3ee]" />
-                      <span className="text-sm text-[#b4b4b4]">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </FadeUp>
-          </div>
-        </div>
-      </section>
-
-      {/* Platform Section */}
-      <section className="px-6 py-24" style={{ background: "#1c1c1c" }}>
-        <div className="mx-auto max-w-6xl">
-          <FadeUp>
-            <h2 className="mb-4 text-center text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Platforma kursowa
-            </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-center text-lg text-[#b4b4b4]">
-              Nowoczesna platforma edukacyjna z narzędziami, które realnie wspierają naukę — lekcje, quizy, społeczność i postępy w jednym panelu.
-            </p>
-          </FadeUp>
-
-          <StaggerGrid className="grid gap-6 md:grid-cols-3">
-            {platformFeatures.map((feature, idx) => (
-              <div
-                key={feature.title}
-                className="neo-brutal-card rounded-xl border-2 border-black p-6"
-                style={{
-                  background: "#161616",
-                  boxShadow: "5px 5px 0 #000",
-                }}
-              >
-                <div
-                  className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg border-2 border-black"
-                  style={{ background: ["#9d6bff", "#3ecf8e", "#e0944a"][idx] }}
-                >
-                  <feature.icon className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-white">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#b4b4b4]">{feature.desc}</p>
-              </div>
-            ))}
-          </StaggerGrid>
-        </div>
-      </section>
-
-      {/* About Me Section */}
-      <section id="omnie" className="px-6 py-24" style={{ background: "#161616" }}>
-        <div className="mx-auto max-w-4xl">
-          <FadeUp>
-            <h2 className="mb-8 text-center text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Cześć, nazywam się Fabian Olczak
-            </h2>
-            <div className="space-y-4 text-lg leading-relaxed text-[#b4b4b4]">
-              <p>
-                Od trzech lat zajmuję się drukiem 3D, a od ponad roku prowadzę własną firmę <strong className="text-white">Magbase</strong>, w której projektuję i produkuję gotowe produkty — wykorzystując druk 3D, druk UV i laser. Na co dzień pracuję na drukarkach Bambu Lab (m.in. H2C, P1S i A1), więc sprzęt, który dostajesz w zestawie kursu, znam nie z teorii, ale z codziennej, produkcyjnej eksploatacji — od pierwszego wydruku po skalowanie produkcji do tysięcy sztuk.
-              </p>
-              <p>
-                Ten kurs to połączenie dwóch rzeczy, którymi żyję na co dzień: praktycznej wiedzy o druku 3D zdobytej w realnym biznesie oraz zaplecza technicznego, dzięki któremu pokażę Ci nie tylko <em className="text-white">jak</em> drukować, ale też <em className="text-white">dlaczego</em> to działa — i jak uniknąć błędów, które kosztowały mnie setki godzin i kilogramy zmarnowanego filamentu.
-              </p>
-            </div>
-
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: "Lat doświadczenia", value: "3+" },
-                { label: "Wydrukowanych sztuk", value: "10 000+" },
-                { label: "Godzin nagrań", value: "40+" },
-                { label: "Zadowolonych kursantów", value: "100+" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-xl border-2 border-black p-6 text-center"
-                  style={{
-                    background: "#1e1e1e",
-                    boxShadow: "4px 4px 0 #000",
-                  }}
-                >
-                  <div className="text-3xl font-extrabold text-[#9d6bff]">{stat.value}</div>
-                  <div className="mt-2 text-sm font-semibold uppercase tracking-wide text-[#8a8a8a]">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="cennik" className="px-6 py-24" style={{ background: "#1c1c1c" }}>
-        <div className="mx-auto max-w-5xl">
-          <FadeUp>
-            <h2 className="mb-4 text-center text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Jednorazowa opłata
-            </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-center text-lg text-[#b4b4b4]">
-              Drukarka i dostęp do kursu w jednym pakiecie.
-            </p>
-          </FadeUp>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <FadeUp delay={0.05}>
-              <div
-                className="neo-brutal-card rounded-2xl border-2 border-black p-8"
-                style={{
-                  background: "#161616",
-                  boxShadow: "8px 8px 0 #000",
-                }}
-              >
-                <div className="mb-2 inline-flex rounded-full border-2 border-black bg-[#9d6bff] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
-                  Pakiet indywidualny
-                </div>
-                <div className="mt-5">
-                  <div className="flex items-end gap-2">
-                    <span className="text-5xl font-extrabold text-white">1 999 zł</span>
-                    <span className="mb-2 text-sm text-[#8a8a8a]">jednorazowo</span>
-                  </div>
-                  <p className="mt-2 text-sm text-[#b4b4b4]">
-                    Drukarka Bambu Lab A1 Mini + dożywotni dostęp do platformy
-                  </p>
-                </div>
-
-                <ul className="mt-6 space-y-3">
-                  {[
-                    "Drukarka Bambu Lab A1 Mini",
-                    "Filament PLA + PETG na start",
-                    "Dożywotni dostęp do platformy kursu",
-                    "Wszystkie przyszłe aktualizacje materiałów",
-                    "Dostęp do społeczności, konkursów i wsparcia",
-                    "Certyfikat ukończenia kursu",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#3ecf8e]" />
-                      <span className="text-sm text-[#b4b4b4]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/login"
-                  className="neo-brutal-btn mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-black bg-[#9d6bff] px-6 py-4 text-base font-bold text-white"
-                  style={{ boxShadow: "5px 5px 0 #000" }}
-                >
-                  Kup teraz
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-              </div>
-            </FadeUp>
-
-            <FadeUp delay={0.15}>
-              <div
-                className="neo-brutal-card rounded-2xl border-2 border-black p-8"
-                style={{
-                  background: "#161616",
-                  boxShadow: "8px 8px 0 #000",
-                }}
-              >
-                <div className="mb-2 inline-flex rounded-full border-2 border-black bg-[#3ecf8e] px-3 py-1 text-xs font-bold uppercase tracking-wide text-black">
-                  Dla firm i instytucji
-                </div>
-                <div className="mt-5">
-                  <div className="text-2xl font-bold text-white">Cena do negocjacji</div>
-                  <p className="mt-2 text-sm text-[#b4b4b4]">
-                    Kupujesz dla więcej niż jednej osoby? Masz szkołę, firmę produkcyjną lub chcesz wyposażyć pracownię? Przygotujemy ofertę dopasowaną.
-                  </p>
-                </div>
-
-                <ul className="mt-6 space-y-3">
-                  {[
-                    "Zniżki od 2 pakietów wzwyż",
-                    "Dedykowany opiekun konta",
-                    "Faktura VAT",
-                    "Możliwość płatności w ratach",
-                    "Szkolenia live dla Twojego zespołu",
-                    "Priorytetowe wsparcie techniczne",
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#3ecf8e]" />
-                      <span className="text-sm text-[#b4b4b4]">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <a
-                  href="mailto:kurs@magbase.pl"
-                  className="neo-brutal-btn mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-black bg-white px-6 py-4 text-base font-bold text-black"
-                  style={{ boxShadow: "5px 5px 0 #000" }}
-                >
-                  <Mail className="h-5 w-5" />
-                  Napisz do nas
-                </a>
-              </div>
-            </FadeUp>
-          </div>
-
-          <FadeUp delay={0.1}>
-            <div className="mt-8 text-center">
-              <p className="text-sm text-[#8a8a8a]">
-                Masz pytania? Napisz na{" "}
-                <a href="mailto:kurs@magbase.pl" className="font-semibold text-[#9d6bff] underline-offset-2 hover:underline">
-                  kurs@magbase.pl
-                </a>{" "}
-                lub zadzwoń{" "}
-                <a href="tel:+48571082475" className="font-semibold text-[#9d6bff] underline-offset-2 hover:underline">
-                  +48 571 082 475
-                </a>
-              </p>
-            </div>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className="px-6 py-24" style={{ background: "#161616" }}>
-        <div className="mx-auto max-w-3xl">
-          <FadeUp>
-            <h2 className="mb-4 text-center text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Najczęstsze pytania
-            </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-center text-lg text-[#b4b4b4]">
-              Nie znalazłeś odpowiedzi? Napisz do nas na <a href="mailto:kurs@magbase.pl" className="font-semibold text-[#9d6bff] underline-offset-2 hover:underline">kurs@magbase.pl</a>
-            </p>
-          </FadeUp>
-
-          <div className="space-y-3">
-            {faqItems.map((item, i) => (
-              <FadeUp key={i} delay={Math.min(i * 0.04, 0.4)}>
-                <div
-                  className="overflow-hidden rounded-xl border-2 border-black"
-                  style={{
-                    background: "#1e1e1e",
-                    boxShadow: "4px 4px 0 #000",
-                  }}
-                >
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-[#252525]"
-                  >
-                    <span className="pr-4 font-bold text-white">{item.q}</span>
-                    <motion.div
-                      animate={{ rotate: openFaq === i ? 180 : 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="shrink-0"
-                    >
-                      <ChevronDown className="h-5 w-5 text-[#8a8a8a]" />
-                    </motion.div>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {openFaq === i && (
-                      <motion.div
-                        key="content"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      >
-                        <p className="border-t-2 border-black px-5 pb-5 pt-4 text-sm leading-relaxed text-[#b4b4b4]">
-                          {item.a}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <h3 style={{ fontSize: 17, fontWeight: 600, margin: "16px 0 7px", color: "#ededed" }}>{b.title}</h3>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.5, margin: 0, fontWeight: 400, color: "#8a8a8a" }}>{b.desc}</p>
                 </div>
               </FadeUp>
             ))}
@@ -997,100 +270,371 @@ export default function LandingClient() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="relative overflow-hidden px-6 py-24" style={{ background: "#9d6bff" }}>
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-
-        <FadeUp>
-          <div className="relative mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Gotowy, żeby zacząć drukować?
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-lg text-white">
-              Drukarka dostarczana pod drzwi, kurs dostępny od pierwszego dnia. Jedna opłata — dożywotni dostęp do wiedzy i społeczności.
+      {/* ── PRINTER + FDM ───────────────────────────────────────────────── */}
+      <section style={{ background: "#1c1c1c", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "70px 24px", display: "grid", gridTemplateColumns: "0.92fr 1.08fr", gap: 50, alignItems: "center" }}>
+          <FadeUp>
+            <FdmAnimation />
+          </FadeUp>
+          <FadeUp delay={0.1}>
+            <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Drukarka w zestawie</span>
+            <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 14px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Bambu Lab A1 Mini — najlepsza drukarka na start</h2>
+            <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.6, margin: "0 0 14px", color: "#b4b4b4" }}>
+              Uważana za <strong style={{ color: "#ededed", fontWeight: 700 }}>najlepszą drukarkę dla początkujących na świecie</strong>, łączy prostotę obsługi z jakością znaną z maszyn profesjonalnych. Auto-poziomowanie, cicha praca i błyskawiczny druk sprawiają, że pierwszy udany wydruk zrobisz dosłownie w kilkanaście minut po rozpakowaniu.
             </p>
-            <Link
-              href="/login"
-              className="neo-brutal-btn mt-8 inline-flex items-center gap-2 rounded-lg border-2 border-black bg-white px-8 py-4 text-lg font-bold text-black"
-              style={{ boxShadow: "6px 6px 0 #000" }}
-            >
-              Zacznij teraz — 1 999 zł
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-
-            <div className="mt-8 flex flex-col items-center gap-2 text-sm text-white">
-              <a href="mailto:kurs@magbase.pl" className="flex items-center gap-2 transition-colors hover:text-black">
-                <Mail className="h-4 w-4" />
-                kurs@magbase.pl
-              </a>
-              <a href="tel:+48571082475" className="flex items-center gap-2 transition-colors hover:text-black">
-                <Phone className="h-4 w-4" />
-                +48 571 082 475
-              </a>
+            <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.6, margin: "0 0 26px", color: "#b4b4b4" }}>
+              Nie musisz niczego składać ani kalibrować ręcznie — drukarka sama przygotowuje się do pracy, a Ty od razu skupiasz się na nauce i tworzeniu.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+              {[
+                ["Prędkość druku", "do 500 mm/s"],
+                ["Przyspieszenie", "10 000 mm/s²"],
+                ["Pole robocze", "180×180×180 mm"],
+                ["Poziomowanie", "Automatyczne"],
+                ["Kamera", "Podgląd live"],
+                ["Temp. dyszy", "do 300°C"],
+                ["Materiały", "PLA · PETG · TPU · PVA"],
+                ["Łączność", "WiFi + microSD"],
+                ["Gwarancja", "12 miesięcy"],
+              ].map(([label, val]) => (
+                <div key={label} style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 11, padding: 14 }}>
+                  <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#7a7a7a" }}>{label}</div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600, marginTop: 4, color: "#ededed" }}>{val}</div>
+                </div>
+              ))}
             </div>
-          </div>
-        </FadeUp>
+          </FadeUp>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t-2 border-black px-6 py-12" style={{ background: "#161616" }}>
-        <div className="mx-auto max-w-6xl">
-          <div className="grid gap-8 sm:grid-cols-3">
-            <div>
-              <div className="flex items-center gap-2 text-lg font-bold text-white">
-                <Sparkles className="h-5 w-5 text-[#9d6bff]" />
-                Interaktywny kurs druku 3D
-              </div>
-              <p className="mt-3 text-sm text-[#8a8a8a]">
-                Kurs druku 3D z prawdziwą drukarką Bambu Lab A1 Mini i dożywotnim dostępem do platformy. Prowadzi Fabian Olczak (Magbase).
-              </p>
+      {/* ── FILAMENT ────────────────────────────────────────────────────── */}
+      <section style={{ background: "#161616", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "70px 24px" }}>
+          <FadeUp>
+            <div style={{ maxWidth: 660 }}>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Filament PLA i PETG — w zestawie</h2>
+              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Dwa podstawowe i najważniejsze materiały do druku 3D, każdy z unikalnym zastosowaniem.</p>
             </div>
-
-            <div>
-              <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-white">Nawigacja</h4>
-              <div className="space-y-2 text-sm">
-                <div><a href="#omnie" className="text-[#8a8a8a] transition-colors hover:text-white">O mnie</a></div>
-                <div><a href="#cennik" className="text-[#8a8a8a] transition-colors hover:text-white">Cennik</a></div>
-                <div><a href="#faq" className="text-[#8a8a8a] transition-colors hover:text-white">FAQ</a></div>
-                <div><Link href="/login" className="text-[#8a8a8a] transition-colors hover:text-white">Zaloguj się</Link></div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-white">Kontakt</h4>
-              <div className="space-y-2 text-sm text-[#8a8a8a]">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <a href="mailto:kurs@magbase.pl" className="transition-colors hover:text-white">kurs@magbase.pl</a>
+          </FadeUp>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 40 }}>
+            {[
+              {
+                abbr: "PLA", color: "#3ecf8e", name: "PLA", sub: "Idealny dla początkujących",
+                items: [["#3ecf8e", "Najłatwiejszy do drukowania materiał"], ["#3ecf8e", "Biodegradowalny — przyjazny środowisku"], ["#3ecf8e", "Dostępny w dziesiątkach kolorów"], ["#3ecf8e", "Świetna dokładność wymiarowa"], ["#3ecf8e", "Niskie temperatury druku (190–220°C)"], ["#3ecf8e", "Idealny do figurek, dekoracji, gadżetów"]],
+              },
+              {
+                abbr: "PETG", color: "#5b8def", name: "PETG", sub: "Wytrzymałość i funkcjonalność",
+                items: [["#5b8def", "Znacznie mocniejszy od PLA"], ["#5b8def", "Odporny na temperaturę do ~80°C"], ["#5b8def", "Odporny na wilgoć i chemikalia"], ["#5b8def", "Idealny do części mechanicznych"]],
+              },
+            ].map((fil) => (
+              <FadeUp key={fil.abbr}>
+                <div style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 16, boxShadow: "6px 6px 0 #000", padding: 30 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ display: "grid", placeItems: "center", width: 54, height: 54, background: fil.color, border: "2px solid #000", borderRadius: 12, fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: fil.abbr === "PETG" ? 15 : 17, color: "#161616" }}>{fil.abbr}</div>
+                    <div>
+                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: 21, fontWeight: 600, color: "#f0f0f0" }}>{fil.name}</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 500, color: "#8a8a8a" }}>{fil.sub}</div>
+                    </div>
+                  </div>
+                  <ul style={{ listStyle: "none", padding: 0, margin: "22px 0 0", display: "flex", flexDirection: "column", gap: 11 }}>
+                    {fil.items.map(([c, text]) => (
+                      <li key={text} style={{ display: "flex", gap: 10, fontSize: 14.5, fontWeight: 500, color: "#c4c4c4" }}>
+                        <span style={{ color: c, flex: "none" }}>✔</span>{text}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <a href="tel:+48571082475" className="transition-colors hover:text-white">+48 571 082 475</a>
-                </div>
-              </div>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PLATFORM SHOWCASE ───────────────────────────────────────────── */}
+      <section id="platforma" style={{ background: "#1c1c1c", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "70px 24px" }}>
+          <FadeUp>
+            <div style={{ maxWidth: 660 }}>
+              <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Platforma kursowa</span>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Wszystko w jednym miejscu</h2>
+              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Nowoczesna platforma edukacyjna z narzędziami, które realnie wspierają naukę — lekcje, quizy, społeczność i postępy w jednym panelu.</p>
             </div>
+          </FadeUp>
+          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 26, marginTop: 40, alignItems: "center" }}>
+            <FadeUp>
+              <div style={{ width: "100%", height: 340, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden", background: "#141414", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "#3a3a3a", fontSize: 14 }}>Zrzut ekranu platformy kursowej</span>
+              </div>
+            </FadeUp>
+            <FadeUp delay={0.1}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  { color: "#9d6bff", icon: "M5 3l14 9-14 9V3Z", title: "Lekcje wideo z timestampami", desc: "Przeskakuj do konkretnych fragmentów i ucz się we własnym tempie." },
+                  { color: "#3ecf8e", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Quizy i śledzenie postępów", desc: "Sprawdzaj wiedzę i obserwuj drogę do certyfikatu." },
+                  { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum, wiki i wiadomości", desc: "Społeczność, baza wiedzy i bezpośredni kontakt z prowadzącym." },
+                ].map((item) => (
+                  <div key={item.title} style={{ display: "flex", gap: 13, alignItems: "flex-start", background: "#1e1e1e", border: "2px solid #000", borderRadius: 12, padding: 16 }}>
+                    <div style={{ display: "grid", placeItems: "center", width: 38, height: 38, flex: "none", background: item.color, border: "2px solid #000", borderRadius: 9, color: "#161616" }}>
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 15, color: "#ededed" }}>{item.title}</div>
+                      <p style={{ margin: "3px 0 0", fontSize: 13, color: "#8a8a8a", lineHeight: 1.45 }}>{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </FadeUp>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT ME ────────────────────────────────────────────────────── */}
+      <section id="o-mnie" style={{ background: "#161616", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "70px 24px", display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 48, alignItems: "center" }}>
+          <FadeUp>
+            <div style={{ position: "relative" }}>
+              <div style={{ width: "100%", height: 460, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #9d6bff", overflow: "hidden", background: "#141414", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "#3a3a3a", fontSize: 14 }}>Zdjęcie — Fabian Olczak</span>
+              </div>
+              <div style={{ position: "absolute", bottom: 14, left: 14, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "#fff", boxShadow: "3px 3px 0 #000" }}>Twój prowadzący</div>
+            </div>
+          </FadeUp>
+          <FadeUp delay={0.1}>
+            <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#1e1e1e", color: "#b89dff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>O mnie</span>
+            <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 18px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Cześć, nazywam się Fabian Olczak</h2>
+            <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.65, margin: "0 0 14px", color: "#b4b4b4" }}>
+              Od trzech lat zajmuję się drukiem 3D, a od ponad roku prowadzę własną firmę <strong style={{ color: "#ededed", fontWeight: 700 }}>Magbase</strong>, w której projektuję i produkuję gotowe produkty — wykorzystując druk 3D, druk UV i laser. Na co dzień pracuję na drukarkach Bambu Lab (m.in. H2C, P1S i A1), więc sprzęt, który dostajesz w zestawie kursu, znam nie z teorii, ale z codziennej, produkcyjnej eksploatacji — od pierwszego wydruku po skalowanie produkcji do tysięcy sztuk.
+            </p>
+            <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.65, margin: "0 0 26px", color: "#b4b4b4" }}>
+              Ten kurs to połączenie dwóch rzeczy, którymi żyję na co dzień: praktycznej wiedzy o druku 3D zdobytej w realnym biznesie oraz zaplecza technicznego, dzięki któremu pokażę Ci nie tylko <em style={{ color: "#ededed", fontStyle: "normal", fontWeight: 600 }}>„jak coś kliknąć"</em>, ale przede wszystkim <strong style={{ color: "#ededed", fontWeight: 700 }}>dlaczego coś działa tak, a nie inaczej.</strong>
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {[
+                { val: "3 lata", color: "#9d6bff", sub: "w druku 3D" },
+                { val: "Magbase", color: "#3ecf8e", sub: "własna firma produkcyjna" },
+                { val: "tysiące", color: "#5b8def", sub: "wydrukowanych sztuk" },
+                { val: "Bambu Lab", color: "#e0944a", sub: "H2C · P1S · A1" },
+              ].map((stat) => (
+                <div key={stat.val} style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 11, padding: "12px 16px", boxShadow: "3px 3px 0 #000" }}>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.val}</div>
+                  <div style={{ fontSize: 12, color: "#8a8a8a", marginTop: 2 }}>{stat.sub}</div>
+                </div>
+              ))}
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── PRICING ─────────────────────────────────────────────────────── */}
+      <section id="cennik" style={{ background: "#1c1c1c", borderBottom: "2px solid #000" }}>
+        <div style={{ ...s.maxW, padding: "70px 24px" }}>
+          <FadeUp>
+            <div style={{ maxWidth: 660 }}>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Prosty cennik</h2>
+              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Jednorazowa opłata. Drukarka i dostęp do kursu w jednym pakiecie.</p>
+            </div>
+          </FadeUp>
+          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 22, marginTop: 40, alignItems: "start" }}>
+            {/* Individual */}
+            <FadeUp>
+              <div style={{ background: "#9d6bff", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 36, position: "relative" }}>
+                <div style={{ position: "absolute", top: -14, right: 28, background: "#161616", border: "2px solid #000", borderRadius: 100, padding: "6px 15px", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "#fff", boxShadow: "3px 3px 0 #000" }}>Najpopularniejszy</div>
+                <h3 style={{ fontSize: 23, fontWeight: 600, margin: 0, color: "#161616" }}>Pakiet indywidualny</h3>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "14px 0 4px" }}>
+                  <span style={{ fontFamily: "'Space Grotesk'", fontSize: 52, fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, color: "#161616" }}>1 999 zł</span>
+                  <span style={{ fontWeight: 600, fontSize: 15, color: "#2a2a2a" }}>jednorazowo</span>
+                </div>
+                <p style={{ fontSize: 14.5, fontWeight: 600, margin: "8px 0 24px", color: "#1c1c1c" }}>Drukarka Bambu Lab A1 Mini + dożywotni dostęp do platformy</p>
+                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 11 }}>
+                  {["Drukarka Bambu Lab A1 Mini", "Filament PLA + PETG na start", "Dożywotni dostęp do platformy kursu", "Wszystkie przyszłe aktualizacje materiałów", "Dostęp do społeczności, konkursów i wsparcia", "Certyfikat ukończenia kursu", "Materiały do pobrania (projekty, pliki STL)"].map((item) => (
+                    <li key={item} style={{ display: "flex", gap: 10, fontSize: 14.5, fontWeight: 600, color: "#161616" }}>
+                      <span style={{ flex: "0 0 auto" }}>✔</span>{item}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Quantity selector */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#1c1c1c", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Liczba pakietów</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 0, background: "#161616", border: "2px solid #000", borderRadius: 10, overflow: "hidden", width: "fit-content", boxShadow: "3px 3px 0 #000" }}>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      style={{ width: 44, height: 44, background: "transparent", border: "none", borderRight: "2px solid #333", cursor: "pointer", fontSize: 22, fontWeight: 700, color: "#9d6bff", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >−</button>
+                    <span style={{ minWidth: 52, textAlign: "center", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 20, color: "#fff" }}>{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => q + 1)}
+                      style={{ width: 44, height: 44, background: "transparent", border: "none", borderLeft: "2px solid #333", cursor: "pointer", fontSize: 22, fontWeight: 700, color: "#9d6bff", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >+</button>
+                  </div>
+                  {quantity > 1 && (
+                    <p style={{ fontSize: 12, color: "#1c1c1c", marginTop: 6, fontWeight: 600 }}>
+                      Łącznie: {(quantity * 1999).toLocaleString("pl-PL")} zł · Dla firm dostępne rabaty
+                    </p>
+                  )}
+                </div>
+
+                <a
+                  href={buyUrl}
+                  style={{ display: "block", textAlign: "center", textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 17, padding: 16, background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #fff"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #fff"; }}
+                >
+                  Kup teraz →
+                </a>
+              </div>
+            </FadeUp>
+
+            {/* Business */}
+            <FadeUp delay={0.1}>
+              <div id="firmy" style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 36 }}>
+                <h3 style={{ fontSize: 23, fontWeight: 600, margin: 0, color: "#f0f0f0" }}>Dla firm i instytucji</h3>
+                <div style={{ fontFamily: "'Space Grotesk'", fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", margin: "14px 0 8px", color: "#f0f0f0" }}>Cena do negocjacji</div>
+                <p style={{ fontSize: 14, fontWeight: 400, color: "#8a8a8a", lineHeight: 1.55, margin: "0 0 24px" }}>Kupujesz dla więcej niż jednej osoby? Masz szkołę, firmę produkcyjną lub chcesz wyposażyć pracownię? Przygotujemy ofertę dopasowaną.</p>
+                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 11 }}>
+                  {["Zniżki od 2 pakietów wzwyż", "Faktura VAT", "Szkolenia live dla Twojego zespołu", "Priorytetowe wsparcie techniczne"].map((item) => (
+                    <li key={item} style={{ display: "flex", gap: 10, fontSize: 14, fontWeight: 500, color: "#c4c4c4" }}>
+                      <span style={{ color: "#9d6bff", flex: "none" }}>✔</span>{item}
+                    </li>
+                  ))}
+                </ul>
+                <a href="#kontakt" style={{ display: "block", textAlign: "center", textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 17, padding: 16, background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #000", transition: "transform .1s, box-shadow .1s" }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #000"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #000"; }}
+                >Napisz do nas</a>
+              </div>
+            </FadeUp>
           </div>
 
-          <div className="mt-8 border-t-2 border-black pt-8 text-center">
-            <p className="text-xs text-[#8a8a8a]">
-              © 2026 Interaktywny kurs druku 3D · Magbase. Wszelkie prawa zastrzeżone.
-            </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs">
-              <Link href="/polityka-prywatnosci" className="text-[#8a8a8a] transition-colors hover:text-white">
-                Polityka prywatności
-              </Link>
-              <Link href="/regulamin" className="text-[#8a8a8a] transition-colors hover:text-white">
-                Regulamin platformy
-              </Link>
-              <Link href="/warunki" className="text-[#8a8a8a] transition-colors hover:text-white">
-                Warunki świadczenia usług
-              </Link>
+          {/* Contact bar */}
+          <div id="kontakt" style={{ marginTop: 24, background: "#9d6bff", color: "#161616", border: "2px solid #000", borderRadius: 16, boxShadow: "6px 6px 0 #000", padding: "26px 30px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+            <span style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600 }}>Masz pytania? Napisz do nas albo zadzwoń.</span>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <a href="mailto:kurs@magbase.pl" style={{ textDecoration: "none", fontWeight: 700, background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "10px 18px" }}>kurs@magbase.pl</a>
+              <a href="tel:+48571082475" style={{ textDecoration: "none", fontWeight: 700, background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 100, padding: "10px 18px" }}>+48 571 082 475</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────────────────── */}
+      <section id="faq" style={{ background: "#161616", borderBottom: "2px solid #000" }}>
+        <div style={{ maxWidth: 820, margin: "0 auto", padding: "70px 24px" }}>
+          <FadeUp>
+            <div style={{ textAlign: "center" }}>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Najczęstsze pytania</h2>
+              <p style={{ fontSize: 16, fontWeight: 500, margin: 0, color: "#8a8a8a" }}>Nie znalazłeś odpowiedzi? Napisz do nas na <a href="mailto:kurs@magbase.pl" style={{ fontWeight: 700, color: "#b89dff" }}>kurs@magbase.pl</a>.</p>
+            </div>
+          </FadeUp>
+          <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 36 }}>
+            {faqData.map(([q, a], i) => (
+              <div key={i} style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 12, boxShadow: "3px 3px 0 #000", overflow: "hidden" }}>
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  style={{ width: "100%", background: "transparent", border: 0, cursor: "pointer", fontFamily: "'Space Grotesk'", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "17px 20px", fontSize: 16, fontWeight: 600, color: "#ededed" }}
+                >
+                  <span>{q}</span>
+                  <span style={{ flex: "none", display: "grid", placeItems: "center", width: 29, height: 29, background: "#9d6bff", border: "2px solid #000", borderRadius: 8, fontSize: 18, fontWeight: 700, lineHeight: 1, color: "#fff" }}>
+                    {openFaq === i ? "−" : "+"}
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ padding: "0 20px 19px", fontSize: 14.5, lineHeight: 1.6, fontWeight: 400, color: "#9a9a9a" }}
+                  >
+                    {a}
+                  </motion.div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ───────────────────────────────────────────────────── */}
+      <section style={{ background: "#9d6bff", borderBottom: "2px solid #000", position: "relative" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#00000010 1px,transparent 1px),linear-gradient(90deg,#00000010 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
+        <div style={{ position: "relative", maxWidth: 820, margin: "0 auto", padding: "82px 24px", textAlign: "center" }}>
+          <FadeUp>
+            <h2 style={{ fontSize: 50, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 16px", lineHeight: 1.05, color: "#161616", fontFamily: "'Space Grotesk'" }}>Gotowy, żeby zacząć drukować?</h2>
+            <p style={{ fontSize: 18, fontWeight: 600, margin: "0 auto 32px", maxWidth: 560, lineHeight: 1.5, color: "#1c1c1c" }}>Drukarka dostarczana pod drzwi, kurs dostępny od pierwszego dnia. Jedna opłata — dożywotni dostęp do wiedzy i społeczności.</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
+              <a href="#cennik" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 18, padding: "16px 28px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #fff"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #fff"; }}
+              >Zacznij teraz — 1 999 zł</a>
+              <a href="#firmy" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 18, padding: "16px 28px", background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #161616", transition: "transform .1s, box-shadow .1s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #161616"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #161616"; }}
+              >Oferta dla firm →</a>
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── FOOTER ──────────────────────────────────────────────────────── */}
+      <footer style={{ background: "#101010", color: "#8a8a8a" }}>
+        <div style={{ ...s.maxW, padding: "52px 24px 40px", display: "grid", gridTemplateColumns: "1.6fr 0.8fr 0.8fr 1fr", gap: 32 }}>
+          {/* Brand */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+              <span style={{ display: "grid", placeItems: "center", width: 32, height: 32, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 12 }}>3D</span>
+              <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 15, color: "#ededed" }}>Interaktywny kurs druku 3D</span>
+            </div>
+            <p style={{ fontSize: 13.5, lineHeight: 1.55, margin: "14px 0 16px", maxWidth: 300 }}>Kurs druku 3D z prawdziwą drukarką Bambu Lab A1 Mini i dożywotnim dostępem do platformy. Prowadzi Fabian Olczak (Magbase).</p>
+            {/* Company data */}
+            <div style={{ fontSize: 12, lineHeight: 1.7, color: "#4a4a4a" }}>
+              <div style={{ fontFamily: "'Space Grotesk'", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "#3a3a3a", marginBottom: 6 }}>Dane firmy</div>
+              <div>Magbase Fabian Olczak</div>
+              <div>NIP: 5993285713</div>
+              <div>VAT-UE: PL5993285713</div>
+              <div>REGON: 543409622</div>
+              <div style={{ marginTop: 4, fontFamily: "monospace", fontSize: 11 }}>PL70 1140 2004 0000 3602 8626 9283</div>
+            </div>
+          </div>
+          {/* Nav */}
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Nawigacja</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
+              {[["#o-mnie", "O mnie"], ["#platforma", "Platforma"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
+                <a key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
+              ))}
+              <Link href="/login" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>Zaloguj się</Link>
+            </div>
+          </div>
+          {/* Contact */}
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Kontakt</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
+              <a href="mailto:kurs@magbase.pl" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>kurs@magbase.pl</a>
+              <a href="tel:+48571082475" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>+48 571 082 475</a>
+            </div>
+          </div>
+          {/* Legal */}
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Dokumenty</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
+              {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki usług", "/strony/warunki"]].map(([label, href]) => (
+                <Link key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</Link>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ borderTop: "2px solid #222" }}>
+          <div style={{ ...s.maxW, padding: "18px 24px", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", fontSize: 12.5 }}>
+            <span>© 2026 Interaktywny kurs druku 3D · Magbase. Wszelkie prawa zastrzeżone.</span>
+            <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+              {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki usług", "/strony/warunki"]].map(([label, href]) => (
+                <Link key={href} href={href} style={{ textDecoration: "none", color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</Link>
+              ))}
             </div>
           </div>
         </div>
