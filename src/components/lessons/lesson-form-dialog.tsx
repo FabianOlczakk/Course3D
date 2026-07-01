@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -92,6 +92,7 @@ export function LessonFormDialog({
   const [timestampsText, setTimestampsText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ratingStats, setRatingStats] = useState<{ avg: number | null; count: number } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -102,6 +103,13 @@ export function LessonFormDialog({
       setContent(contentToString(lesson?.contentJson));
       setTimestampsText(serializeTimestamps(lesson?.timestamps));
       setError(null);
+      setRatingStats(null);
+      if (lesson?.id) {
+        fetch(`/api/lessons/${lesson.id}/rating`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => { if (d) setRatingStats({ avg: d.avg, count: d.count }); })
+          .catch(() => {});
+      }
     }
   }, [open, lesson]);
 
@@ -143,7 +151,16 @@ export function LessonFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glow-card max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? "Edytuj lekcję" : "Nowa lekcja"}</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle>{editing ? "Edytuj lekcję" : "Nowa lekcja"}</DialogTitle>
+            {editing && ratingStats && ratingStats.count > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-[6px] bg-yellow-500/10 px-3 py-1 text-[12px] font-semibold text-yellow-400">
+                <Star className="h-3.5 w-3.5 fill-yellow-400" />
+                {ratingStats.avg?.toFixed(1)} / 5
+                <span className="font-normal text-yellow-400/70">({ratingStats.count} ocen)</span>
+              </span>
+            )}
+          </div>
           <DialogDescription>
             Dodaj wideo i treść lekcji. Treść może zawierać HTML/Markdown.
           </DialogDescription>

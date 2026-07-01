@@ -9,8 +9,10 @@ import {
   Check,
   CheckCircle2,
   XCircle,
+  Star,
 } from "lucide-react";
 import { LessonPlayer } from "@/components/lessons/lesson-player";
+import { LessonNotes } from "@/components/lessons/lesson-notes";
 import { useToast } from "@/lib/toast";
 import { broadcastProgressUpdate } from "@/lib/use-progress";
 import { cn } from "@/lib/utils";
@@ -110,6 +112,8 @@ export function LessonView({
     prev: null,
     next: null,
   });
+  const [showRating, setShowRating] = useState(false);
+  const [rating, setRating] = useState(0);
 
   const enrichedHtml = useMemo(() => {
     if (!html) return "";
@@ -151,9 +155,12 @@ export function LessonView({
       if (!res.ok) throw new Error();
       setCompleted(next);
       broadcastProgressUpdate();
-      toast.success(
-        next ? "Lekcja oznaczona jako ukończona ✓" : "Oznaczenie cofnięte"
-      );
+      if (next) {
+        setRating(0);
+        setShowRating(true);
+      } else {
+        toast.success("Oznaczenie cofnięte");
+      }
     } catch {
       toast.error("Nie udało się zapisać postępu.");
     } finally {
@@ -216,8 +223,62 @@ export function LessonView({
     videoRef.current?.play().catch(() => {});
   }, []);
 
+  async function submitRating(stars: number) {
+    setShowRating(false);
+    toast.success("Lekcja oznaczona jako ukończona ✓");
+    if (stars > 0) {
+      await fetch(`/api/lessons/${lessonId}/rating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: stars }),
+      }).catch(() => {});
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-56px)] flex-col">
+      {/* Rating modal */}
+      {showRating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="glow-card w-full max-w-sm space-y-5 p-7 text-center">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-green-400" />
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Lekcja ukończona!</h3>
+            <p className="text-sm text-[var(--text-secondary)]">Jak oceniasz tę lekcję?</p>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setRating(s)}
+                  className="transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={cn("h-8 w-8", s <= rating ? "fill-yellow-400 text-yellow-400" : "text-[var(--text-muted)]")}
+                  />
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => void submitRating(0)}
+                className="flex-1 rounded-[8px] border border-[var(--border-subtle)] px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              >
+                Pomiń
+              </button>
+              <button
+                type="button"
+                disabled={rating === 0}
+                onClick={() => void submitRating(rating)}
+                className="flex-1 rounded-[8px] bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                Wyślij ocenę
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-4 py-2">
         <Link
@@ -240,11 +301,13 @@ export function LessonView({
       <div className="grid flex-1 overflow-hidden lg:grid-cols-2">
         {/* Lewa strona: wideo + info + przyciski */}
         <div className="flex flex-col overflow-y-auto border-r border-[var(--border-subtle)] bg-[var(--bg-base)]">
-          <LessonPlayer
-            videoUrl={videoUrl}
-            videoRef={videoRef}
-            onTimeUpdate={handleTimeUpdate}
-          />
+          <div className="px-2 pt-2">
+            <LessonPlayer
+              videoUrl={videoUrl}
+              videoRef={videoRef}
+              onTimeUpdate={handleTimeUpdate}
+            />
+          </div>
           <div className="flex-1 space-y-4 p-4">
             <div>
               <h1 className="text-xl font-bold text-text-primary">{title}</h1>
@@ -293,6 +356,8 @@ export function LessonView({
                 )}
               </div>
             </div>
+
+            <LessonNotes lessonId={lessonId} />
 
             {extraDescription && (
               <div

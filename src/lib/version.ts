@@ -1,2 +1,2 @@
 // Wersja aplikacji — widoczna tylko dla administratorów (w nagłówku paska bocznego).
-export const APP_VERSION = "1.0.1";
+export const APP_VERSION = "1.1.0";
