@@ -378,23 +378,23 @@ function StaggerGrid({
 const features = [
   {
     icon: GraduationCap,
-    title: "Kompletny kurs wideo",
-    desc: "Od rozpakowania drukarki po zaawansowane modelowanie — krok po kroku, w języku polskim. Lekcje z sygnaturami czasowymi.",
+    title: "Interaktywny kurs po polsku",
+    desc: "Od rozpakowania drukarki po zaawansowane modelowanie — krok po kroku, w języku polskim, z interaktywnymi zadaniami.",
   },
   {
     icon: Printer,
     title: "Bambu Lab A1 Mini w zestawie",
-    desc: "Otrzymujesz fizyczną drukarkę 3D: auto-poziomowanie, multi-kolor AMS Lite, WiFi, 250 mm/s. Gotową do druku od razu.",
+    desc: "Otrzymujesz fizyczną drukarkę 3D gotową do druku od razu.",
   },
   {
     icon: Boxes,
     title: "Interaktywne lekcje",
-    desc: "Quizy, śledzenie postępów, wiki, forum i wiadomości prywatne do prowadzącego — kompletna platforma edukacyjna.",
+    desc: "Quizy, śledzenie postępów, wiki, forum i wiadomości prywatne do prowadzącego - kompletna platforma edukacyjna w jednym miejscu.",
   },
   {
     icon: MessagesSquare,
     title: "Społeczność i wsparcie",
-    desc: "Zadawaj pytania, dziel się wydrukami i pisz bezpośrednio do prowadzących. Certyfikat po ukończeniu.",
+    desc: "Zadawaj pytania, dziel się wydrukami i pisz bezpośrednio do prowadzących. Po ukończeniu kursu otrzymasz certyfikat."
   },
 ];
 
@@ -651,7 +651,7 @@ function HeroSection() {
           }}
         >
           <Sparkles className="h-4 w-4" style={{ color: "var(--accent)" }} />
-          Druk 3D od zera do mistrza
+          Druk 3D od podstaw
         </motion.span>
 
         <motion.h1
@@ -660,7 +660,7 @@ function HeroSection() {
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="bg-gradient-to-br from-[var(--text-primary)] via-purple-300 to-purple-500 bg-clip-text text-5xl font-extrabold leading-tight text-transparent md:text-6xl lg:text-7xl"
         >
-          Kurs Druku 3D<br />z Bambu Lab A1 Mini
+          Kurs Druku 3D Online<br />Bambu Lab A1 Mini Gratis!
         </motion.h1>
 
         <motion.p
@@ -670,9 +670,8 @@ function HeroSection() {
           className="mx-auto mt-6 max-w-2xl text-lg"
           style={{ color: "var(--text-secondary)" }}
         >
-          Naucz się drukowania 3D od podstaw. Otrzymasz prawdziwą drukarkę
-          Bambu Lab A1 Mini oraz pełny dostęp do interaktywnej platformy kursowej.
-          Jedna opłata — dożywotni dostęp.
+          Naucz się drukowania 3D od ekspertów z wieloletnim doświadczeniem w branży FDM. Otrzymasz drukarkę
+          Bambu Lab A1 Mini, zestaw filamentów oraz pełny dostęp do interaktywnej platformy kursowej.
         </motion.p>
 
         <motion.div
@@ -685,8 +684,7 @@ function HeroSection() {
             href="/login"
             className="glow-btn inline-flex items-center gap-2 rounded-md px-7 py-3.5 text-base font-semibold text-white shadow-glow"
           >
-            Zacznij teraz — 1 999 zł
-            <ArrowRight className="h-5 w-5" />
+            Przejd do kursu            <ArrowRight className="h-5 w-5" />
           </Link>
           <a
             href="#cennik"
@@ -694,7 +692,7 @@ function HeroSection() {
             style={{ borderColor: "var(--border-subtle)", color: "var(--text-secondary)" }}
           >
             <Play className="h-4 w-4" />
-            Poznaj szczegóły
+            Dowiedz się więcej
           </a>
         </motion.div>
 
@@ -712,15 +710,13 @@ function HeroSection() {
 
 function PrinterSection() {
   const specsLeft = [
-    { icon: Zap, label: "Prędkość druku", val: "250 mm/s" },
+    { icon: Zap, label: "Prędkość druku", val: "do 500 mm/s" },
     { icon: Layers, label: "Pole robocze", val: "180×180×180 mm" },
-    { icon: Palette, label: "Multi-kolor AMS Lite", val: "do 4 kolorów" },
     { icon: Wifi, label: "Łączność", val: "WiFi + microSD" },
   ];
   const specsRight = [
-    { icon: Shield, label: "Poziomowanie łoża", val: "Auto-ABL" },
-    { icon: Zap, label: "Kalibracja", val: "Pełny auto-start" },
-    { icon: Printer, label: "Technologia", val: "FDM / FFF" },
+    { icon: Zap, label: "Kalibracja", val: "Automatyczna" },
+    { icon: Printer, label: "Technologia", val: "FDM" },
     { icon: Award, label: "Gwarancja", val: "12 miesięcy" },
   ];
 
