@@ -187,6 +187,9 @@ export function AdminPagesClient() {
 
           <div>
             <label className="mb-2 block text-[12px] font-semibold text-[var(--text-muted)]">Widoczność</label>
+            <p className="mb-2 text-[11px] text-[var(--text-muted)]">
+              Strony <strong>publiczne</strong> są osobnymi stronami (bez sidebaru, dostępne bez logowania). Strony <strong>Kursanci/Admin</strong> są osadzone w platformie.
+            </p>
             <div className="flex gap-2 flex-wrap">
               {(["PUBLIC", "USERS", "ADMIN"] as Visibility[]).map((v) => {
                 const d = VIS_LABELS[v];
