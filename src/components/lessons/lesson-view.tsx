@@ -114,6 +114,7 @@ export function LessonView({
   });
   const [showRating, setShowRating] = useState(false);
   const [rating, setRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
 
   const enrichedHtml = useMemo(() => {
     if (!html) return "";
@@ -157,6 +158,7 @@ export function LessonView({
       broadcastProgressUpdate();
       if (next) {
         setRating(0);
+        setRatingComment("");
         setShowRating(true);
       } else {
         toast.success("Oznaczenie cofnięte");
@@ -223,16 +225,15 @@ export function LessonView({
     videoRef.current?.play().catch(() => {});
   }, []);
 
-  async function submitRating(stars: number) {
+  async function submitRating() {
+    if (rating === 0) return;
     setShowRating(false);
     toast.success("Lekcja oznaczona jako ukończona ✓");
-    if (stars > 0) {
-      await fetch(`/api/lessons/${lessonId}/rating`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating: stars }),
-      }).catch(() => {});
-    }
+    await fetch(`/api/lessons/${lessonId}/rating`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating, ratingComment: ratingComment.trim() || undefined }),
+    }).catch(() => {});
   }
 
   return (
@@ -240,10 +241,14 @@ export function LessonView({
       {/* Rating modal */}
       {showRating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glow-card w-full max-w-sm space-y-5 p-7 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-green-400" />
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Lekcja ukończona!</h3>
-            <p className="text-sm text-[var(--text-secondary)]">Jak oceniasz tę lekcję?</p>
+          <div className="glow-card w-full max-w-sm space-y-5 p-7">
+            <div className="text-center">
+              <CheckCircle2 className="mx-auto h-12 w-12 text-green-400" />
+              <h3 className="mt-3 text-lg font-semibold text-[var(--text-primary)]">Lekcja ukończona!</h3>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                Oceń lekcję, aby kontynuować.
+              </p>
+            </div>
             <div className="flex justify-center gap-2">
               {[1, 2, 3, 4, 5].map((s) => (
                 <button
@@ -253,28 +258,33 @@ export function LessonView({
                   className="transition-transform hover:scale-110"
                 >
                   <Star
-                    className={cn("h-8 w-8", s <= rating ? "fill-yellow-400 text-yellow-400" : "text-[var(--text-muted)]")}
+                    className={cn("h-9 w-9", s <= rating ? "fill-yellow-400 text-yellow-400" : "text-[var(--text-muted)]")}
                   />
                 </button>
               ))}
             </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => void submitRating(0)}
-                className="flex-1 rounded-[8px] border border-[var(--border-subtle)] px-4 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-              >
-                Pomiń
-              </button>
-              <button
-                type="button"
-                disabled={rating === 0}
-                onClick={() => void submitRating(rating)}
-                className="flex-1 rounded-[8px] bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-              >
-                Wyślij ocenę
-              </button>
-            </div>
+            {rating > 0 && (
+              <div>
+                <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-muted)]">
+                  Opinia (opcjonalna)
+                </label>
+                <textarea
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  rows={3}
+                  placeholder="Powiedz nam więcej o tej lekcji…"
+                  className="w-full resize-none rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={rating === 0}
+              onClick={() => void submitRating()}
+              className="w-full rounded-[8px] bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              {rating === 0 ? "Wybierz ocenę" : "Wyślij ocenę i zakończ"}
+            </button>
           </div>
         </div>
       )}

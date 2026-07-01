@@ -201,6 +201,7 @@ model LessonProgress {
   completed      Boolean  @default(false)
   watchedSeconds Int      @default(0)
   rating         Int?     // 1-5 gwiazdek, null = nie oceniono
+  ratingComment  String?  @db.Text
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

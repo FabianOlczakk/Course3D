@@ -3,7 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
-const schema = z.object({ rating: z.number().int().min(1).max(5) });
+const schema = z.object({
+  rating: z.number().int().min(1).max(5),
+  ratingComment: z.string().max(1000).optional(),
+});
 
 export async function POST(
   req: Request,
@@ -16,10 +19,20 @@ export async function POST(
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
 
-  await prisma.lessonProgress.upsert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (prisma.lessonProgress as any).upsert({
     where: { userId_lessonId: { userId: session.user.id, lessonId: params.id } },
-    create: { userId: session.user.id, lessonId: params.id, completed: true, rating: parsed.data.rating },
-    update: { rating: parsed.data.rating },
+    create: {
+      userId: session.user.id,
+      lessonId: params.id,
+      completed: true,
+      rating: parsed.data.rating,
+      ratingComment: parsed.data.ratingComment,
+    },
+    update: {
+      rating: parsed.data.rating,
+      ratingComment: parsed.data.ratingComment,
+    },
   });
 
   return NextResponse.json({ ok: true });

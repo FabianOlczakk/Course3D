@@ -13,7 +13,6 @@ import {
   Sparkles,
   ChevronDown,
   Play,
-  Star,
   Building2,
   Users,
   Zap,
@@ -36,22 +35,26 @@ import {
   Clock,
 } from "lucide-react";
 
-// --- Theme Switcher ---
+// --- Theme Switcher (taki sam jak na platformie: klasy dark/light na <html>) ---
 
-function useTheme() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+function useLandingTheme() {
+  const [theme, setThemeState] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme") as "dark" | "light" | null;
-    const initial = stored ?? "dark";
-    setTheme(initial);
-    document.documentElement.setAttribute("data-theme", initial);
+    const raw = localStorage.getItem("theme") ?? "dark";
+    const resolved: "dark" | "light" = raw === "light" ? "light"
+      : raw === "system" ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+      : "dark";
+    setThemeState(resolved);
+    document.documentElement.classList.remove("dark", "light");
+    document.documentElement.classList.add(resolved);
   }, []);
 
   const toggle = () => {
     const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
+    setThemeState(next);
+    document.documentElement.classList.remove("dark", "light");
+    document.documentElement.classList.add(next);
     localStorage.setItem("theme", next);
   };
 
@@ -405,44 +408,6 @@ const pricingPoints = [
   "Materiały do pobrania (projekty, pliki STL)",
 ];
 
-const testimonials = [
-  {
-    name: "Marek K.",
-    role: "Hobbysta, Warszawa",
-    text: "Przed kursem bałem się, że druk 3D to za skomplikowane. Trzy tygodnie później mam na biurku własnoręcznie zaprojektowane uchwyty i dekoracje. To uczucie, gdy dotykasz czegoś, co sam wymyśliłeś — nie da się opisać.",
-    stars: 5,
-  },
-  {
-    name: "Agnieszka N.",
-    role: "Nauczycielka, Kraków",
-    text: "Kurs zmienił moje podejście do dydaktyki. Dziś uczniowie projektują modele i sami je drukują. Widzę w nich zaangażowanie, którego wcześniej nie było. Platforma jest prosta na tyle, że nie tracę czasu na szukanie materiałów.",
-    stars: 5,
-  },
-  {
-    name: "Tomasz W.",
-    role: "Inżynier mechanik, Wrocław",
-    text: "Prototypuję teraz szybciej niż kiedykolwiek. Kurs nauczył mnie nie tylko obsługi drukarki, ale i logiki projektowania pod FDM. Przestałem zlecać proste części na zewnątrz — robię je sam w godzinę.",
-    stars: 5,
-  },
-  {
-    name: "Karolina M.",
-    role: "Właścicielka małego biznesu, Gdańsk",
-    text: "Zaczęłam sprzedawać własne ozdoby z druku 3D trzy miesiące po zakupie kursu. Bambu Lab A1 Mini jest niezawodna, a wiedza z kursu pozwoliła mi od razu drukować na sprzedaż.",
-    stars: 5,
-  },
-  {
-    name: "Paweł R.",
-    role: "Student, Poznań",
-    text: "Społeczność na platformie jest niesamowita. Zawsze ktoś odpowie na pytanie, podzieli się profilem slicera albo poratuje gotowym modelem. Czuję się częścią czegoś więcej niż tylko kurs.",
-    stars: 5,
-  },
-  {
-    name: "Dorota S.",
-    role: "Logopeda, Łódź",
-    text: "Drukowałam pomoce dydaktyczne dla moich pacjentów. Czas oczekiwania na gotowe pomoce skrócił się z tygodni do godzin. Kurs naprawdę otworzył przede mną nowy wymiar pracy.",
-    stars: 5,
-  },
-];
 
 const platformFeatures = [
   { icon: Play, title: "Lekcje wideo z timestampami", desc: "Przeskakuj do konkretnych fragmentów, ucz się we własnym tempie." },
@@ -561,7 +526,7 @@ const faqItems = [
 // --- Sub-components ---
 
 function NavBar() {
-  const { theme, toggle } = useTheme();
+  const { theme, toggle } = useLandingTheme();
 
   return (
     <header
@@ -693,7 +658,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="bg-gradient-to-br from-white via-purple-100 to-purple-400 bg-clip-text text-5xl font-extrabold leading-tight text-transparent md:text-6xl lg:text-7xl"
+          className="bg-gradient-to-br from-[var(--text-primary)] via-purple-300 to-purple-500 bg-clip-text text-5xl font-extrabold leading-tight text-transparent md:text-6xl lg:text-7xl"
         >
           Kurs Druku 3D<br />z Bambu Lab A1 Mini
         </motion.h1>
@@ -957,49 +922,6 @@ function FeaturesSection() {
   );
 }
 
-function TestimonialsSection() {
-  return (
-    <section className="px-6 py-24">
-      <div className="mx-auto max-w-6xl">
-        <FadeUp className="text-center">
-          <h2 className="text-3xl font-bold md:text-4xl" style={{ color: "var(--text-primary)" }}>
-            Co mówią kursanci
-          </h2>
-          <p className="mt-3" style={{ color: "var(--text-secondary)" }}>
-            Prawdziwe przemiany. Prawdziwe efekty.
-          </p>
-        </FadeUp>
-
-        <StaggerGrid className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <div key={t.name} className="glow-card rounded-xl border p-6" style={{ borderColor: "var(--border-subtle)" }}>
-              <div className="flex gap-0.5">
-                {Array.from({ length: t.stars }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-[var(--accent)] text-[var(--accent)]" />
-                ))}
-              </div>
-              <p className="mt-4 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                &ldquo;{t.text}&rdquo;
-              </p>
-              <div className="mt-5 flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
-                  style={{ background: "var(--accent-glow)", color: "var(--accent)" }}
-                >
-                  {t.name[0]}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.name}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </StaggerGrid>
-      </div>
-    </section>
-  );
-}
 
 function PricingSection() {
   return (
@@ -1030,7 +952,7 @@ function PricingSection() {
               </span>
               <div className="mt-5">
                 <div className="flex items-end gap-2">
-                  <span className="bg-gradient-to-br from-white to-purple-300 bg-clip-text text-5xl font-extrabold text-transparent">
+                  <span className="bg-gradient-to-br from-[var(--text-primary)] to-purple-400 bg-clip-text text-5xl font-extrabold text-transparent">
                     1 999 zł
                   </span>
                   <span className="mb-1.5 text-sm" style={{ color: "var(--text-muted)" }}>jednorazowo</span>
@@ -1314,7 +1236,6 @@ export default function LandingClient() {
       <PrinterSection />
       <FilamentsSection />
       <PlatformSection />
-      <TestimonialsSection />
       <PricingSection />
       <FaqSection />
       <CtaSection />
