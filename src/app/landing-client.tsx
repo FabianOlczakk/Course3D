@@ -35,6 +35,108 @@ function useCountdown(target: Date) {
 
 const SG = "var(--font-space-grotesk), system-ui, sans-serif";
 
+// ── Auto-playing Frame Sequence (looping) ──────────────────────────────────
+function AutoPlayFrameSequence({
+  startFrame = 8,
+  endFrame = 74,
+  basePath = "/sequence",
+  fps = 24,
+}: {
+  startFrame?: number;
+  endFrame?: number;
+  basePath?: string;
+  fps?: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const frameRef = useRef(0);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const frameCount = endFrame - startFrame + 1;
+
+  // Preload klatek
+  useEffect(() => {
+    let loadedCount = 0;
+    const images: HTMLImageElement[] = [];
+    for (let i = startFrame; i <= endFrame; i++) {
+      const img = new Image();
+      img.src = `${basePath}/${i}.png`;
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === frameCount) setImagesLoaded(true);
+      };
+      img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === frameCount) setImagesLoaded(true);
+      };
+      images.push(img);
+    }
+    imagesRef.current = images;
+  }, [startFrame, endFrame, basePath, frameCount]);
+
+  // Rysowanie + pętla klatek
+  useEffect(() => {
+    if (!imagesLoaded) return;
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    function drawFrame(index: number) {
+      const img = imagesRef.current[index];
+      if (!img || !canvas || !ctx || !img.complete || img.naturalWidth === 0) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const canvasRatio = canvas.width / canvas.height;
+      const imgRatio = img.width / img.height;
+      let drawWidth, drawHeight, offsetX, offsetY;
+      if (imgRatio > canvasRatio) {
+        drawHeight = canvas.height;
+        drawWidth = img.width * (canvas.height / img.height);
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        drawWidth = canvas.width;
+        drawHeight = img.height * (canvas.width / img.width);
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+      }
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+    }
+
+    function resize() {
+      if (!canvas || !container) return;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      drawFrame(frameRef.current);
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    const interval = setInterval(() => {
+      frameRef.current = (frameRef.current + 1) % frameCount;
+      drawFrame(frameRef.current);
+    }, 1000 / fps);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      clearInterval(interval);
+    };
+  }, [imagesLoaded, frameCount, fps]);
+
+  return (
+    <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
+      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      {!imagesLoaded && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#3a3a3a", fontSize: 14 }}>
+          Ładowanie animacji…
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── FDM Animation ─────────────────────────────────────────────────────────────
 function FdmAnimation() {
   const [progress, setProgress] = useState(0);
@@ -361,8 +463,8 @@ export function LandingClient() {
           </FadeUp>
           <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 26, marginTop: 40, alignItems: "center" }}>
             <FadeUp>
-              <div style={{ width: "100%", height: 340, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden", background: "#141414", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: "#3a3a3a", fontSize: 14 }}>Zrzut ekranu platformy kursowej</span>
+              <div style={{ width: "100%", height: 340, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden", background: "#141414" }}>
+                <AutoPlayFrameSequence startFrame={8} endFrame={74} basePath="/sequence" fps={24} />
               </div>
             </FadeUp>
             <FadeUp delay={0.1}>
@@ -393,8 +495,12 @@ export function LandingClient() {
         <div style={{ ...s.maxW, padding: "70px 24px", display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 48, alignItems: "center" }}>
           <FadeUp>
             <div style={{ position: "relative" }}>
-              <div style={{ width: "100%", height: 460, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #9d6bff", overflow: "hidden", background: "#141414", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: "#3a3a3a", fontSize: 14 }}>Zdjęcie — Fabian Olczak</span>
+              <div style={{ width: "100%", height: 460, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #9d6bff", overflow: "hidden", background: "#141414" }}>
+                <img
+                  src="/img/designing.png"
+                  alt="Fabian Olczak"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
               </div>
               <div style={{ position: "absolute", bottom: 14, left: 14, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", fontFamily: SG, fontSize: 12, fontWeight: 600, color: "#fff", boxShadow: "3px 3px 0 #000" }}>Twój prowadzący</div>
             </div>
