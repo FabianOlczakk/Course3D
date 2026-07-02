@@ -51,7 +51,7 @@ function FdmAnimation() {
       <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px)", backgroundSize: "26px 26px" }} />
       {/* live badge */}
       <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 7, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "5px 12px", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", boxShadow: "2px 2px 0 #000" }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", display: "inline-block" }} /> FDM · druk na żywo
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", display: "inline-block" }} /> Druk FDM
       </div>
       {/* SVG print */}
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -110,34 +110,31 @@ function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 const faqData: [string, string][] = [
-  ["Co dokładnie dostaję w pakiecie?", "Drukarkę Bambu Lab A1 Mini, filament PLA i PETG na start, dożywotni dostęp do platformy kursowej, dostęp do społeczności i konkursów oraz certyfikat ukończenia."],
-  ["Czy potrzebuję wcześniejszej wiedzy o druku 3D?", "Nie. Kurs prowadzi od zera — od rozpakowania drukarki po zaawansowane modelowanie, krok po kroku."],
+  ["Co dokładnie dostaję w pakiecie?", "Drukarkę Bambu Lab A1 Mini, po kilogramie filamentu PLA i PETG na start, dożywotni dostęp do platformy kursowej, dostęp do społeczności, kontakt z instruktorami oraz certyfikat ukończenia."],
+  ["Czy potrzebuję wcześniejszej wiedzy o druku 3D?", "Nie. Kurs prowadzi od zera — od rozpakowania drukarki, krok po kroku."],
   ["Jak długo mam dostęp do kursu?", "Dożywotnio, wraz ze wszystkimi przyszłymi aktualizacjami materiałów."],
-  ["Czy mogę kupić kurs dla firmy lub szkoły?", "Tak. Przygotujemy ofertę z rabatem od 2 pakietów, fakturą VAT, ratami i szkoleniami live dla zespołu."],
-  ["Jak wygląda wysyłka drukarki?", "Drukarka dostarczana jest kurierem pod wskazany adres, gotowa do pracy po rozpakowaniu."],
-  ["Czy będę mógł modelować własne projekty?", "Tak. Kurs obejmuje moduł modelowania 3D od podstaw, dzięki któremu stworzysz własne projekty."],
-  ["Co to znaczy automatyczne poziomowanie łoża (ABL)?", "Drukarka sama kalibruje wysokość dyszy nad stołem, eliminując żmudne ręczne poziomowanie."],
-  ["Jak wygląda platforma kursowa?", "Lekcje wideo z timestampami, quizy, forum, wiki, wiadomości do prowadzącego i śledzenie postępów — wszystko w jednym miejscu."],
-  ["Czy drukarka wymaga WiFi?", "Nie musisz — możesz drukować przez WiFi lub z karty microSD."],
-  ["Jak długo trwa kurs?", "Uczysz się we własnym tempie, a dostęp jest dożywotni — decydujesz sam, ile czasu potrzebujesz."],
+  ["Czy mogę kupić kurs dla firmy lub szkoły?", "Tak. Przygotujemy ofertę z rabatem, fakturą VAT i szkoleniami live dla zespołu."],
+  ["Jak wygląda wysyłka drukarki?", "Drukarka dostarczana z dniem startu kursu, paczkomatem lub kurierem pod wskazany adres, gotowa do pracy po rozpakowaniu."],
+  ["Jak wygląda platforma kursowa?", "Lekcje wideo z timestampami, quizy, forum, wiki, wiadomości do prowadzących i śledzenie postępów — wszystko w jednym miejscu."],
+  ["Jak długo trwa kurs?", "Uczysz się we własnym tempie, a dostęp do platformy jest dożywotni — decydujesz sam, ile czasu potrzebujesz."],
   ["Czy otrzymam certyfikat?", "Tak. Po ukończeniu modułów otrzymasz certyfikat potwierdzający Twoje umiejętności."],
   ["Czy kurs będzie aktualizowany?", "Tak. Wszystkie przyszłe aktualizacje materiałów są w cenie pakietu."],
-  ["Co jeśli drukarka będzie miała problem techniczny?", "Bambu Lab oferuje wsparcie techniczne i gwarancję na drukarkę. Kurs obejmuje też moduł diagnostyczny — nauczysz się rozwiązywać najczęstsze problemy samodzielnie. W razie potrzeby napisz do nas na kurs@magbase.pl."],
+  ["Co jeśli drukarka będzie miała problem techniczny?", "Oferujemy wsparcie techniczne i 12 miesieczną gwarancję na drukarkę. Kurs obejmuje też moduł diagnostyczny — nauczysz się rozwiązywać najczęstsze problemy samodzielnie. W razie potrzeby napisz do nas na kurs@magbase.pl."],
   ["Czy mogę kupić tylko dostęp do kursu bez drukarki?", "Napisz do nas na kurs@magbase.pl — ustalimy indywidualne warunki."],
-  ["Jak wygląda płatność?", "Jest to jednorazowa opłata. Dla firm możliwe są raty oraz faktura VAT."],
+  ["Jak wygląda płatność?", "Jest to jednorazowa opłata kartą, przelewem lub za pomocą BLIK."],
 ];
 
 const benefits = [
-  { color: "#9d6bff", icon: "M22 10 12 5 2 10l10 5 10-5ZM6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5", title: "Interaktywny kurs po polsku", desc: "Od rozpakowania drukarki po modelowanie — krok po kroku, z zadaniami." },
-  { color: "#3ecf8e", icon: "M4 9h16v11H4ZM8 9V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4M8 14h8v6H8Z", title: "Bambu Lab A1 Mini w zestawie", desc: "Otrzymujesz fizyczną drukarkę 3D gotową do druku od razu po dostawie." },
-  { color: "#5b8def", icon: "m12 2 9 5v10l-9 5-9-5V7ZM12 12l9-5M12 12v10M12 12 3 7", title: "Filament PLA + PETG", desc: "Dwa najważniejsze materiały na start — od razu masz z czego drukować." },
-  { color: "#e0944a", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Interaktywne quizy", desc: "Sprawdzaj wiedzę po każdym module i dostawaj natychmiastowy feedback." },
+  { color: "#9d6bff", icon: "M22 10 12 5 2 10l10 5 10-5ZM6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5", title: "Interaktywny kurs po polsku", desc: "Od rozpakowania drukarki — krok po kroku, z zadaniami." },
+  { color: "#3ecf8e", icon: "M4 9h16v11H4ZM8 9V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4M8 14h8v6H8Z", title: "Bambu Lab A1 Mini w zestawie", desc: "Otrzymujesz fizyczną drukarkę 3D gotową do druku w dniu startu kursu." },
+  { color: "#5b8def", icon: "m12 2 9 5v10l-9 5-9-5V7ZM12 12l9-5M12 12v10M12 12 3 7", title: "Filament PLA + PETG", desc: "Po kilogramie dwóch najważniejszych materiałów na start — od razu masz z czego drukować." },
+  { color: "#e0944a", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Interaktywne quizy", desc: "Sprawdzaj wiedzę po każdym module i otrzymuj natychmiastowy feedback." },
   { color: "#9d6bff", icon: "M3 3v18h18M7 12h3v6M12 8h3v10M17 5h3v13", title: "Śledzenie postępów", desc: "Sprawdź które lekcje masz za sobą i ile zostało Ci do certyfikatu." },
   { color: "#3ecf8e", icon: "M12 8a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm-3.5 5.5-1.5 8 5-3 5 3-1.5-8", title: "Certyfikat ukończenia", desc: "Po ukończeniu kursu otrzymasz certyfikat potwierdzający umiejętności." },
   { color: "#e0944a", icon: "M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v5a6 6 0 0 1-12 0ZM9 18h6M10 22h4M12 14v4", title: "Konkursy z nagrodami", desc: "Regularne konkursy na platformie z realnymi nagrodami dla kursantów." },
   { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum i społeczność", desc: "Zadawaj pytania, dziel się wydrukami i ucz się razem z innymi kursantami." },
-  { color: "#9d6bff", icon: "M3 5h18v14H3ZM3 7l9 6 9-6", title: "Kontakt z prowadzącym", desc: "Pisz prywatne wiadomości bezpośrednio do instruktora przez platformę." },
-  { color: "#3ecf8e", icon: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z", title: "Wiki z wiedzą", desc: "Baza wiedzy z poradnikami, profilami slicera i parametrami druku." },
+  { color: "#9d6bff", icon: "M3 5h18v14H3ZM3 7l9 6 9-6", title: "Kontakt z prowadzącym", desc: "Pisz prywatne wiadomości bezpośrednio do instruktorów i innych użytkowników przez platformę." },
+  { color: "#3ecf8e", icon: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z", title: "Wiki z wiedzą", desc: "Baza wiedzy z poradnikami i rozwiązaniem najczęstszych problemów." },
   { color: "#5b8def", icon: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0", title: "Ogłoszenia i live", desc: "Nie przegap nowych lekcji, sesji live i aktualizacji materiałów." },
   { color: "#e0944a", icon: "M18.4 5.6A9 9 0 1 0 21 12M21 3v6h-6", title: "Dożywotni dostęp", desc: "Uczysz się we własnym tempie, a wszystkie przyszłe aktualizacje masz w cenie." },
 ];
@@ -203,7 +200,7 @@ export function LandingClient() {
               <span style={{ display: "inline-block", marginTop: 10, background: "#161616", color: "#fff", padding: "2px 12px", border: "2px solid #000", borderRadius: 6 }}>Bambu Lab A1 Mini gratis!</span>
             </h1>
             <p style={{ fontSize: 18, lineHeight: 1.55, fontWeight: 500, maxWidth: 520, margin: "0 0 30px", color: "#1c1c1c" }}>
-              Naucz się drukowania 3D od praktyka z realnym biznesem produkcyjnym. Otrzymasz drukarkę Bambu Lab A1 Mini, zestaw filamentów oraz pełny dostęp do interaktywnej platformy kursowej.
+              Naucz się drukowania 3D od osoby, która prowadzi firme zajmującą się drukiem 3D. W cenie otrzymasz drukarkę Bambu Lab A1 Mini, zestaw filamentów oraz pełny dostęp do interaktywnej platformy kursowej.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>
               <a href="/login" style={{ textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s", cursor: "pointer" }}
@@ -253,7 +250,7 @@ export function LandingClient() {
             <div style={{ maxWidth: 660 }}>
               <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Co dostajesz</span>
               <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: SG }}>Wszystko czego potrzebujesz</h2>
-              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Kompleksowy program nauczania połączony z prawdziwym sprzętem, społecznością i konkursami z nagrodami.</p>
+              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Kompleksowy program nauczania połączony z prawdziwym sprzętem, interaktywną platformą z kursami, zadaniami, społecznością i wiele więcej!</p>
             </div>
           </FadeUp>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 40 }}>
@@ -282,7 +279,7 @@ export function LandingClient() {
             <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Drukarka w zestawie</span>
             <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 14px", color: "#f0f0f0", fontFamily: SG }}>Bambu Lab A1 Mini — najlepsza drukarka na start</h2>
             <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.6, margin: "0 0 14px", color: "#b4b4b4" }}>
-              Uważana za <strong style={{ color: "#ededed", fontWeight: 700 }}>najlepszą drukarkę dla początkujących na świecie</strong>, łączy prostotę obsługi z jakością znaną z maszyn profesjonalnych. Auto-poziomowanie, cicha praca i błyskawiczny druk sprawiają, że pierwszy udany wydruk zrobisz dosłownie w kilkanaście minut po rozpakowaniu.
+              Uważana za <strong style={{ color: "#ededed", fontWeight: 700 }}>najlepszą drukarkę dla początkujących na świecie</strong>, łączy prostotę obsługi z jakością znaną z maszyn profesjonalnych. Auto-poziomowanie i kalibracja, cicha praca i błyskawiczny druk sprawiają, że pierwszy udany wydruk zrobisz dosłownie w kilkadziesiąt minut po rozpakowaniu.
             </p>
             <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.6, margin: "0 0 26px", color: "#b4b4b4" }}>
               Nie musisz niczego składać ani kalibrować ręcznie — drukarka sama przygotowuje się do pracy, a Ty od razu skupiasz się na nauce i tworzeniu.
@@ -292,8 +289,8 @@ export function LandingClient() {
                 ["Prędkość druku", "do 500 mm/s"],
                 ["Przyspieszenie", "10 000 mm/s²"],
                 ["Pole robocze", "180×180×180 mm"],
-                ["Poziomowanie", "Automatyczne"],
-                ["Kamera", "Podgląd live"],
+                ["Poziomowanie i kalibracja", "Automatyczne"],
+                ["Kamera i status", "Podgląd live przez aplikacje"],
                 ["Temp. dyszy", "do 300°C"],
                 ["Materiały", "PLA · PETG · TPU · PVA"],
                 ["Łączność", "WiFi + microSD"],
@@ -315,7 +312,7 @@ export function LandingClient() {
           <FadeUp>
             <div style={{ maxWidth: 660 }}>
               <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: SG }}>Filament PLA i PETG — w zestawie</h2>
-              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Dwa podstawowe i najważniejsze materiały do druku 3D, każdy z unikalnym zastosowaniem.</p>
+              <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Po kilogramie dwóch podstawowych i najważniejszych materiałów do druku 3D, każdy z unikalnym zastosowaniem.</p>
             </div>
           </FadeUp>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 40 }}>
@@ -373,7 +370,7 @@ export function LandingClient() {
                 {[
                   { color: "#9d6bff", icon: "M5 3l14 9-14 9V3Z", title: "Lekcje wideo z timestampami", desc: "Przeskakuj do konkretnych fragmentów i ucz się we własnym tempie." },
                   { color: "#3ecf8e", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Quizy i śledzenie postępów", desc: "Sprawdzaj wiedzę i obserwuj drogę do certyfikatu." },
-                  { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum, wiki i wiadomości", desc: "Społeczność, baza wiedzy i bezpośredni kontakt z prowadzącym." },
+                  { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum, wiki i wiadomości", desc: "Społeczność, baza wiedzy i bezpośredni kontakt z prowadzącymi." },
                 ].map((item) => (
                   <div key={item.title} style={{ display: "flex", gap: 13, alignItems: "flex-start", background: "#1e1e1e", border: "2px solid #000", borderRadius: 12, padding: 16 }}>
                     <div style={{ display: "grid", placeItems: "center", width: 38, height: 38, flex: "none", background: item.color, border: "2px solid #000", borderRadius: 9, color: "#161616" }}>
@@ -406,15 +403,15 @@ export function LandingClient() {
             <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#1e1e1e", color: "#b89dff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>O mnie</span>
             <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 18px", color: "#f0f0f0", fontFamily: SG }}>Cześć, nazywam się Fabian Olczak</h2>
             <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.65, margin: "0 0 14px", color: "#b4b4b4" }}>
-              Od trzech lat zajmuję się drukiem 3D, a od ponad roku prowadzę własną firmę <strong style={{ color: "#ededed", fontWeight: 700 }}>Magbase</strong>, w której projektuję i produkuję gotowe produkty — wykorzystując druk 3D, druk UV i laser. Na co dzień pracuję na drukarkach Bambu Lab (m.in. H2C, P1S i A1), więc sprzęt, który dostajesz w zestawie kursu, znam nie z teorii, ale z codziennej, produkcyjnej eksploatacji — od pierwszego wydruku po skalowanie produkcji do tysięcy sztuk.
+              Od trzech lat zajmuję się drukiem 3D, a od ponad dwóch lat prowadzę własną firmę <strong style={{ color: "#ededed", fontWeight: 700 }}>Magbase</strong>, w której projektuję i produkuję gotowe produkty — wykorzystując m.in. druk 3D, druk UV i laser. Na co dzień pracuję na drukarkach Bambu Lab (m.in. H2C, P1S i A1), więc sprzęt, który dostajesz w zestawie kursu, znam nie z teorii, ale z codziennej, produkcyjnej eksploatacji — od pierwszego wydruku po skalowanie produkcji do tysięcy sztuk.
             </p>
             <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.65, margin: "0 0 26px", color: "#b4b4b4" }}>
-              Ten kurs to połączenie dwóch rzeczy, którymi żyję na co dzień: praktycznej wiedzy o druku 3D zdobytej w realnym biznesie oraz zaplecza technicznego, dzięki któremu pokażę Ci nie tylko <em style={{ color: "#ededed", fontStyle: "normal", fontWeight: 600 }}>„jak coś kliknąć"</em>, ale przede wszystkim <strong style={{ color: "#ededed", fontWeight: 700 }}>dlaczego coś działa tak, a nie inaczej.</strong>
+              Ten kurs to połączenie dwóch rzeczy, którymi zajmuję się na co dzień: praktycznej wiedzy o druku 3D zdobytej w realnym biznesie oraz zaplecza technicznego, dzięki któremu pokażę Ci nie tylko <em style={{ color: "#ededed", fontStyle: "normal", fontWeight: 600 }}>„jak coś kliknąć"</em>, ale przede wszystkim <strong style={{ color: "#ededed", fontWeight: 700 }}>dlaczego coś działa tak, a nie inaczej.</strong>
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {[
-                { val: "3 lata", color: "#9d6bff", sub: "w druku 3D" },
-                { val: "Magbase", color: "#3ecf8e", sub: "własna firma produkcyjna" },
+                { val: "ponad 3 lata", color: "#9d6bff", sub: "w druku 3D" },
+                { val: "Magbase.pl", color: "#3ecf8e", sub: "własna firma produkcyjna" },
                 { val: "tysiące", color: "#5b8def", sub: "wydrukowanych sztuk" },
                 { val: "Bambu Lab", color: "#e0944a", sub: "H2C · P1S · A1" },
               ].map((stat) => (
@@ -449,7 +446,7 @@ export function LandingClient() {
                 </div>
                 <p style={{ fontSize: 14.5, fontWeight: 600, margin: "8px 0 24px", color: "#1c1c1c" }}>Drukarka Bambu Lab A1 Mini + dożywotni dostęp do platformy</p>
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 11 }}>
-                  {["Drukarka Bambu Lab A1 Mini", "Filament PLA + PETG na start", "Dożywotni dostęp do platformy kursu", "Wszystkie przyszłe aktualizacje materiałów", "Dostęp do społeczności, konkursów i wsparcia", "Certyfikat ukończenia kursu", "Materiały do pobrania (projekty, pliki STL)"].map((item) => (
+                  {["Drukarka Bambu Lab A1 Mini", "Po 1kg filamentu PLA i PETG na start", "Dożywotni dostęp do platformy kursu", "Wszystkie przyszłe aktualizacje materiałów", "Dostęp do społeczności, konkursów i wsparcia", "Certyfikat ukończenia kursu", "Indywidualny kontakt z prowadzącymi"].map((item) => (
                     <li key={item} style={{ display: "flex", gap: 10, fontSize: 14.5, fontWeight: 600, color: "#161616" }}>
                       <span style={{ flex: "0 0 auto" }}>✔</span>{item}
                     </li>
@@ -474,7 +471,7 @@ export function LandingClient() {
                   </div>
                   {quantity > 1 && (
                     <p style={{ fontSize: 12, color: "#1c1c1c", marginTop: 6, fontWeight: 600 }}>
-                      Łącznie: {(quantity * 1999).toLocaleString("pl-PL")} zł · Dla firm dostępne rabaty
+                      Łącznie: {(quantity * 1999).toLocaleString("pl-PL")} zł · Dla większych ilości dostępne są rabaty
                     </p>
                   )}
                 </div>
@@ -496,10 +493,10 @@ export function LandingClient() {
             <FadeUp delay={0.1}>
               <div id="firmy" style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 36 }}>
                 <h3 style={{ fontSize: 23, fontWeight: 600, margin: 0, color: "#f0f0f0" }}>Dla firm i instytucji</h3>
-                <div style={{ fontFamily: SG, fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", margin: "14px 0 8px", color: "#f0f0f0" }}>Cena do negocjacji</div>
-                <p style={{ fontSize: 14, fontWeight: 400, color: "#8a8a8a", lineHeight: 1.55, margin: "0 0 24px" }}>Kupujesz dla więcej niż jednej osoby? Masz szkołę, firmę produkcyjną lub chcesz wyposażyć pracownię? Przygotujemy ofertę dopasowaną.</p>
+                <div style={{ fontFamily: SG, fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", margin: "14px 0 8px", color: "#f0f0f0" }}>Cena indywidualna</div>
+                <p style={{ fontSize: 14, fontWeight: 400, color: "#8a8a8a", lineHeight: 1.55, margin: "0 0 24px" }}>Kupujesz dla więcej niż jednej osoby? Dla szkoły lub firmy? Przygotujemy ofertę dopasowaną do Ciebie.</p>
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 11 }}>
-                  {["Zniżki od 2 pakietów wzwyż", "Faktura VAT", "Szkolenia live dla Twojego zespołu", "Priorytetowe wsparcie techniczne"].map((item) => (
+                  {["Zniżki dla większych ilości", "Faktura VAT", "Szkolenia dla Twojego zespołu", "Priorytetowe wsparcie techniczne"].map((item) => (
                     <li key={item} style={{ display: "flex", gap: 10, fontSize: 14, fontWeight: 500, color: "#c4c4c4" }}>
                       <span style={{ color: "#9d6bff", flex: "none" }}>✔</span>{item}
                     </li>
@@ -515,7 +512,7 @@ export function LandingClient() {
 
           {/* Contact bar */}
           <div id="kontakt" style={{ marginTop: 24, background: "#9d6bff", color: "#161616", border: "2px solid #000", borderRadius: 16, boxShadow: "6px 6px 0 #000", padding: "26px 30px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-            <span style={{ fontFamily: SG, fontSize: 17, fontWeight: 600 }}>Masz pytania? Napisz do nas albo zadzwoń.</span>
+            <span style={{ fontFamily: SG, fontSize: 17, fontWeight: 600 }}>Masz pytania? Napisz do nas lub zadzwoń.</span>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <a href="mailto:kurs@magbase.pl" style={{ textDecoration: "none", fontWeight: 700, background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "10px 18px" }}>kurs@magbase.pl</a>
               <a href="tel:+48571082475" style={{ textDecoration: "none", fontWeight: 700, background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 100, padding: "10px 18px" }}>+48 571 082 475</a>
@@ -593,22 +590,22 @@ export function LandingClient() {
               <span style={{ display: "grid", placeItems: "center", width: 32, height: 32, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: SG, fontWeight: 700, fontSize: 12 }}>3D</span>
               <span style={{ fontFamily: SG, fontWeight: 600, fontSize: 15, color: "#ededed" }}>Interaktywny kurs druku 3D</span>
             </div>
-            <p style={{ fontSize: 13.5, lineHeight: 1.55, margin: "14px 0 16px", maxWidth: 300 }}>Kurs druku 3D z prawdziwą drukarką Bambu Lab A1 Mini i dożywotnim dostępem do platformy. Prowadzi Fabian Olczak (Magbase).</p>
+            <p style={{ fontSize: 13.5, lineHeight: 1.55, margin: "14px 0 16px", maxWidth: 300 }}>Kurs druku 3D z drukarką Bambu Lab A1 Mini i dożywotnim dostępem do platformy.</p>
             {/* Company data */}
             <div style={{ fontSize: 12, lineHeight: 1.7, color: "#4a4a4a" }}>
-              <div style={{ fontFamily: SG, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "#3a3a3a", marginBottom: 6 }}>Dane firmy</div>
-              <div>Magbase Fabian Olczak</div>
+              <div style={{ fontFamily: SG, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f", marginBottom: 6 }}>Dane firmy</div>
+              <div>NAZWA: Magbase Fabian Olczak</div>
               <div>NIP: 5993285713</div>
               <div>VAT-UE: PL5993285713</div>
               <div>REGON: 543409622</div>
-              <div style={{ marginTop: 4, fontFamily: "monospace", fontSize: 11 }}>PL70 1140 2004 0000 3602 8626 9283</div>
+              <div style={{ marginTop: 4, fontFamily: "monospace", fontSize: 10 }}>NUMER KONTA: PL70 1140 2004 0000 3602 8626 9283</div>
             </div>
           </div>
           {/* Nav */}
           <div>
             <div style={{ fontFamily: SG, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Nawigacja</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
-              {[["#o-mnie", "O mnie"], ["#platforma", "Platforma"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
+              {[["#co-dostajesz", "Co dostajesz"], ["#o-mnie", "O mnie"], ["#platforma", "Platforma"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
                 <a key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
               ))}
               <a href="/login" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s", cursor: "pointer" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>Zaloguj się</a>
@@ -626,7 +623,7 @@ export function LandingClient() {
           <div>
             <div style={{ fontFamily: SG, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Dokumenty</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
-              {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki usług", "/strony/warunki"]].map(([label, href]) => (
+              {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki świadczenia usług", "/strony/warunki"]].map(([label, href]) => (
                 <a key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
               ))}
             </div>
@@ -636,7 +633,7 @@ export function LandingClient() {
           <div style={{ ...s.maxW, padding: "18px 24px", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", fontSize: 12.5 }}>
             <span>© 2026 Interaktywny kurs druku 3D · Magbase. Wszelkie prawa zastrzeżone.</span>
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-              {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki usług", "/strony/warunki"]].map(([label, href]) => (
+              {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki świadczenia usług", "/strony/warunki"]].map(([label, href]) => (
                 <a key={href} href={href} style={{ textDecoration: "none", color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
               ))}
             </div>
