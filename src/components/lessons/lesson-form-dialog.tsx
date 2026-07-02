@@ -92,7 +92,6 @@ export function LessonFormDialog({
   const [timestampsText, setTimestampsText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (open) {
       setTitle(lesson?.title ?? "");

@@ -19,6 +19,8 @@ import {
   LogOut,
   Loader2,
   Terminal,
+  FileText,
+  Star,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -596,6 +598,8 @@ export function Sidebar({
                 { label: "Rozdziały", icon: Boxes, href: "/admin/chapters" },
                 { label: "Ogłoszenia", icon: Bell, href: "/admin/ogloszenia" },
                 { label: "Wiki", icon: Pencil, href: "/admin/wiki/new" },
+                { label: "Oceny", icon: Star, href: "/admin/oceny" },
+                { label: "Strony", icon: FileText, href: "/admin/strony" },
                 { label: "Deweloper", icon: Terminal, href: "/admin/developer" },
               ].map((it) => {
                 const Icon = it.icon;

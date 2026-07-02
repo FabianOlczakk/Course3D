@@ -102,14 +102,21 @@ export function MessagesPanel({
     }
   }, []);
 
+  // Śledzi ID aktualnie ładowanej konwersacji — zapobiega wyścigowi przy szybkim przełączaniu.
+  const loadingForRef = useRef<string | null>(null);
+
   const loadMessages = useCallback(
     async (userId: string, system = false) => {
+      const key = userId + (system ? ":sys" : "");
+      loadingForRef.current = key;
       try {
         const res = await fetch(
           `/api/messages/${userId}${system ? "?system=1" : ""}`
         );
         if (!res.ok) return;
         const data = await res.json();
+        // Porzuć wynik jeśli użytkownik już przełączył konwersację.
+        if (loadingForRef.current !== key) return;
         setMessages(data.messages ?? []);
         if (!system) {
           // Oznacz jako przeczytane (tylko własne wątki).
@@ -119,7 +126,7 @@ export function MessagesPanel({
       } catch {
         /* ignore */
       } finally {
-        setMsgLoading(false);
+        if (loadingForRef.current === key) setMsgLoading(false);
       }
     },
     [loadConversations]
