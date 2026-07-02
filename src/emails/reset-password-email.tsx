@@ -3,13 +3,18 @@ import {
   Button,
   Container,
   Head,
-  Heading,
   Html,
+  Img,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 import * as React from "react";
+
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.NEXTAUTH_URL ||
+  "https://kurs.magbase.pl";
 
 interface ResetPasswordEmailProps {
   resetUrl: string;
@@ -22,7 +27,15 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
       <Preview>Resetowanie hasła w platformie Course3D</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Reset hasła</Heading>
+          <Section style={{ textAlign: "center", marginBottom: "24px" }}>
+            <Img
+              src={`${APP_URL}/logo.svg`}
+              alt="Interaktywny Kurs Druku 3D"
+              width="280"
+              height="auto"
+            />
+          </Section>
+          <Text style={heading}>Reset hasła</Text>
           <Text style={paragraph}>
             Otrzymujesz tę wiadomość, ponieważ poproszono o zresetowanie hasła do
             Twojego konta na platformie <strong>Course3D</strong>.
@@ -67,9 +80,10 @@ const container: React.CSSProperties = {
 };
 
 const heading: React.CSSProperties = {
-  fontSize: "24px",
+  fontSize: "22px",
   fontWeight: "bold",
   color: "#0f172a",
+  marginTop: 0,
 };
 
 const paragraph: React.CSSProperties = {
