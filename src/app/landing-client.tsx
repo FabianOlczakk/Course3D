@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 
@@ -34,6 +33,8 @@ function useCountdown(target: Date) {
   return t;
 }
 
+const SG = "var(--font-space-grotesk), system-ui, sans-serif";
+
 // ── FDM Animation ─────────────────────────────────────────────────────────────
 function FdmAnimation() {
   const [progress, setProgress] = useState(0);
@@ -49,7 +50,7 @@ function FdmAnimation() {
       {/* grid */}
       <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px)", backgroundSize: "26px 26px" }} />
       {/* live badge */}
-      <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 7, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "5px 12px", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", boxShadow: "2px 2px 0 #000" }}>
+      <div style={{ position: "absolute", top: 14, left: 14, display: "flex", alignItems: "center", gap: 7, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "5px 12px", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", boxShadow: "2px 2px 0 #000" }}>
         <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", display: "inline-block" }} /> FDM · druk na żywo
       </div>
       {/* SVG print */}
@@ -88,7 +89,7 @@ function FdmAnimation() {
       <motion.div
         animate={{ y: [0, -6, 0] }}
         transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
-        style={{ position: "absolute", bottom: 14, right: 14, background: "#161616", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "#b89dff", boxShadow: "3px 3px 0 #000" }}
+        style={{ position: "absolute", bottom: 14, right: 14, background: "#161616", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", fontFamily: SG, fontSize: 12, fontWeight: 600, color: "#b89dff", boxShadow: "3px 3px 0 #000" }}
       >
         do 500 mm/s
       </motion.div>
@@ -153,8 +154,9 @@ export function LandingClient() {
   const buyUrl = `https://magbase.pl/?add-to-cart=2695&quantity=${quantity}`;
 
   const s = {
-    body: { fontFamily: "'DM Sans', sans-serif", color: "#ededed", background: "#161616", overflowX: "hidden" as const },
+    body: { fontFamily: "var(--font-dm-sans), system-ui, sans-serif", color: "#ededed", background: "#161616", overflowX: "hidden" as const },
     maxW: { maxWidth: 1140, margin: "0 auto", padding: "0 24px" },
+    sg: "var(--font-space-grotesk), system-ui, sans-serif" as const,
   };
 
   return (
@@ -164,21 +166,21 @@ export function LandingClient() {
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(22,22,22,0.95)", backdropFilter: "blur(8px)", borderBottom: "2px solid #000" }}>
         <div style={{ ...s.maxW, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <a href="#top" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
-            <span style={{ display: "grid", placeItems: "center", width: 34, height: 34, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 13, boxShadow: "2px 2px 0 #000" }}>3D</span>
-            <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, color: "#f0f0f0", letterSpacing: "-0.01em" }}>Interaktywny kurs druku 3D</span>
+            <span style={{ display: "grid", placeItems: "center", width: 34, height: 34, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: SG, fontWeight: 700, fontSize: 13, boxShadow: "2px 2px 0 #000" }}>3D</span>
+            <span style={{ fontFamily: SG, fontWeight: 600, fontSize: 16, color: "#f0f0f0", letterSpacing: "-0.01em" }}>Interaktywny kurs druku 3D</span>
           </a>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {[["#o-mnie", "O mnie"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
-              <a key={href} href={href} style={{ textDecoration: "none", fontWeight: 600, fontSize: 14.5, color: "#b4b4b4", padding: "9px 13px", borderRadius: 7, transition: "color .15s" }}
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {[["#co-dostajesz", "Co dostajesz"], ["#platforma", "Platforma"], ["#o-mnie", "O mnie"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
+              <a key={href} href={href} style={{ textDecoration: "none", fontWeight: 600, fontSize: 13.5, color: "#b4b4b4", padding: "9px 11px", borderRadius: 7, transition: "color .15s", cursor: "pointer" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "#ededed")}
                 onMouseLeave={e => (e.currentTarget.style.color = "#b4b4b4")}
               >{label}</a>
             ))}
-            <Link href="/login" style={{ textDecoration: "none", fontWeight: 600, fontSize: 14.5, color: "#b4b4b4", padding: "9px 13px", borderRadius: 7, transition: "color .15s" }}
+            <a href="/login" style={{ textDecoration: "none", fontWeight: 600, fontSize: 13.5, color: "#b4b4b4", padding: "9px 11px", borderRadius: 7, transition: "color .15s", cursor: "pointer" }}
               onMouseEnter={e => (e.currentTarget.style.color = "#ededed")}
               onMouseLeave={e => (e.currentTarget.style.color = "#b4b4b4")}
-            >Zaloguj się</Link>
-            <a href="#cennik" style={{ textDecoration: "none", fontWeight: 700, fontSize: 14.5, color: "#fff", padding: "10px 18px", marginLeft: 6, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, boxShadow: "3px 3px 0 #000", transition: "transform .1s, box-shadow .1s" }}
+            >Zaloguj się</a>
+            <a href="#cennik" style={{ textDecoration: "none", fontWeight: 700, fontSize: 13.5, color: "#fff", padding: "10px 16px", marginLeft: 4, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, boxShadow: "3px 3px 0 #000", transition: "transform .1s, box-shadow .1s", cursor: "pointer" }}
               onMouseEnter={e => { e.currentTarget.style.transform = "translate(1px,1px)"; e.currentTarget.style.boxShadow = "2px 2px 0 #000"; }}
               onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "3px 3px 0 #000"; }}
             >Kup kurs</a>
@@ -192,11 +194,11 @@ export function LandingClient() {
         <div style={{ ...s.maxW, padding: "70px 24px 80px", display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 52, alignItems: "center", position: "relative" }}>
           {/* left */}
           <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", boxShadow: "3px 3px 0 #000" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: SG, fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", boxShadow: "3px 3px 0 #000" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9d6bff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg>
               Druk 3D od podstaw
             </span>
-            <h1 style={{ fontSize: 60, lineHeight: 1.08, fontWeight: 700, letterSpacing: "-0.03em", margin: "22px 0 20px", color: "#161616", textWrap: "balance", fontFamily: "'Space Grotesk'" }}>
+            <h1 style={{ fontSize: 60, lineHeight: 1.08, fontWeight: 700, letterSpacing: "-0.03em", margin: "22px 0 20px", color: "#161616", textWrap: "balance", fontFamily: SG }}>
               Interaktywny kurs<br />druku 3D online.<br />
               <span style={{ display: "inline-block", marginTop: 10, background: "#161616", color: "#fff", padding: "2px 12px", border: "2px solid #000", borderRadius: 6 }}>Bambu Lab A1 Mini gratis!</span>
             </h1>
@@ -204,11 +206,11 @@ export function LandingClient() {
               Naucz się drukowania 3D od praktyka z realnym biznesem produkcyjnym. Otrzymasz drukarkę Bambu Lab A1 Mini, zestaw filamentów oraz pełny dostęp do interaktywnej platformy kursowej.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14 }}>
-              <Link href="/login" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
+              <a href="/login" style={{ textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s", cursor: "pointer" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #fff"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #fff"; }}
-              >Przejdź do kursu →</Link>
-              <a href="#platforma" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #161616", transition: "transform .1s, box-shadow .1s" }}
+              >Przejdź do kursu →</a>
+              <a href="#platforma" style={{ textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 16, padding: "15px 26px", background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 11, boxShadow: "5px 5px 0 #161616", transition: "transform .1s, box-shadow .1s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #161616"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #161616"; }}
               >Dowiedz się więcej</a>
@@ -218,7 +220,7 @@ export function LandingClient() {
           {/* right — countdown card */}
           <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}>
             <div style={{ background: "#161616", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 28 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: "'Space Grotesk'", fontSize: 12.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#cfcfcf" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: SG, fontSize: 12.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#cfcfcf" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9d6bff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
                 Kurs startuje 1 września 2026
               </div>
@@ -230,14 +232,14 @@ export function LandingClient() {
                   { val: seconds, label: "sek", accent: true },
                 ].map(({ val, label, accent }) => (
                   <div key={label} style={{ background: accent ? "#9d6bff" : "#242424", border: "2px solid #000", borderRadius: 11, padding: "15px 4px", textAlign: "center" }}>
-                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 34, fontWeight: 700, lineHeight: 1, color: accent ? "#fff" : "#f0f0f0" }}>{pad(val)}</div>
+                    <div style={{ fontFamily: SG, fontSize: 34, fontWeight: 700, lineHeight: 1, color: accent ? "#fff" : "#f0f0f0" }}>{pad(val)}</div>
                     <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 6, color: accent ? "#f0e9ff" : "#8a8a8a" }}>{label}</div>
                   </div>
                 ))}
               </div>
               <div style={{ marginTop: 18, paddingTop: 16, borderTop: "2px dashed #333", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 13, color: "#7a7a7a" }}>Cena pakietu indywidualnego</span>
-                <span style={{ fontFamily: "'Space Grotesk'", fontSize: 25, fontWeight: 700, color: "#f0f0f0" }}>1 999 zł</span>
+                <span style={{ fontFamily: SG, fontSize: 25, fontWeight: 700, color: "#f0f0f0" }}>1 999 zł</span>
               </div>
             </div>
           </motion.div>
@@ -245,12 +247,12 @@ export function LandingClient() {
       </header>
 
       {/* ── BENEFITS ────────────────────────────────────────────────────── */}
-      <section style={{ background: "#161616", borderBottom: "2px solid #000" }}>
+      <section id="co-dostajesz" style={{ background: "#161616", borderBottom: "2px solid #000" }}>
         <div style={{ ...s.maxW, padding: "70px 24px" }}>
           <FadeUp>
             <div style={{ maxWidth: 660 }}>
-              <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Co dostajesz</span>
-              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Wszystko czego potrzebujesz</h2>
+              <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Co dostajesz</span>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: SG }}>Wszystko czego potrzebujesz</h2>
               <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Kompleksowy program nauczania połączony z prawdziwym sprzętem, społecznością i konkursami z nagrodami.</p>
             </div>
           </FadeUp>
@@ -277,8 +279,8 @@ export function LandingClient() {
             <FdmAnimation />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Drukarka w zestawie</span>
-            <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 14px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Bambu Lab A1 Mini — najlepsza drukarka na start</h2>
+            <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Drukarka w zestawie</span>
+            <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 14px", color: "#f0f0f0", fontFamily: SG }}>Bambu Lab A1 Mini — najlepsza drukarka na start</h2>
             <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.6, margin: "0 0 14px", color: "#b4b4b4" }}>
               Uważana za <strong style={{ color: "#ededed", fontWeight: 700 }}>najlepszą drukarkę dla początkujących na świecie</strong>, łączy prostotę obsługi z jakością znaną z maszyn profesjonalnych. Auto-poziomowanie, cicha praca i błyskawiczny druk sprawiają, że pierwszy udany wydruk zrobisz dosłownie w kilkanaście minut po rozpakowaniu.
             </p>
@@ -299,7 +301,7 @@ export function LandingClient() {
               ].map(([label, val]) => (
                 <div key={label} style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 11, padding: 14 }}>
                   <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.04em", color: "#7a7a7a" }}>{label}</div>
-                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600, marginTop: 4, color: "#ededed" }}>{val}</div>
+                  <div style={{ fontFamily: SG, fontSize: 17, fontWeight: 600, marginTop: 4, color: "#ededed" }}>{val}</div>
                 </div>
               ))}
             </div>
@@ -312,7 +314,7 @@ export function LandingClient() {
         <div style={{ ...s.maxW, padding: "70px 24px" }}>
           <FadeUp>
             <div style={{ maxWidth: 660 }}>
-              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Filament PLA i PETG — w zestawie</h2>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: SG }}>Filament PLA i PETG — w zestawie</h2>
               <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Dwa podstawowe i najważniejsze materiały do druku 3D, każdy z unikalnym zastosowaniem.</p>
             </div>
           </FadeUp>
@@ -330,9 +332,9 @@ export function LandingClient() {
               <FadeUp key={fil.abbr}>
                 <div style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 16, boxShadow: "6px 6px 0 #000", padding: 30 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ display: "grid", placeItems: "center", width: 54, height: 54, background: fil.color, border: "2px solid #000", borderRadius: 12, fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: fil.abbr === "PETG" ? 15 : 17, color: "#161616" }}>{fil.abbr}</div>
+                    <div style={{ display: "grid", placeItems: "center", width: 54, height: 54, background: fil.color, border: "2px solid #000", borderRadius: 12, fontFamily: SG, fontWeight: 700, fontSize: fil.abbr === "PETG" ? 15 : 17, color: "#161616" }}>{fil.abbr}</div>
                     <div>
-                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: 21, fontWeight: 600, color: "#f0f0f0" }}>{fil.name}</div>
+                      <div style={{ fontFamily: SG, fontSize: 21, fontWeight: 600, color: "#f0f0f0" }}>{fil.name}</div>
                       <div style={{ fontSize: 13.5, fontWeight: 500, color: "#8a8a8a" }}>{fil.sub}</div>
                     </div>
                   </div>
@@ -355,8 +357,8 @@ export function LandingClient() {
         <div style={{ ...s.maxW, padding: "70px 24px" }}>
           <FadeUp>
             <div style={{ maxWidth: 660 }}>
-              <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Platforma kursowa</span>
-              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Wszystko w jednym miejscu</h2>
+              <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>Platforma kursowa</span>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 12px", color: "#f0f0f0", fontFamily: SG }}>Wszystko w jednym miejscu</h2>
               <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Nowoczesna platforma edukacyjna z narzędziami, które realnie wspierają naukę — lekcje, quizy, społeczność i postępy w jednym panelu.</p>
             </div>
           </FadeUp>
@@ -378,7 +380,7 @@ export function LandingClient() {
                       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
                     </div>
                     <div>
-                      <div style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 15, color: "#ededed" }}>{item.title}</div>
+                      <div style={{ fontFamily: SG, fontWeight: 600, fontSize: 15, color: "#ededed" }}>{item.title}</div>
                       <p style={{ margin: "3px 0 0", fontSize: 13, color: "#8a8a8a", lineHeight: 1.45 }}>{item.desc}</p>
                     </div>
                   </div>
@@ -397,12 +399,12 @@ export function LandingClient() {
               <div style={{ width: "100%", height: 460, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #9d6bff", overflow: "hidden", background: "#141414", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "#3a3a3a", fontSize: 14 }}>Zdjęcie — Fabian Olczak</span>
               </div>
-              <div style={{ position: "absolute", bottom: 14, left: 14, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "#fff", boxShadow: "3px 3px 0 #000" }}>Twój prowadzący</div>
+              <div style={{ position: "absolute", bottom: 14, left: 14, background: "#9d6bff", border: "2px solid #000", borderRadius: 100, padding: "7px 14px", fontFamily: SG, fontSize: 12, fontWeight: 600, color: "#fff", boxShadow: "3px 3px 0 #000" }}>Twój prowadzący</div>
             </div>
           </FadeUp>
           <FadeUp delay={0.1}>
-            <span style={{ display: "inline-block", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#1e1e1e", color: "#b89dff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>O mnie</span>
-            <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 18px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Cześć, nazywam się Fabian Olczak</h2>
+            <span style={{ display: "inline-block", fontFamily: SG, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", background: "#1e1e1e", color: "#b89dff", border: "2px solid #000", borderRadius: 100, padding: "6px 13px", boxShadow: "2px 2px 0 #000" }}>O mnie</span>
+            <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: "-0.03em", margin: "16px 0 18px", color: "#f0f0f0", fontFamily: SG }}>Cześć, nazywam się Fabian Olczak</h2>
             <p style={{ fontSize: 16.5, fontWeight: 400, lineHeight: 1.65, margin: "0 0 14px", color: "#b4b4b4" }}>
               Od trzech lat zajmuję się drukiem 3D, a od ponad roku prowadzę własną firmę <strong style={{ color: "#ededed", fontWeight: 700 }}>Magbase</strong>, w której projektuję i produkuję gotowe produkty — wykorzystując druk 3D, druk UV i laser. Na co dzień pracuję na drukarkach Bambu Lab (m.in. H2C, P1S i A1), więc sprzęt, który dostajesz w zestawie kursu, znam nie z teorii, ale z codziennej, produkcyjnej eksploatacji — od pierwszego wydruku po skalowanie produkcji do tysięcy sztuk.
             </p>
@@ -417,7 +419,7 @@ export function LandingClient() {
                 { val: "Bambu Lab", color: "#e0944a", sub: "H2C · P1S · A1" },
               ].map((stat) => (
                 <div key={stat.val} style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 11, padding: "12px 16px", boxShadow: "3px 3px 0 #000" }}>
-                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.val}</div>
+                  <div style={{ fontFamily: SG, fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.val}</div>
                   <div style={{ fontSize: 12, color: "#8a8a8a", marginTop: 2 }}>{stat.sub}</div>
                 </div>
               ))}
@@ -431,7 +433,7 @@ export function LandingClient() {
         <div style={{ ...s.maxW, padding: "70px 24px" }}>
           <FadeUp>
             <div style={{ maxWidth: 660 }}>
-              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Prosty cennik</h2>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: SG }}>Prosty cennik</h2>
               <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Jednorazowa opłata. Drukarka i dostęp do kursu w jednym pakiecie.</p>
             </div>
           </FadeUp>
@@ -439,10 +441,10 @@ export function LandingClient() {
             {/* Individual */}
             <FadeUp>
               <div style={{ background: "#9d6bff", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 36, position: "relative" }}>
-                <div style={{ position: "absolute", top: -14, right: 28, background: "#161616", border: "2px solid #000", borderRadius: 100, padding: "6px 15px", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "#fff", boxShadow: "3px 3px 0 #000" }}>Najpopularniejszy</div>
+                <div style={{ position: "absolute", top: -14, right: 28, background: "#161616", border: "2px solid #000", borderRadius: 100, padding: "6px 15px", fontFamily: SG, fontSize: 12, fontWeight: 600, textTransform: "uppercase", color: "#fff", boxShadow: "3px 3px 0 #000" }}>Najpopularniejszy</div>
                 <h3 style={{ fontSize: 23, fontWeight: 600, margin: 0, color: "#161616" }}>Pakiet indywidualny</h3>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "14px 0 4px" }}>
-                  <span style={{ fontFamily: "'Space Grotesk'", fontSize: 52, fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, color: "#161616" }}>1 999 zł</span>
+                  <span style={{ fontFamily: SG, fontSize: 52, fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, color: "#161616" }}>1 999 zł</span>
                   <span style={{ fontWeight: 600, fontSize: 15, color: "#2a2a2a" }}>jednorazowo</span>
                 </div>
                 <p style={{ fontSize: 14.5, fontWeight: 600, margin: "8px 0 24px", color: "#1c1c1c" }}>Drukarka Bambu Lab A1 Mini + dożywotni dostęp do platformy</p>
@@ -463,7 +465,7 @@ export function LandingClient() {
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       style={{ width: 44, height: 44, background: "transparent", border: "none", borderRight: "2px solid #333", cursor: "pointer", fontSize: 22, fontWeight: 700, color: "#9d6bff", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >−</button>
-                    <span style={{ minWidth: 52, textAlign: "center", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 20, color: "#fff" }}>{quantity}</span>
+                    <span style={{ minWidth: 52, textAlign: "center", fontFamily: SG, fontWeight: 700, fontSize: 20, color: "#fff" }}>{quantity}</span>
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => q + 1)}
@@ -479,7 +481,9 @@ export function LandingClient() {
 
                 <a
                   href={buyUrl}
-                  style={{ display: "block", textAlign: "center", textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 17, padding: 16, background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "block", textAlign: "center", textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 17, padding: 16, background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s", cursor: "pointer" }}
                   onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #fff"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #fff"; }}
                 >
@@ -492,7 +496,7 @@ export function LandingClient() {
             <FadeUp delay={0.1}>
               <div id="firmy" style={{ background: "#1e1e1e", border: "2px solid #000", borderRadius: 18, boxShadow: "8px 8px 0 #000", padding: 36 }}>
                 <h3 style={{ fontSize: 23, fontWeight: 600, margin: 0, color: "#f0f0f0" }}>Dla firm i instytucji</h3>
-                <div style={{ fontFamily: "'Space Grotesk'", fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", margin: "14px 0 8px", color: "#f0f0f0" }}>Cena do negocjacji</div>
+                <div style={{ fontFamily: SG, fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", margin: "14px 0 8px", color: "#f0f0f0" }}>Cena do negocjacji</div>
                 <p style={{ fontSize: 14, fontWeight: 400, color: "#8a8a8a", lineHeight: 1.55, margin: "0 0 24px" }}>Kupujesz dla więcej niż jednej osoby? Masz szkołę, firmę produkcyjną lub chcesz wyposażyć pracownię? Przygotujemy ofertę dopasowaną.</p>
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 11 }}>
                   {["Zniżki od 2 pakietów wzwyż", "Faktura VAT", "Szkolenia live dla Twojego zespołu", "Priorytetowe wsparcie techniczne"].map((item) => (
@@ -501,7 +505,7 @@ export function LandingClient() {
                     </li>
                   ))}
                 </ul>
-                <a href="#kontakt" style={{ display: "block", textAlign: "center", textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 17, padding: 16, background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #000", transition: "transform .1s, box-shadow .1s" }}
+                <a href="#kontakt" style={{ display: "block", textAlign: "center", textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 17, padding: 16, background: "#9d6bff", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #000", transition: "transform .1s, box-shadow .1s" }}
                   onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #000"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #000"; }}
                 >Napisz do nas</a>
@@ -511,7 +515,7 @@ export function LandingClient() {
 
           {/* Contact bar */}
           <div id="kontakt" style={{ marginTop: 24, background: "#9d6bff", color: "#161616", border: "2px solid #000", borderRadius: 16, boxShadow: "6px 6px 0 #000", padding: "26px 30px", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-            <span style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600 }}>Masz pytania? Napisz do nas albo zadzwoń.</span>
+            <span style={{ fontFamily: SG, fontSize: 17, fontWeight: 600 }}>Masz pytania? Napisz do nas albo zadzwoń.</span>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <a href="mailto:kurs@magbase.pl" style={{ textDecoration: "none", fontWeight: 700, background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 100, padding: "10px 18px" }}>kurs@magbase.pl</a>
               <a href="tel:+48571082475" style={{ textDecoration: "none", fontWeight: 700, background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 100, padding: "10px 18px" }}>+48 571 082 475</a>
@@ -525,7 +529,7 @@ export function LandingClient() {
         <div style={{ maxWidth: 820, margin: "0 auto", padding: "70px 24px" }}>
           <FadeUp>
             <div style={{ textAlign: "center" }}>
-              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: "'Space Grotesk'" }}>Najczęstsze pytania</h2>
+              <h2 style={{ fontSize: 42, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 12px", color: "#f0f0f0", fontFamily: SG }}>Najczęstsze pytania</h2>
               <p style={{ fontSize: 16, fontWeight: 500, margin: 0, color: "#8a8a8a" }}>Nie znalazłeś odpowiedzi? Napisz do nas na <a href="mailto:kurs@magbase.pl" style={{ fontWeight: 700, color: "#b89dff" }}>kurs@magbase.pl</a>.</p>
             </div>
           </FadeUp>
@@ -535,7 +539,7 @@ export function LandingClient() {
                 <button
                   type="button"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  style={{ width: "100%", background: "transparent", border: 0, cursor: "pointer", fontFamily: "'Space Grotesk'", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "17px 20px", fontSize: 16, fontWeight: 600, color: "#ededed" }}
+                  style={{ width: "100%", background: "transparent", border: 0, cursor: "pointer", fontFamily: SG, textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "17px 20px", fontSize: 16, fontWeight: 600, color: "#ededed" }}
                 >
                   <span>{q}</span>
                   <span style={{ flex: "none", display: "grid", placeItems: "center", width: 29, height: 29, background: "#9d6bff", border: "2px solid #000", borderRadius: 8, fontSize: 18, fontWeight: 700, lineHeight: 1, color: "#fff" }}>
@@ -564,14 +568,14 @@ export function LandingClient() {
         <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(#00000010 1px,transparent 1px),linear-gradient(90deg,#00000010 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
         <div style={{ position: "relative", maxWidth: 820, margin: "0 auto", padding: "82px 24px", textAlign: "center" }}>
           <FadeUp>
-            <h2 style={{ fontSize: 50, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 16px", lineHeight: 1.05, color: "#161616", fontFamily: "'Space Grotesk'" }}>Gotowy, żeby zacząć drukować?</h2>
+            <h2 style={{ fontSize: 50, fontWeight: 700, letterSpacing: "-0.03em", margin: "0 0 16px", lineHeight: 1.05, color: "#161616", fontFamily: SG }}>Gotowy, żeby zacząć drukować?</h2>
             <p style={{ fontSize: 18, fontWeight: 600, margin: "0 auto 32px", maxWidth: 560, lineHeight: 1.5, color: "#1c1c1c" }}>Drukarka dostarczana pod drzwi, kurs dostępny od pierwszego dnia. Jedna opłata — dożywotni dostęp do wiedzy i społeczności.</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
-              <a href="#cennik" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 18, padding: "16px 28px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
+              <a href="#cennik" style={{ textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 18, padding: "16px 28px", background: "#161616", color: "#fff", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #fff", transition: "transform .1s, box-shadow .1s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #fff"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #fff"; }}
               >Zacznij teraz — 1 999 zł</a>
-              <a href="#firmy" style={{ textDecoration: "none", fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 18, padding: "16px 28px", background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #161616", transition: "transform .1s, box-shadow .1s" }}
+              <a href="#firmy" style={{ textDecoration: "none", fontFamily: SG, fontWeight: 600, fontSize: 18, padding: "16px 28px", background: "#fff", color: "#161616", border: "2px solid #000", borderRadius: 12, boxShadow: "5px 5px 0 #161616", transition: "transform .1s, box-shadow .1s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translate(2px,2px)"; e.currentTarget.style.boxShadow = "3px 3px 0 #161616"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "5px 5px 0 #161616"; }}
               >Oferta dla firm →</a>
@@ -586,13 +590,13 @@ export function LandingClient() {
           {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-              <span style={{ display: "grid", placeItems: "center", width: 32, height: 32, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: 12 }}>3D</span>
-              <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 15, color: "#ededed" }}>Interaktywny kurs druku 3D</span>
+              <span style={{ display: "grid", placeItems: "center", width: 32, height: 32, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: SG, fontWeight: 700, fontSize: 12 }}>3D</span>
+              <span style={{ fontFamily: SG, fontWeight: 600, fontSize: 15, color: "#ededed" }}>Interaktywny kurs druku 3D</span>
             </div>
             <p style={{ fontSize: 13.5, lineHeight: 1.55, margin: "14px 0 16px", maxWidth: 300 }}>Kurs druku 3D z prawdziwą drukarką Bambu Lab A1 Mini i dożywotnim dostępem do platformy. Prowadzi Fabian Olczak (Magbase).</p>
             {/* Company data */}
             <div style={{ fontSize: 12, lineHeight: 1.7, color: "#4a4a4a" }}>
-              <div style={{ fontFamily: "'Space Grotesk'", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "#3a3a3a", marginBottom: 6 }}>Dane firmy</div>
+              <div style={{ fontFamily: SG, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "#3a3a3a", marginBottom: 6 }}>Dane firmy</div>
               <div>Magbase Fabian Olczak</div>
               <div>NIP: 5993285713</div>
               <div>VAT-UE: PL5993285713</div>
@@ -602,17 +606,17 @@ export function LandingClient() {
           </div>
           {/* Nav */}
           <div>
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Nawigacja</div>
+            <div style={{ fontFamily: SG, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Nawigacja</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
               {[["#o-mnie", "O mnie"], ["#platforma", "Platforma"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
                 <a key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
               ))}
-              <Link href="/login" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>Zaloguj się</Link>
+              <a href="/login" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s", cursor: "pointer" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>Zaloguj się</a>
             </div>
           </div>
           {/* Contact */}
           <div>
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Kontakt</div>
+            <div style={{ fontFamily: SG, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Kontakt</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
               <a href="mailto:kurs@magbase.pl" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>kurs@magbase.pl</a>
               <a href="tel:+48571082475" style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>+48 571 082 475</a>
@@ -620,10 +624,10 @@ export function LandingClient() {
           </div>
           {/* Legal */}
           <div>
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Dokumenty</div>
+            <div style={{ fontFamily: SG, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#5f5f5f" }}>Dokumenty</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
               {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki usług", "/strony/warunki"]].map(([label, href]) => (
-                <Link key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</Link>
+                <a key={href} href={href} style={{ textDecoration: "none", fontSize: 14, fontWeight: 500, color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
               ))}
             </div>
           </div>
@@ -633,7 +637,7 @@ export function LandingClient() {
             <span>© 2026 Interaktywny kurs druku 3D · Magbase. Wszelkie prawa zastrzeżone.</span>
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
               {[["Polityka prywatności", "/strony/polityka-prywatnosci"], ["Regulamin platformy", "/strony/regulamin"], ["Warunki usług", "/strony/warunki"]].map(([label, href]) => (
-                <Link key={href} href={href} style={{ textDecoration: "none", color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</Link>
+                <a key={href} href={href} style={{ textDecoration: "none", color: "#8a8a8a", transition: "color .15s" }} onMouseEnter={e => (e.currentTarget.style.color = "#ededed")} onMouseLeave={e => (e.currentTarget.style.color = "#8a8a8a")}>{label}</a>
               ))}
             </div>
           </div>
