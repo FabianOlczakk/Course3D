@@ -26,7 +26,6 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { useProgress } from "@/lib/use-progress";
-import { APP_VERSION } from "@/lib/version";
 import {
   ChapterList,
   type SidebarChapter,
@@ -371,19 +370,12 @@ export function Sidebar({
       {/* HEADER — branding bez ikony (wysokość = topbar, aby border się równał) */}
       <div className="flex h-14 items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-[18px]">
         <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
-          <div className="flex items-baseline gap-1.5">
-            <span className="truncate font-display text-[14px] font-semibold leading-[1.1] text-[var(--text-primary)]">
-              Kurs druku 3D
-            </span>
-            {role === "ADMIN" && (
-              <span className="shrink-0 text-[9px] leading-none text-[var(--text-muted)]">
-                v{APP_VERSION}
-              </span>
-            )}
-          </div>
-          <div className="mt-[2px] text-[11px] text-[var(--text-muted)]">
-            BambuLab A1 mini
-          </div>
+          <img
+            src="/logo.png"
+            alt="Interaktywny Kurs Druku 3D"
+            className="h-7 w-auto max-w-[160px] object-contain"
+            draggable={false}
+          />
         </Link>
         {onMobileClose && (
           <button

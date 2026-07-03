@@ -56,7 +56,7 @@ export async function generateMetadata({
     select: { title: true },
   });
   return {
-    title: lesson ? `${lesson.title} | Course3D` : "Lekcja | Course3D",
+    title: lesson ? `${lesson.title} | Interaktywny Kurs Druku 3D` : "Lekcja | Interaktywny Kurs Druku 3D",
   };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { APP_VERSION } from "@/lib/version";
 import {
   AlertTriangle,
   Bug,

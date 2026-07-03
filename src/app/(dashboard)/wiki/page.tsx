@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { BookOpen, Plus, FileText } from "lucide-react";
 import { timeAgo } from "@/lib/format-time";
 
-export const metadata: Metadata = { title: "Wiki | Course3D" };
+export const metadata: Metadata = { title: "Wiki | Interaktywny Kurs Druku 3D" };
 export const dynamic = "force-dynamic";
 
 export default async function WikiPage() {

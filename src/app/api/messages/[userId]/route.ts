@@ -106,7 +106,13 @@ export async function POST(
     );
   }
 
-  // Wysyłka incognito jako „SYSTEM" — tylko dla administratora.
+  // Wysyłka incognito jako „SYSTEM" — tylko dla administratora i tylko do nieadminów.
+  if (asSystem && receiver.role === "ADMIN") {
+    return NextResponse.json(
+      { error: "Nie można wysyłać wiadomości SYSTEM do administratorów." },
+      { status: 403 }
+    );
+  }
   const senderId =
     asSystem && session.user.role === "ADMIN" ? await getSystemUserId() : me;
 

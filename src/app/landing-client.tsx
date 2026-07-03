@@ -264,9 +264,8 @@ export function LandingClient() {
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(22,22,22,0.95)", backdropFilter: "blur(8px)", borderBottom: "2px solid #000" }}>
         <div style={{ ...s.maxW, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <a href="#top" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
-            <span style={{ display: "grid", placeItems: "center", width: 34, height: 34, background: "#9d6bff", border: "2px solid #000", borderRadius: 9, color: "#fff", fontFamily: SG, fontWeight: 700, fontSize: 13, boxShadow: "2px 2px 0 #000" }}>3D</span>
-            <span style={{ fontFamily: SG, fontWeight: 600, fontSize: 16, color: "#f0f0f0", letterSpacing: "-0.01em" }}>Interaktywny kurs druku 3D</span>
+          <a href="#top" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+            <img src="/logo.png" alt="Interaktywny Kurs Druku 3D" style={{ height: 36, width: "auto" }} draggable={false} />
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {[["#co-dostajesz", "Co dostajesz"], ["#platforma", "Platforma"], ["#o-mnie", "O mnie"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (

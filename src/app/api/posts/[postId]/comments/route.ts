@@ -49,6 +49,14 @@ export async function GET(
   ]);
   const myVoteByComment = new Map(myVotes.map((v) => [v.commentId, v.value]));
 
+  function wilsonScore(up: number, down: number): number {
+    const n = up + down;
+    if (n === 0) return 0;
+    const z = 1.96;
+    const p = up / n;
+    return (p + (z * z) / (2 * n) - z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n)) / (1 + (z * z) / n);
+  }
+
   const enriched = comments.map((c) => {
     const up = voteCounts.find((v) => v.commentId === c.id && v.value === "UP")?._count ?? 0;
     const down = voteCounts.find((v) => v.commentId === c.id && v.value === "DOWN")?._count ?? 0;
@@ -56,16 +64,22 @@ export async function GET(
       ...c,
       author: maskActivity(c.author, viewerId, viewerIsAdmin),
       votes: { up, down, myVote: myVoteByComment.get(c.id) ?? null },
+      _score: wilsonScore(up, down),
     };
   });
 
+  // Sortuj komentarze: top-level po popularności, odpowiedzi chronologicznie.
+  const topLevel = enriched.filter((c) => !c.parentId).sort((a, b) => b._score - a._score);
+  const replies = enriched.filter((c) => !!c.parentId);
+  const sorted = [...topLevel, ...replies];
+
   // Wzmianki: migracja starych @nazwa → znaczniki + mapa ID → użytkownik.
   const { items: withMentions, mentions } = await attachMentions(
-    enriched.map((c) => ({ id: c.id, content: c.content })),
+    sorted.map((c) => ({ id: c.id, content: c.content })),
     (id, content) => prisma.comment.update({ where: { id }, data: { content } })
   );
   const contentById = new Map(withMentions.map((i) => [i.id, i.content]));
-  const result = enriched.map((c) => ({
+  const result = sorted.map(({ _score: _s, ...c }) => ({
     ...c,
     content: contentById.get(c.id) ?? c.content,
     mentions,

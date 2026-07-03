@@ -3,13 +3,18 @@ import {
   Button,
   Container,
   Head,
-  Heading,
   Html,
+  Img,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 import * as React from "react";
+
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.NEXTAUTH_URL ||
+  "https://kurs.magbase.pl";
 
 interface InviteEmailProps {
   inviteUrl: string;
@@ -19,13 +24,21 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
   return (
     <Html lang="pl">
       <Head />
-      <Preview>Zostałeś zaproszony do platformy Course3D</Preview>
+      <Preview>Zostałeś zaproszony do Interaktywnego Kursu Druku 3D</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Witaj w Course3D!</Heading>
+          <Section style={{ textAlign: "center", marginBottom: "24px" }}>
+            <Img
+              src={`${APP_URL}/logo.png`}
+              alt="Interaktywny Kurs Druku 3D"
+              width="280"
+              height="auto"
+            />
+          </Section>
+          <Text style={heading}>Witaj w kursie!</Text>
           <Text style={paragraph}>
             Otrzymujesz tę wiadomość, ponieważ utworzono dla Ciebie konto na
-            platformie kursu druku 3D <strong>Course3D</strong>.
+            platformie <strong>Interaktywnego Kursu Druku 3D</strong>.
           </Text>
           <Text style={paragraph}>
             Aby dokończyć rejestrację, ustaw swoją nazwę użytkownika oraz hasło,
@@ -44,7 +57,7 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
             Link jest ważny przez 7 dni. Jeśli nie spodziewałeś się tej
             wiadomości, zignoruj ją.
           </Text>
-          <Text style={footer}>— Zespół Course3D</Text>
+          <Text style={footer}>— Interaktywny Kurs Druku 3D</Text>
         </Container>
       </Body>
     </Html>
@@ -68,9 +81,10 @@ const container: React.CSSProperties = {
 };
 
 const heading: React.CSSProperties = {
-  fontSize: "24px",
+  fontSize: "22px",
   fontWeight: "bold",
   color: "#0f172a",
+  marginTop: 0,
 };
 
 const paragraph: React.CSSProperties = {
