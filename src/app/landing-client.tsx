@@ -35,22 +35,19 @@ function useCountdown(target: Date) {
 
 const SG = "var(--font-space-grotesk), system-ui, sans-serif";
 
-// ── Auto-playing Frame Sequence (looping) ──────────────────────────────────
-function AutoPlayFrameSequence({
+// ── Scroll-linked Frame Sequence (stays in place, scrubs with page scroll) ──
+function ScrollLinkedFrameSequence({
   startFrame = 8,
   endFrame = 74,
   basePath = "/sequence",
-  fps = 24,
 }: {
   startFrame?: number;
   endFrame?: number;
   basePath?: string;
-  fps?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
-  const frameRef = useRef(0);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const frameCount = endFrame - startFrame + 1;
 
@@ -74,7 +71,7 @@ function AutoPlayFrameSequence({
     imagesRef.current = images;
   }, [startFrame, endFrame, basePath, frameCount]);
 
-  // Rysowanie + pętla klatek
+  // Rysowanie klatki na podstawie pozycji scrolla
   useEffect(() => {
     if (!imagesLoaded) return;
     const canvas = canvasRef.current;
@@ -104,26 +101,35 @@ function AutoPlayFrameSequence({
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
     }
 
+    function render() {
+      if (!container || !canvas) return;
+      const rect = container.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      // progres: 0 gdy kontener wchodzi od dołu ekranu, 1 gdy wychodzi górą
+      const progress = Math.min(
+        Math.max((viewportHeight - rect.top) / (viewportHeight + rect.height), 0),
+        1
+      );
+      const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+      drawFrame(frameIndex);
+    }
+
     function resize() {
       if (!canvas || !container) return;
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
-      drawFrame(frameRef.current);
+      render();
     }
 
     resize();
+    window.addEventListener("scroll", render, { passive: true });
     window.addEventListener("resize", resize);
 
-    const interval = setInterval(() => {
-      frameRef.current = (frameRef.current + 1) % frameCount;
-      drawFrame(frameRef.current);
-    }, 1000 / fps);
-
     return () => {
+      window.removeEventListener("scroll", render);
       window.removeEventListener("resize", resize);
-      clearInterval(interval);
     };
-  }, [imagesLoaded, frameCount, fps]);
+  }, [imagesLoaded, frameCount]);
 
   return (
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -463,7 +469,7 @@ export function LandingClient() {
           <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 26, marginTop: 40, alignItems: "center" }}>
             <FadeUp>
               <div style={{ width: "100%", height: 340, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden", background: "#141414" }}>
-                <AutoPlayFrameSequence startFrame={8} endFrame={74} basePath="/sequence" fps={24} />
+                <ScrollLinkedFrameSequence startFrame={8} endFrame={74} basePath="/sequence" />
               </div>
             </FadeUp>
             <FadeUp delay={0.1}>
