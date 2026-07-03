@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { DeveloperClient } from "@/components/admin/developer-client";
 import { APP_VERSION } from "@/lib/version";
 
-export const metadata: Metadata = { title: "Deweloper — Course3D" };
+export const metadata: Metadata = { title: "Deweloper — Interaktywny Kurs Druku 3D" };
 
 export default async function DeveloperPage() {
   const session = await auth();

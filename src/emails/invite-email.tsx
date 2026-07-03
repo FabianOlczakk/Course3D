@@ -24,7 +24,7 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
   return (
     <Html lang="pl">
       <Head />
-      <Preview>Zostałeś zaproszony do platformy Course3D</Preview>
+      <Preview>Zostałeś zaproszony do Interaktywnego Kursu Druku 3D</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={{ textAlign: "center", marginBottom: "24px" }}>
@@ -38,7 +38,7 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
           <Text style={heading}>Witaj w kursie!</Text>
           <Text style={paragraph}>
             Otrzymujesz tę wiadomość, ponieważ utworzono dla Ciebie konto na
-            platformie kursu druku 3D <strong>Course3D</strong>.
+            platformie <strong>Interaktywnego Kursu Druku 3D</strong>.
           </Text>
           <Text style={paragraph}>
             Aby dokończyć rejestrację, ustaw swoją nazwę użytkownika oraz hasło,
@@ -57,7 +57,7 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
             Link jest ważny przez 7 dni. Jeśli nie spodziewałeś się tej
             wiadomości, zignoruj ją.
           </Text>
-          <Text style={footer}>— Zespół Course3D</Text>
+          <Text style={footer}>— Interaktywny Kurs Druku 3D</Text>
         </Container>
       </Body>
     </Html>

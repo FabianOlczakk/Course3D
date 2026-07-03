@@ -7,7 +7,7 @@ const resend = process.env.RESEND_API_KEY
   : null;
 
 const FROM =
-  process.env.RESEND_FROM_EMAIL || "Course3D <noreply@kurs.magbase.pl>";
+  process.env.RESEND_FROM_EMAIL || "Interaktywny Kurs Druku 3D <noreply@kurs.magbase.pl>";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -31,7 +31,7 @@ export async function sendInviteEmail(params: {
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: params.to,
-    subject: "Zaproszenie do platformy Course3D",
+    subject: "Zaproszenie do Interaktywnego Kursu Druku 3D",
     react: InviteEmail({ inviteUrl }),
   });
 
@@ -58,7 +58,7 @@ export async function sendPasswordResetEmail(params: {
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: params.to,
-    subject: "Reset hasła — Course3D",
+    subject: "Reset hasła — Interaktywny Kurs Druku 3D",
     react: ResetPasswordEmail({ resetUrl }),
   });
 

@@ -24,7 +24,7 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
   return (
     <Html lang="pl">
       <Head />
-      <Preview>Resetowanie hasła w platformie Course3D</Preview>
+      <Preview>Resetowanie hasła — Interaktywny Kurs Druku 3D</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={{ textAlign: "center", marginBottom: "24px" }}>
@@ -38,7 +38,7 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
           <Text style={heading}>Reset hasła</Text>
           <Text style={paragraph}>
             Otrzymujesz tę wiadomość, ponieważ poproszono o zresetowanie hasła do
-            Twojego konta na platformie <strong>Course3D</strong>.
+            Twojego konta na platformie <strong>Interaktywnego Kursu Druku 3D</strong>.
           </Text>
           <Text style={paragraph}>
             Aby ustawić nowe hasło, kliknij w poniższy przycisk:
@@ -56,7 +56,7 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
             Link jest ważny przez 1 godzinę. Jeśli nie prosiłeś o reset hasła,
             zignoruj tę wiadomość — Twoje hasło pozostanie bez zmian.
           </Text>
-          <Text style={footer}>— Zespół Course3D</Text>
+          <Text style={footer}>— Interaktywny Kurs Druku 3D</Text>
         </Container>
       </Body>
     </Html>

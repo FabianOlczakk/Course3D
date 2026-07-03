@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Ustaw nowe hasło — Course3D",
+  title: "Ustaw nowe hasło — Interaktywny Kurs Druku 3D",
 };
 
 export default async function ResetPasswordPage({
