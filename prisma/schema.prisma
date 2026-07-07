@@ -72,17 +72,17 @@ model Announcement {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String?  @unique
-  passwordHash String?
-  role         Role     @default(STUDENT)
-  avatarUrl    String?
-  lastActiveAt DateTime?
-  progressPrivate  Boolean @default(false)
-  activityPrivate  Boolean @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  username        String?   @unique
+  passwordHash    String?
+  role            Role      @default(STUDENT)
+  avatarUrl       String?
+  lastActiveAt    DateTime?
+  progressPrivate Boolean   @default(false)
+  activityPrivate Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Auth
   accounts Account[]
@@ -123,6 +123,11 @@ model User {
   // Powiadomienia
   notifications     Notification[] @relation("ReceivedNotifications")
   sentNotifications Notification[] @relation("SentNotifications")
+
+  // Formularze i kampanie emailowe
+  formResponses     FormResponse[]
+  emailCampaigns    EmailCampaign[] @relation("CreatedEmailCampaigns")
+  newsletterConsent Boolean         @default(true)
 }
 
 model Account {
@@ -173,21 +178,21 @@ model Chapter {
 }
 
 model Lesson {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  order         Int
-  chapterId     String
+  id               String   @id @default(cuid())
+  title            String
+  description      String?
+  order            Int
+  chapterId        String
   videoUrl         String?
-  extraDescription String? @db.Text // dodatkowy opis pod wideo (pod przyciskami)
-  muxAssetId    String?
-  muxPlaybackId String?
-  contentJson   Json? // Tiptap JSON content
-  timestamps    Json? // Array of {time, elementId}
-  quizzes       Json? // Array of {triggersAt, question, options, correctIndex}
-  tasks         Json? // Array of {triggersAt, description}
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  extraDescription String?  @db.Text // dodatkowy opis pod wideo (pod przyciskami)
+  muxAssetId       String?
+  muxPlaybackId    String?
+  contentJson      Json? // Tiptap JSON content
+  timestamps       Json? // Array of {time, elementId}
+  quizzes          Json? // Array of {triggersAt, question, options, correctIndex}
+  tasks            Json? // Array of {triggersAt, description}
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   chapter  Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
@@ -200,7 +205,7 @@ model LessonProgress {
   lessonId       String
   completed      Boolean  @default(false)
   watchedSeconds Int      @default(0)
-  rating         Int?     // 1-5 gwiazdek, null = nie oceniono
+  rating         Int? // 1-5 gwiazdek, null = nie oceniono
   ratingComment  String?  @db.Text
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -265,10 +270,10 @@ model Post {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  comments Comment[]
-  votes    PostVote[]
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  comments      Comment[]
+  votes         PostVote[]
   notifications Notification[]
 }
 
@@ -282,12 +287,12 @@ model Comment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id])
-  replies Comment[]     @relation("CommentReplies")
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
+  replies       Comment[]      @relation("CommentReplies")
   notifications Notification[]
-  votes   CommentVote[]
+  votes         CommentVote[]
 }
 
 model WikiArticle {
@@ -303,7 +308,6 @@ model WikiArticle {
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
-
 
 model SupportTicket {
   id        String            @id @default(cuid())
@@ -362,4 +366,88 @@ model Notification {
 
   @@index([userId, read])
   @@index([createdAt(sort: Desc)])
+}
+
+enum FormVisibility {
+  ALL // Wszyscy zalogowani (obecni i przyszli)
+  ACTIVE // Tylko aktywni w chwili tworzenia formularza
+  NEW // Tylko nowi użytkownicy którzy dołączą po utworzeniu
+}
+
+enum QuestionType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  CHECKBOX
+  RADIO
+}
+
+enum EmailCampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+  FAILED
+}
+
+enum EmailRecipientType {
+  ALL
+  NEWSLETTER
+  SPECIFIC
+}
+
+model Form {
+  id          String         @id @default(cuid())
+  title       String
+  description String?        @db.Text
+  visibility  FormVisibility @default(ALL)
+  allowSkip   Boolean        @default(true)
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  questions FormQuestion[]
+  responses FormResponse[]
+}
+
+model FormQuestion {
+  id       String       @id @default(cuid())
+  formId   String
+  order    Int
+  text     String
+  type     QuestionType
+  options  Json? // String[] for CHECKBOX/RADIO options; last element can be "__other__" to enable "Inne"
+  required Boolean      @default(false)
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+model FormResponse {
+  id        String   @id @default(cuid())
+  formId    String
+  userId    String
+  answers   Json // { questionId: string | string[] | number }
+  skipped   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, userId])
+}
+
+model EmailCampaign {
+  id             String              @id @default(cuid())
+  subject        String
+  content        String              @db.Text
+  recipientType  EmailRecipientType  @default(ALL)
+  specificEmails Json? // String[] when recipientType=SPECIFIC
+  status         EmailCampaignStatus @default(DRAFT)
+  sentAt         DateTime?
+  recipientCount Int?
+  testSentTo     String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  createdById    String
+
+  createdBy User @relation("CreatedEmailCampaigns", fields: [createdById], references: [id], onDelete: Cascade)
 }
