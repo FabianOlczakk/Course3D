@@ -593,7 +593,7 @@ export function Sidebar({
                 { label: "Użytkownicy", icon: Users, href: "/admin/users" },
                 { label: "Rozdziały", icon: Boxes, href: "/admin/chapters" },
                 { label: "Ogłoszenia", icon: Bell, href: "/admin/ogloszenia" },
-                { label: "Wiki", icon: Pencil, href: "/admin/wiki/new" },
+                { label: "Wiki", icon: Pencil, href: "/wiki" },
                 { label: "Oceny", icon: Star, href: "/admin/oceny" },
                 { label: "Strony", icon: FileText, href: "/admin/strony" },
                 { label: "Formularze", icon: ClipboardList, href: "/admin/formularze" },

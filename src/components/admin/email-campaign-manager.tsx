@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, Send, Mail, Trash2, X, AlertCircle, CheckCircle, Loader2, Clock } from "lucide-react";
+import { Plus, Send, Mail, Trash2, X, AlertCircle, CheckCircle, Loader2, Clock, RefreshCw } from "lucide-react";
 
 type RecipientType = "ALL" | "NEWSLETTER" | "SPECIFIC";
 type CampaignStatus = "DRAFT" | "SENDING" | "SENT" | "FAILED";
@@ -128,6 +128,18 @@ export function EmailCampaignManager() {
     await load();
   }
 
+  function handleResend(c: Campaign) {
+    setError(null);
+    setSuccessMsg(null);
+    setCurrentCampaignId(null); // resending always creates a new campaign, never edits the sent one
+    setSubject(c.subject);
+    setContent(c.content);
+    setRecipientType(c.recipientType);
+    setSpecificEmails((c.specificEmails ?? []).join("\n"));
+    setTestEmail("");
+    setComposing(true);
+  }
+
   if (composing) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-6 md:p-8">
@@ -238,11 +250,16 @@ export function EmailCampaignManager() {
                     {c.sentAt ? new Date(c.sentAt).toLocaleString("pl") : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {c.status !== "SENT" && (
-                      <button onClick={() => handleDelete(c.id)} className="rounded-md p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--bg-elevated)]" title="Usuń">
-                        <Trash2 className="h-4 w-4" />
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleResend(c)} className="rounded-md p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--bg-elevated)]" title="Wyślij ponownie">
+                        <RefreshCw className="h-4 w-4" />
                       </button>
-                    )}
+                      {c.status !== "SENT" && (
+                        <button onClick={() => handleDelete(c.id)} className="rounded-md p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--bg-elevated)]" title="Usuń">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

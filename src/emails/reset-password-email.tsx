@@ -76,6 +76,7 @@ const main: React.CSSProperties = {
   backgroundColor: "#f4f4f5",
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  padding: "0 16px",
 };
 
 const container: React.CSSProperties = {
