@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { UsersTable } from "@/components/admin/users-table";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
@@ -29,11 +30,14 @@ export default async function AdminUsersPage() {
   }));
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Użytkownicy</h1>
-          <p className="text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <Users className="h-5 w-5 text-[var(--accent)]" />
+            <h1 className="font-display text-[20px] font-semibold text-[var(--text-primary)]">Użytkownicy</h1>
+          </div>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">
             Zarządzaj kontami kursantów i administratorów.
           </p>
         </div>

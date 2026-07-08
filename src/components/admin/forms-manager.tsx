@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Eye, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { Plus, Trash2, Eye, ToggleLeft, ToggleRight, X, ClipboardList } from "lucide-react";
 import { StyledSelect } from "@/components/ui/styled-select";
 
 type QuestionType = "TEXT" | "TEXTAREA" | "NUMBER" | "CHECKBOX" | "RADIO";
@@ -62,7 +62,7 @@ export function FormsManager() {
   }
 
   if (viewingId) return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4 p-6 md:p-8">
       <div className="flex items-center gap-3">
         <button onClick={() => setViewingId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">← Wróć</button>
         <h2 className="font-display text-lg font-semibold text-[var(--text-primary)]">Odpowiedzi: {responsesForm?.title}</h2>
@@ -91,7 +91,7 @@ export function FormsManager() {
   );
 
   if (creating) return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4 p-6 md:p-8">
       <div className="flex items-center gap-3">
         <button onClick={() => { setCreating(false); resetForm(); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">← Wróć</button>
         <h2 className="font-display text-lg font-semibold text-[var(--text-primary)]">Nowy formularz</h2>
@@ -164,9 +164,15 @@ export function FormsManager() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4 p-6 md:p-8">
       <div className="flex items-center justify-between">
-        <div><h1 className="font-display text-xl font-semibold text-[var(--text-primary)]">Formularze</h1><p className="text-sm text-[var(--text-muted)] mt-0.5">Twórz ankiety i formularze dla kursantów</p></div>
+        <div>
+          <div className="flex items-center gap-3">
+            <ClipboardList className="h-5 w-5 text-[var(--accent)]" />
+            <h1 className="font-display text-[20px] font-semibold text-[var(--text-primary)]">Formularze</h1>
+          </div>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">Twórz ankiety i formularze dla kursantów</p>
+        </div>
         <button onClick={() => setCreating(true)} className="flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"><Plus className="h-4 w-4" /> Nowy formularz</button>
       </div>
       {loading ? <div className="glow-card p-8 text-center text-[var(--text-muted)] text-sm">Ładowanie...</div> : forms.length === 0 ? <div className="glow-card p-10 text-center text-[var(--text-muted)]">Brak formularzy. Utwórz pierwszy.</div> : (

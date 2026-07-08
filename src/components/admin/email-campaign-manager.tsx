@@ -130,7 +130,7 @@ export function EmailCampaignManager() {
 
   if (composing) {
     return (
-      <div className="space-y-4 max-w-2xl">
+      <div className="mx-auto max-w-2xl space-y-4 p-6 md:p-8">
         <div className="flex items-center gap-3">
           <button onClick={() => { setComposing(false); resetCompose(); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">← Wróć</button>
           <h2 className="font-display text-lg font-semibold text-[var(--text-primary)]">Nowa kampania e-mail</h2>
@@ -188,10 +188,13 @@ export function EmailCampaignManager() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4 p-6 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-semibold text-[var(--text-primary)]">Email</h1>
+          <div className="flex items-center gap-3">
+            <Mail className="h-5 w-5 text-[var(--accent)]" />
+            <h1 className="font-display text-[20px] font-semibold text-[var(--text-primary)]">Email</h1>
+          </div>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">Wysyłaj kampanie e-mail do kursantów</p>
         </div>
         <button onClick={() => setComposing(true)} className="flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
