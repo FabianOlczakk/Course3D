@@ -29,7 +29,7 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
         <Container style={container}>
           <Section style={{ textAlign: "center", marginBottom: "24px" }}>
             <Img
-              src={`${APP_URL}/logo.svg`}
+              src={`${APP_URL}/logo.png`}
               alt="Interaktywny Kurs Druku 3D"
               width="48"
               height="48"

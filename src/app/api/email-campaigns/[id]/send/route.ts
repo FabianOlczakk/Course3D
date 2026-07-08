@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
   <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:8px;overflow:hidden">
     <div style="padding:24px;text-align:center;border-bottom:1px solid #e2e8f0">
-      <img src="${APP_URL}/logo.svg" alt="Interaktywny Kurs Druku 3D" width="48" height="48" style="display:inline-block;vertical-align:middle" />
+      <img src="${APP_URL}/logo.png" alt="Interaktywny Kurs Druku 3D" width="48" height="48" style="display:inline-block;vertical-align:middle" />
       <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:18px;font-weight:600;color:#0f172a">Interaktywny kurs 3D</span>
     </div>
     <div style="padding:32px;color:#334155;font-size:15px;line-height:1.6">

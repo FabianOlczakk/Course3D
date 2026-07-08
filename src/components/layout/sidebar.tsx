@@ -372,7 +372,7 @@ export function Sidebar({
       <div className="flex h-14 items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-[18px]">
         <Link href="/dashboard" onClick={onMobileClose} className="flex min-w-0 items-center gap-2">
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="Interaktywny Kurs Druku 3D"
             className="h-7 w-auto shrink-0 object-contain"
             draggable={false}

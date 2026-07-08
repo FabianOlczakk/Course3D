@@ -32,7 +32,7 @@ export function LoginForm() {
       <CardHeader className="space-y-3 text-center">
         <div className="flex items-center justify-center gap-2.5">
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="Interaktywny Kurs Druku 3D"
             className="h-10 w-auto"
             draggable={false}
