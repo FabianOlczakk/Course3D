@@ -9,6 +9,7 @@ import {
   ArrowUp,
   ArrowDown,
   ListVideo,
+  Boxes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,11 +78,14 @@ export function ChaptersManager({ initial }: { initial: ManagedChapter[] }) {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Rozdziały</h1>
-          <p className="text-text-secondary">
+          <div className="flex items-center gap-3">
+            <Boxes className="h-5 w-5 text-[var(--accent)]" />
+            <h1 className="font-display text-[20px] font-semibold text-[var(--text-primary)]">Rozdziały</h1>
+          </div>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">
             Zarządzaj rozdziałami i kolejnością kursu.
           </p>
         </div>

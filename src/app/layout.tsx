@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const dmSans = DM_Sans({
-  subsets: ["latin", "latin-ext"],
+const dmSans = localFont({
+  src: [
+    { path: "../fonts/dm-sans-400.ttf", weight: "400", style: "normal" },
+    { path: "../fonts/dm-sans-500.ttf", weight: "500", style: "normal" },
+    { path: "../fonts/dm-sans-600.ttf", weight: "600", style: "normal" },
+    { path: "../fonts/dm-sans-700.ttf", weight: "700", style: "normal" },
+  ],
   variable: "--font-dm-sans",
 });
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+const spaceGrotesk = localFont({
+  src: [
+    { path: "../fonts/space-grotesk-500.ttf", weight: "500", style: "normal" },
+    { path: "../fonts/space-grotesk-600.ttf", weight: "600", style: "normal" },
+    { path: "../fonts/space-grotesk-700.ttf", weight: "700", style: "normal" },
+  ],
   variable: "--font-space-grotesk",
 });
 
 export const metadata: Metadata = {
-  title: "Kurs druku 3D — BambuLab A1 mini",
+  title: "Interaktywny Kurs Druku 3D",
   description:
-    "Platforma kursu druku 3D z drukarką BambuLab A1 mini. Naucz się druku 3D od podstaw.",
+    "Platforma Interaktywnego Kursu Druku 3D. Naucz się druku 3D od podstaw.",
 };
 
 // Prevents flash of wrong theme before React hydrates.

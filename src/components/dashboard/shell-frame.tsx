@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { HelpWidget } from "@/components/shared/help-widget";
+import { PendingFormsModal } from "@/components/shared/pending-forms-modal";
 import type { SidebarChapter } from "@/components/chapters/chapter-list";
 import type { Role } from "@prisma/client";
 
@@ -54,6 +55,7 @@ export function ShellFrame({
         </main>
       </div>
       <HelpWidget />
+      <PendingFormsModal />
     </div>
   );
 }

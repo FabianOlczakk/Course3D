@@ -302,6 +302,9 @@ export function DeveloperClient() {
         <div className="flex items-center gap-3">
           <Terminal className="h-5 w-5 text-[var(--accent)]" />
           <h1 className="font-display text-[20px] font-semibold text-[var(--text-primary)]">Deweloper</h1>
+          <span className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-muted)]">
+            v{APP_VERSION}
+          </span>
         </div>
         <button
           type="button"

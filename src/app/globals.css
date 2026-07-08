@@ -237,6 +237,29 @@
     background: var(--bg-elevated);
   }
 
+  /* Pole tekstowe / textarea / natywny select w stylu strony */
+  .input {
+    display: block;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   /* Shadow utilities for neobrutalism */
   .shadow-brutal {
     box-shadow: 5px 5px 0 #000;

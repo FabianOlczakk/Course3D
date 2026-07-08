@@ -35,15 +35,17 @@ function useCountdown(target: Date) {
 
 const SG = "var(--font-space-grotesk), system-ui, sans-serif";
 
-// ── Scroll-linked Frame Sequence (stays in place, scrubs with page scroll) ──
+// ── Auto-looping Frame Sequence (plays on its own, no scroll involved) ──────
 function ScrollLinkedFrameSequence({
   startFrame = 8,
   endFrame = 74,
   basePath = "/sequence",
+  fps = 24,
 }: {
   startFrame?: number;
   endFrame?: number;
   basePath?: string;
+  fps?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ function ScrollLinkedFrameSequence({
     imagesRef.current = images;
   }, [startFrame, endFrame, basePath, frameCount]);
 
-  // Rysowanie klatki na podstawie pozycji scrolla
+  // Odtwarzanie klatek w pętli, niezależnie od scrolla
   useEffect(() => {
     if (!imagesLoaded) return;
     const canvas = canvasRef.current;
@@ -101,35 +103,27 @@ function ScrollLinkedFrameSequence({
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
     }
 
-    function render() {
-      if (!container || !canvas) return;
-      const rect = container.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      // progres: 0 gdy kontener wchodzi od dołu ekranu, 1 gdy wychodzi górą
-      const progress = Math.min(
-        Math.max((viewportHeight - rect.top) / (viewportHeight + rect.height), 0),
-        1
-      );
-      const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
-      drawFrame(frameIndex);
-    }
-
     function resize() {
       if (!canvas || !container) return;
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
-      render();
     }
 
     resize();
-    window.addEventListener("scroll", render, { passive: true });
     window.addEventListener("resize", resize);
 
+    let frameIndex = 0;
+    drawFrame(frameIndex);
+    const id = setInterval(() => {
+      frameIndex = (frameIndex + 1) % frameCount;
+      drawFrame(frameIndex);
+    }, 1000 / fps);
+
     return () => {
-      window.removeEventListener("scroll", render);
+      clearInterval(id);
       window.removeEventListener("resize", resize);
     };
-  }, [imagesLoaded, frameCount]);
+  }, [imagesLoaded, frameCount, fps]);
 
   return (
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -270,8 +264,11 @@ export function LandingClient() {
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(22,22,22,0.95)", backdropFilter: "blur(8px)", borderBottom: "2px solid #000" }}>
         <div style={{ ...s.maxW, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <a href="#top" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <a href="#top" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <img src="/logo.png" alt="Interaktywny Kurs Druku 3D" style={{ height: 36, width: "auto" }} draggable={false} />
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17, color: "#fff" }}>
+              Interaktywny kurs druku 3D
+            </span>
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {[["#co-dostajesz", "Co dostajesz"], ["#platforma", "Platforma"], ["#o-mnie", "O mnie"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (

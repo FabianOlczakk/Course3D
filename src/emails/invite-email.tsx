@@ -31,9 +31,13 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
             <Img
               src={`${APP_URL}/logo.png`}
               alt="Interaktywny Kurs Druku 3D"
-              width="280"
-              height="auto"
+              width="48"
+              height="48"
+              style={{ display: "inline-block", verticalAlign: "middle" }}
             />
+            <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: "10px", fontSize: "18px", fontWeight: 600, color: "#0f172a" }}>
+              Interaktywny kurs druku 3D
+            </span>
           </Section>
           <Text style={heading}>Witaj w kursie!</Text>
           <Text style={paragraph}>
@@ -73,6 +77,7 @@ const main: React.CSSProperties = {
   backgroundColor: "#f4f4f5",
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  padding: "0 16px",
 };
 
 const container: React.CSSProperties = {

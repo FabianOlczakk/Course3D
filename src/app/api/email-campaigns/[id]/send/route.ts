@@ -32,15 +32,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 <html lang="pl">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:8px;overflow:hidden">
-    <div style="padding:24px;text-align:center;border-bottom:1px solid #e2e8f0">
-      <img src="${APP_URL}/logo.png" alt="Interaktywny Kurs Druku 3D" style="height:40px;width:auto" />
-    </div>
-    <div style="padding:32px;color:#334155;font-size:15px;line-height:1.6">
-      ${campaign.content}
-    </div>
-    <div style="padding:16px 32px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px;text-align:center">
-      Interaktywny Kurs Druku 3D — <a href="${APP_URL}" style="color:#7c3aed">kurs.magbase.pl</a>
+  <div style="padding:0 16px">
+    <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:8px;overflow:hidden">
+      <div style="padding:24px;text-align:center;border-bottom:1px solid #e2e8f0">
+        <img src="${APP_URL}/logo.png" alt="Interaktywny Kurs Druku 3D" width="48" height="48" style="display:inline-block;vertical-align:middle" />
+        <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:18px;font-weight:600;color:#0f172a">Interaktywny kurs druku 3D</span>
+      </div>
+      <div style="padding:32px;color:#334155;font-size:15px;line-height:1.6">
+        ${campaign.content}
+      </div>
+      <div style="padding:16px 32px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px;text-align:center">
+        Interaktywny Kurs Druku 3D — <a href="${APP_URL}" style="color:#7c3aed">kurs.magbase.pl</a>
+        <br />
+        <a href="${APP_URL}/profile" style="color:#94a3b8;font-size:11px">Wypisz się z newslettera</a>
+      </div>
     </div>
   </div>
 </body>

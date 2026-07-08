@@ -1,292 +1,294 @@
-# Course3D — Platforma kursu druku 3D
+# Interaktywny Kurs Druku 3D
 
-Platforma e-learningowa dla kursu druku 3D w cenie **999 PLN**, w której skład
-wchodzi drukarka **Bambu Lab A1 Mini**. Interfejs w całości w języku polskim,
-dostępny pod adresem [kurs.magbase.pl](https://kurs.magbase.pl).
-
-Kurs prowadzony jest w modelu zamkniętym — konta tworzy administrator i wysyła
-zaproszenia e-mail, na podstawie których kursant ustawia własną nazwę
-użytkownika oraz hasło.
+A closed-enrollment e-learning platform for a 3D printing course. Accounts are
+created by an administrator, who sends an email invite; the student follows
+the link to set their own username and password. The UI is entirely in
+Polish and is deployed at [kurs.magbase.pl](https://kurs.magbase.pl).
 
 ---
 
-## Spis treści
+## Table of contents
 
-- [Funkcje](#funkcje)
-- [Stos technologiczny](#stos-technologiczny)
-- [Struktura katalogów](#struktura-katalogów)
-- [Uruchomienie](#uruchomienie)
-- [Zmienne środowiskowe](#zmienne-środowiskowe)
-- [Przepływ zaproszeń](#przepływ-zaproszeń)
-- [Migracje bazy danych](#migracje-bazy-danych)
-- [Import CSV](#import-csv)
-- [Poradnik: synchronizacja kursora z filmem](#poradnik-synchronizacja-kursora-z-filmem)
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Getting started](#getting-started)
+- [Environment variables](#environment-variables)
+- [Database migrations](#database-migrations)
+- [Authentication](#authentication)
+- [Invite flow](#invite-flow)
+- [CSV import](#csv-import)
+- [Video timestamps](#video-timestamps)
+- [Popularity ranking](#popularity-ranking)
 
 ---
 
-## Funkcje
+## Features
 
-### Zarządzanie użytkownikami
-- **Panel administracyjny** — tworzenie, edycja roli/nazwy oraz usuwanie kont, wyszukiwanie i filtrowanie po roli
-- **System zaproszeń e-mail** — administrator tworzy konto, Resend wysyła link do ustawienia hasła i nazwy użytkownika
-- **Import użytkowników z CSV** — masowe tworzenie kont i wysyłka zaproszeń
-- **Awatary użytkowników** — zdjęcie profilowe wyświetlane w topbarze i przy postach
-- **Status online** — zielona kropka przy nazwie użytkownika (aktywny = aktywność < 5 min); heartbeat co 60 sekund aktualizuje `lastActiveAt` w bazie
+### User management
+- **Admin panel** (`/admin/users`) — create, edit (role/username), delete accounts; search and filter by role
+- **Email invites** — admin creates an account, Resend sends a link to set username/password
+- **CSV bulk import** — create many accounts at once, each gets an automatic invite email
+- **Avatars** — profile picture shown in the topbar, sidebar and next to posts/comments
+- **Online status** — a green dot next to a username when `lastActiveAt` is under 5 minutes old; a client-side heartbeat updates it every 60s
+- **Privacy toggles** — a user can hide their course progress and/or online status from other students (admins always see both)
+- **Newsletter consent** — every user is opted in by default; can unsubscribe from their profile settings, and every campaign/transactional email carries a small unsubscribe link in the footer
 
-### Kurs
-- **16 modułów, 108 lekcji** — pełna struktura kursu druku 3D (MODUŁ 0–15) załadowana do bazy SQL
-- **Odtwarzacz wideo** — integracja z Mux (`muxAssetId`, `muxPlaybackId`)
-- **Śledzenie postępu** — `LessonProgress` z `watchedSeconds` i `completed`
-- **Znaczniki czasu** — `timestamps` JSON synchronizujące treść lekcji z odtwarzaczem wideo
-- **Sidebar z rozdziałami** — lista lekcji po lewej stronie; narzędzia admina przypięte na dole (nie scrollują się razem z listą lekcji)
+### Course
+- Chapters → lessons structure, managed at `/admin/chapters`
+- **Mux video player** with per-lesson `timestamps` (JSON) that keep the lesson text in sync with playback position — see [Video timestamps](#video-timestamps)
+- **Progress tracking** — `LessonProgress` (`watchedSeconds`, `completed`) per user/lesson
+- **Per-lesson notes and ratings**
+- Sidebar chapter list with a live progress bar
 
-### Społeczność
-- **Forum** — posty z komentarzami, zagnieżdżone odpowiedzi, załączniki
-- **Wiadomości prywatne** — bezpośredni czat między użytkownikami
-- **Ogłoszenia** — specjalne posty admina wyróżnione w feedzie
-- **Status online przy postach** — zielona kropka przy nazwie autora posta i komentarza
+### Community
+- **Forum** (`/spolecznosc`) — posts with nested comments, attachments, upvote/downvote
+- **Popularity sort** — posts and top-level comments are ranked with a Wilson-score-based algorithm (see [Popularity ranking](#popularity-ranking))
+- **Private messages** (`/wiadomosci`) — direct chat between users; SYSTEM-authored messages cannot be sent to admin accounts
+- **Announcements** (`/ogloszenia`) — admin-authored posts pinned/highlighted in the feed
+- **@mentions** — typing `@username` in a post/comment links to that user's profile; renaming a username rewrites existing mentions
 
 ### Wiki
-- **Artykuły** — baza wiedzy z kategoriami (kody HMS, wymiana części, tutoriale)
-- **Edytor HTML** — pełna kontrola formatowania treści
-- **Zarządzanie** — admin może tworzyć, edytować i usuwać artykuły przez `/admin/wiki/new`
-- **Widok czytelnika** — `/wiki` — lista artykułów pogrupowanych po kategorii; `/wiki/[slug]` — treść artykułu
+- Knowledge base articles with categories, managed at `/admin/wiki`
+- Rich HTML editor for article content
+- Reader view at `/wiki` (grouped by category) and `/wiki/[slug]`
 
-### Wyszukiwarka globalna
-- **Pole wyszukiwania w topbarze** — szuka jednocześnie w lekcjach, postach i artykułach Wiki
-- **Debounce 300 ms** — zapytanie do `/api/search?q=...` wysyłane dopiero po chwili przerwy w pisaniu
-- **Wyniki z ikonami** — lekcje (🎓), posty społeczności (💬), artykuły Wiki (📄)
+### Static pages ("Strony")
+- Admin-authored standalone pages at `/strony/[slug]`, with `PUBLIC` / `USERS` / `ADMIN` visibility
+- `PUBLIC` pages are reachable without logging in (bypassed in `src/middleware.ts`)
 
-### Integracja BambuLab
-- **Logowanie przez token** — połączenie konta BambuLab przez token w panelu drukarki
-- **Wybór drukarki** — lista urządzeń z chmury; przełączanie między drukarkami
-- **Panel statusu** — temperatura, prędkość, stan druku w czasie rzeczywistym (polling REST)
-- **Podgląd kamery** — pobieranie URL strumienia RTSP przez endpoint `ttcode`; wyświetlanie do skopiowania (kompatybilny z VLC/OBS)
-- **Wylogowanie z BambuLab** — przycisk "Wyloguj z BambuLab" widoczny zawsze, niezależnie od liczby drukarek
+### Forms ("Formularze")
+- Admin-built surveys/forms at `/admin/formularze` — question types `TEXT`, `TEXTAREA`, `NUMBER`, `CHECKBOX`, `RADIO`
+- Visibility targeting: `ALL` (everyone), `ACTIVE` (existing users at creation time), `NEW` (users who join after)
+- Optional "skip" toggle per form; response viewer per form
 
-### Profil użytkownika
-- **Strona profilu** — `/profil/[userId]` — awatar, status online, postęp w kursie, ostatnie posty
-- **Akcje admina na profilu** — zmiana roli, resetowanie hasła (tylko dla innych użytkowników)
+### Email campaigns
+- Admin can compose and send one-off email campaigns at `/admin/email`
+- Recipients: `ALL` users, users with `NEWSLETTER` consent, or a `SPECIFIC` list of addresses
+- Test-send to a single address before a full send; history table of every past campaign with status (`DRAFT` / `SENDING` / `SENT` / `FAILED`)
 
----
+### Global search
+- Topbar search box queries lessons, posts and wiki articles at once (`/api/search?q=...`), debounced 300ms
 
-## Stos technologiczny
+### Support tickets
+- Users can submit a support ticket (`/api/support`); admins triage them at `/admin` (see `SupportTicket` model)
 
-| Warstwa            | Technologia                          |
-| ------------------ | ------------------------------------ |
-| Framework          | Next.js 14 (App Router)              |
-| Język              | TypeScript                           |
-| Stylowanie         | Tailwind CSS                         |
-| Komponenty UI      | shadcn/ui + Radix UI                 |
-| Ikony              | lucide-react                         |
-| ORM                | Prisma                               |
-| Baza danych        | PostgreSQL (Supabase)                |
-| Uwierzytelnianie   | Własny JWT (jose, HS256) + Auth.js   |
-| Hashowanie haseł   | bcryptjs                             |
-| E-mail             | Resend + React Email                 |
-| Walidacja          | Zod                                  |
-| Wideo              | Mux                                  |
+### Developer panel
+- `/admin/developer` — surfaces the app version (`src/lib/version.ts`), PM2 logs, and a one-click deploy trigger (see [Environment variables](#environment-variables))
+
+### User profile
+- `/profil/[userId]` — avatar, online status, course progress, recent posts
+- Admin actions on another user's profile: change role, force password reset
 
 ---
 
-## Struktura katalogów
+## Tech stack
+
+| Layer              | Technology                            |
+| ------------------ | -------------------------------------- |
+| Framework          | Next.js 14 (App Router)                |
+| Language           | TypeScript                             |
+| Styling            | Tailwind CSS + CSS custom properties   |
+| UI components      | shadcn/ui + Radix UI                   |
+| Icons              | lucide-react                           |
+| ORM                | Prisma                                 |
+| Database           | PostgreSQL (Supabase)                  |
+| Auth               | Custom JWT (jose, HS256) + Auth.js     |
+| Password hashing   | bcryptjs                               |
+| Email              | Resend + React Email                   |
+| Validation         | Zod                                    |
+| Video              | Mux                                    |
+| Fonts              | Self-hosted (DM Sans, Space Grotesk) via `next/font/local` |
+
+> Fonts are vendored under `src/fonts/` and loaded with `next/font/local` rather
+> than `next/font/google`, so `next build` never depends on outbound network
+> access to `fonts.gstatic.com` — this avoids build failures on hosts with
+> restricted or unreliable internet access.
+
+---
+
+## Project structure
 
 ```
 .
 ├── prisma/
-│   ├── schema.prisma              # Pełny schemat bazy danych (źródło prawdy)
-│   ├── seed.ts                    # Konto administratora startowego
-│   └── sql-archive/               # Historyczne, jednorazowe skrypty SQL (już zaaplikowane)
+│   ├── schema.prisma              # Full database schema (source of truth)
+│   ├── seed.ts                    # Seeds a starter admin account
+│   └── sql-archive/               # Historical one-off SQL scripts (already applied to prod)
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/
-│   │   │   ├── login/page.tsx
-│   │   │   └── set-password/page.tsx
-│   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx         # Sidebar + topbar
-│   │   │   ├── dashboard/page.tsx
-│   │   │   ├── kurs/[chapterId]/[lessonId]/page.tsx
-│   │   │   ├── spolecznosc/page.tsx
-│   │   │   ├── wiadomosci/page.tsx
-│   │   │   ├── profil/[userId]/page.tsx
-│   │   │   ├── drukarka/page.tsx  # Panel BambuLab
-│   │   │   └── wiki/
-│   │   │       ├── page.tsx       # Lista artykułów Wiki
-│   │   │       └── [slug]/page.tsx
-│   │   ├── (admin)/
+│   │   ├── (auth)/                # login, forgot/reset/set-password
+│   │   ├── (dashboard)/           # Authenticated app shell (sidebar + topbar)
+│   │   │   ├── dashboard/
+│   │   │   ├── kurs/[lessonId]/
+│   │   │   ├── spolecznosc/       # Forum
+│   │   │   ├── wiadomosci/        # Messages
+│   │   │   ├── ogloszenia/        # Announcements
+│   │   │   ├── wiki/
+│   │   │   ├── profil/[userId]/
+│   │   │   ├── profile/           # Own account settings
 │   │   │   └── admin/
-│   │   │       ├── users/page.tsx
-│   │   │       ├── chapters/page.tsx
-│   │   │       ├── ogloszenia/page.tsx
-│   │   │       └── wiki/
-│   │   │           ├── new/page.tsx
-│   │   │           └── [slug]/page.tsx
-│   │   └── api/
-│   │       ├── auth/
-│   │       ├── users/             # CRUD + CSV import + zaproszenia
-│   │       ├── chapters/          # CRUD rozdziałów i lekcji
-│   │       ├── posts/             # Posty i komentarze
-│   │       ├── messages/          # Wiadomości prywatne
-│   │       ├── wiki/              # CRUD artykułów Wiki
-│   │       ├── search/            # GET ?q= — wyszukiwanie globalne
-│   │       ├── heartbeat/         # POST — aktualizacja lastActiveAt
-│   │       └── bambulab/          # connect, devices, status, camera
+│   │   │       ├── developer/
+│   │   │       ├── email/         # Email campaigns
+│   │   │       └── formularze/    # Forms
+│   │   ├── (admin)/admin/         # users, chapters, wiki, oceny, ogloszenia, strony
+│   │   ├── strony/[slug]/         # Public/standalone static pages
+│   │   └── api/                   # Route handlers, one folder per resource
 │   ├── components/
-│   │   ├── ui/                    # shadcn/ui
+│   │   ├── ui/                    # shadcn/ui primitives + StyledSelect
 │   │   ├── layout/                # sidebar.tsx, topbar.tsx
 │   │   ├── community/             # post-card, comment-tree, post-feed
-│   │   ├── shared/                # online-dot, admin-badge, avatar
-│   │   ├── admin/                 # users-table, wiki-article-form
-│   │   ├── chapters/              # chapter-list, lessons-manager
-│   │   └── printer/               # printer-panel, camera
-│   └── lib/
-│       ├── auth.ts / auth.config.ts
-│       ├── online-status.ts       # isOnline(lastActiveAt)
-│       ├── prisma.ts
-│       └── format-time.ts
+│   │   ├── admin/                 # users-table, forms-manager, email-campaign-manager, ...
+│   │   ├── chapters/               # chapter-list, lessons-manager
+│   │   └── shared/                 # online-dot, admin-badge, highlight-target
+│   ├── emails/                    # React Email templates (invite, reset-password)
+│   ├── fonts/                     # Self-hosted DM Sans / Space Grotesk .ttf files
+│   └── lib/                       # auth.ts, prisma.ts, mail.ts, version.ts, ...
 ```
 
 ---
 
-## Uruchomienie
+## Getting started
 
-Wymagania: Node.js 18+, dostęp do bazy PostgreSQL (Supabase).
+Requirements: Node.js 18+, a PostgreSQL database (Supabase recommended).
 
 ```bash
-# 1. Instalacja zależności
+# 1. Install dependencies
 npm install
 
-# 2. Konfiguracja środowiska
+# 2. Configure environment
 cp .env.example .env
-# Uzupełnij DATABASE_URL, DIRECT_URL, AUTH_SECRET itd.
+# Fill in DATABASE_URL, DIRECT_URL, AUTH_SECRET, etc. — see below.
 
-# 3. Wygenerowanie klienta Prisma
+# 3. Generate the Prisma client
 npx prisma generate
 
-# 4. Uruchomienie migracji ręcznych w Supabase SQL Editor
-# (patrz: prisma/migrations-manual.sql)
+# 4. Push the schema to your database
+npm run db:push
 
-# 5. (Opcjonalnie) Utworzenie konta administratora startowego
+# 5. (Optional) Create a starter admin account
 npm run db:seed
-# Login: admin@course3d.pl / Hasło: admin123
 
-# 6. (Opcjonalnie) Załadowanie struktury kursu
-# Uruchom prisma/course-structure.sql w Supabase SQL Editor
-
-# 7. Start w trybie deweloperskim
+# 6. Start the dev server
 npm run dev
 ```
 
-Aplikacja będzie dostępna pod `http://localhost:3000`.
+The app runs at `http://localhost:3000`.
 
 ---
 
-## Zmienne środowiskowe
+## Environment variables
 
-| Zmienna                  | Opis                                                        |
-| ------------------------ | ----------------------------------------------------------- |
-| `DATABASE_URL`           | Połączenie z PostgreSQL (pooler dla Supabase)               |
-| `DIRECT_URL`             | Bezpośrednie połączenie (migracje Prisma)                   |
-| `AUTH_SECRET`            | **Wymagany**, min. 32 znaki — podpis JWT (`openssl rand -base64 32`) |
-| `NEXTAUTH_SECRET`        | Alias `AUTH_SECRET` (kompatybilność wsteczna)               |
-| `NEXTAUTH_URL`           | Bazowy URL aplikacji                                        |
-| `RESEND_API_KEY`         | Klucz API Resend (opcjonalny w dev)                         |
-| `RESEND_FROM_EMAIL`      | Adres nadawcy zaproszeń                                     |
-| `NEXT_PUBLIC_APP_URL`    | Publiczny URL używany w linkach zaproszeń                   |
-| `BAMBULAB_CLIENT_ID`     | Client ID aplikacji BambuLab Cloud                          |
-| `BAMBULAB_CLIENT_SECRET` | Client Secret aplikacji BambuLab Cloud                      |
-| `BAMBULAB_REDIRECT_URI`  | URI przekierowania OAuth BambuLab                           |
+See `.env.example` for a ready-to-copy template. Reference:
 
----
+| Variable                 | Description                                                          |
+| ------------------------- | --------------------------------------------------------------------- |
+| `DATABASE_URL`            | Pooled PostgreSQL connection (used by Prisma Client at runtime)      |
+| `DIRECT_URL`              | Direct (non-pooled) connection, used for `prisma db push`/migrations |
+| `AUTH_SECRET`             | **Required**, min. 32 chars — signs the session JWT (`openssl rand -base64 32`) |
+| `NEXTAUTH_SECRET`         | Alias of `AUTH_SECRET`, kept for Auth.js compatibility                |
+| `NEXTAUTH_URL`            | Base URL of the app                                                    |
+| `NEXT_PUBLIC_APP_URL`     | Public URL used in invite/reset links and email templates             |
+| `RESEND_API_KEY`          | Resend API key (invites, password resets, campaigns)                 |
+| `RESEND_FROM_EMAIL`       | Sender address for outgoing email                                     |
+| `DEPLOY_SCRIPT`           | Optional — absolute path to a deploy script the admin developer panel can trigger |
+| `PM2_OUT_LOG` / `PM2_ERR_LOG` | Optional — absolute paths to PM2 stdout/stderr logs shown in the developer panel |
+| `APP_LOG_DIR`             | Optional — directory for application log files (defaults to `./logs`) |
 
-## Uwierzytelnianie
-
-Logowanie korzysta z **własnego, lekkiego mechanizmu JWT** opartego o bibliotekę
-[`jose`](https://github.com/panva/jose) (algorytm **HS256**), a nie ze standardowego
-przepływu NextAuth/Auth.js (który domyślnie tworzy szyfrowany token JWE niekompatybilny
-z weryfikacją w edge-middleware).
-
-- **Logowanie** — formularz wysyła `POST /api/auth/login`. Endpoint weryfikuje hasło
-  (`bcrypt.compare`), podpisuje token HS256 (payload: `id`, `username`, `role` — bez
-  danych wrażliwych, bo token jest jedynie podpisany, nie szyfrowany) i ustawia cookie
-  `authjs.session-token` (`httpOnly`, `sameSite=lax`, `secure` przy HTTPS, ważność 30 dni).
-- **Ochrona tras** — `src/middleware.ts` weryfikuje token (`jwtVerify`) przy każdym żądaniu;
-  przekierowuje niezalogowanych na `/login`, a trasy `/admin/*` wymagają roli `ADMIN`.
-- **Odczyt sesji po stronie serwera** — `auth()` z `src/lib/auth.ts`; `encode`/`decode`
-  NextAuth są nadpisane na ten sam format HS256, aby format tokenu był spójny wszędzie.
-- **Sekret** — `AUTH_SECRET` jest **wymagany** (min. 32 znaki); jego brak zatrzymuje
-  aplikację na starcie (`src/lib/auth-secret.ts`) — bez cichego fallbacku.
-- **Ochrona przed brute-force** — `POST /api/auth/login` ma rate limiting per IP
-  (`src/lib/rate-limit.ts`).
-- Avatar użytkownika (base64) **nie** jest zapisywany w tokenie — jest dociągany z bazy
-  przy budowaniu sesji (token musi zmieścić się w limicie ~4 KB cookie).
+`AUTH_SECRET` is validated at import time (`src/lib/auth-secret.ts`) — the app
+refuses to start (including at build time, since `middleware.ts` imports it)
+if it is missing or shorter than 32 characters.
 
 ---
 
-## Przepływ zaproszeń
+## Database migrations
 
-1. Administrator w `/admin/users` klika **„Dodaj użytkownika"** i podaje e-mail.
-2. System tworzy rekord `User` z losowym `inviteToken` (32 znaki hex) oraz `inviteExpires` (ważność 7 dni).
-3. Resend wysyła e-mail z linkiem: `…/set-password?token=xxx`.
-4. Użytkownik otwiera link, ustawia **nazwę użytkownika** i **hasło**.
-5. Token zostaje wyczyszczony, `emailVerified` ustawione — konto jest aktywne.
+The schema in `prisma/schema.prisma` is the source of truth, applied with:
 
-> **Uwaga:** pole „Nazwa użytkownika" na stronie ustawiania hasła to login wyświetlany na platformie, nie adres e-mail. E-mail jest już przypisany do konta przez administratora.
-
----
-
-## Migracje bazy danych
-
-Projekt korzysta z **ręcznych migracji SQL** uruchamianych w Supabase SQL Editor
-(bez Prisma CLI `migrate`).
-
-### 1. Migracja podstawowa (wymagana przed deploymentem)
-
-Uruchom plik `prisma/migrations-manual.sql` w Supabase SQL Editor:
-
-```sql
--- Dodaje kolumnę lastActiveAt do tabeli User
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastActiveAt" TIMESTAMP(3);
-
--- Tworzy tabelę WikiArticle
-CREATE TABLE IF NOT EXISTS "WikiArticle" ( ... );
+```bash
+npm run db:push
 ```
 
-### 2. Struktura kursu (opcjonalna)
+Older one-off manual SQL scripts (applied directly against Supabase before the
+project settled on `prisma db push`) live in `prisma/sql-archive/` — kept for
+historical reference only, not part of the build or deploy process.
 
-Uruchom plik `prisma/course-structure.sql` w Supabase SQL Editor, aby wstawić
-16 modułów i 108 lekcji kursu druku 3D do tabel `Chapter` i `Lesson`.
+`prisma/migrations-forms-email.sql` is a manual, idempotent SQL equivalent of
+the Forms/Email-campaign schema additions, for environments that prefer
+running a plain SQL script over `prisma db push`. Run it once against the
+production database, then it can be moved into `sql-archive/`.
 
 ---
 
-## Import CSV
+## Authentication
 
-Plik CSV powinien zawierać kolumnę `email` (wymagana) oraz opcjonalnie `role`
-(`ADMIN` lub `STUDENT`, domyślnie `STUDENT`). Przykład:
+Login uses a **custom, lightweight JWT** signed with
+[`jose`](https://github.com/panva/jose) (HS256) rather than Auth.js's default
+encrypted JWE flow, which isn't easily verifiable from edge middleware.
+
+- **Login** — the form posts to `POST /api/auth/login`. The handler verifies
+  the password (`bcrypt.compare`), signs an HS256 token (payload: `id`,
+  `username`, `role` — no sensitive data, since the token is signed but not
+  encrypted) and sets an `authjs.session-token` cookie (`httpOnly`,
+  `sameSite=lax`, `secure` over HTTPS, 30-day expiry).
+- **Route protection** — `src/middleware.ts` verifies the token
+  (`jwtVerify`) on every request, redirects unauthenticated users to
+  `/login`, and requires the `ADMIN` role for `/admin/*` routes. Paths under
+  `/strony/` bypass this check (public static pages).
+- **Server-side session** — `auth()` in `src/lib/auth.ts`; Auth.js's
+  `encode`/`decode` are overridden to the same HS256 format so tokens are
+  consistent everywhere.
+- **Secret** — `AUTH_SECRET` is required (min. 32 chars); its absence stops
+  the app at import time (`src/lib/auth-secret.ts`), with no silent fallback.
+- **Brute-force protection** — `POST /api/auth/login` is rate-limited per IP
+  (`src/lib/rate-limit.ts`).
+- The user's avatar (base64) is **not** stored in the token — it's fetched
+  from the database when building the session, keeping the cookie under the
+  ~4KB browser limit.
+
+---
+
+## Invite flow
+
+1. An admin clicks **"Dodaj użytkownika"** in `/admin/users` and enters an email.
+2. The system creates a `User` record with a random `inviteToken` (32 hex
+   chars) and `inviteExpires` (7-day validity).
+3. Resend sends an email with a link: `…/set-password?token=xxx`.
+4. The user opens the link and sets their **username** and **password**.
+5. The token is cleared and `emailVerified` is set — the account is active.
+
+> The "Nazwa użytkownika" field on the set-password page is the login name
+> shown across the platform, not the email address — the email is already
+> attached to the account by the admin.
+
+---
+
+## CSV import
+
+The CSV file should have an `email` column (required) and an optional `role`
+column (`ADMIN` or `STUDENT`, default `STUDENT`):
 
 ```csv
 email,role
-kursant1@przyklad.pl,STUDENT
-kursant2@przyklad.pl
-nowy.admin@przyklad.pl,ADMIN
+student1@example.com,STUDENT
+student2@example.com
+new.admin@example.com,ADMIN
 ```
 
-Każde nowo utworzone konto automatycznie otrzymuje zaproszenie e-mail. Istniejące
-adresy są pomijane, a podsumowanie (utworzone / pominięte / błędy) jest wyświetlane po imporcie.
+Every newly created account automatically receives an invite email. Existing
+addresses are skipped, and a summary (created / skipped / errors) is shown
+after the import.
 
 ---
 
-## Poradnik: synchronizacja kursora z filmem
+## Video timestamps
 
-Platforma obsługuje **znaczniki czasu** (`timestamps`) w lekcjach, które
-automatycznie synchronizują treść tekstową lekcji z pozycją odtwarzacza wideo.
-Dzięki temu, gdy kursant przewija wideo lub klika znacznik, kursor w dokumencie
-przesuwa się do odpowiedniego fragmentu.
+Lessons support a `timestamps` JSON field that keeps the lesson text
+synchronized with the video player's playback position.
 
-### Jak to działa
+### How it works
 
-Każda lekcja może mieć pole `timestamps` w formacie JSON — tablicę obiektów
-z sekundą i kotwicą:
+Each lesson can have a `timestamps` array of `{ seconds, anchor }` objects:
 
 ```json
 [
@@ -297,37 +299,48 @@ z sekundą i kotwicą:
 ]
 ```
 
-### Jak dodać znaczniki do lekcji
+### Adding timestamps to a lesson
 
-1. Otwórz panel admina: `/admin/chapters` → wybierz rozdział → kliknij lekcję.
-2. W polu **„Znaczniki czasu (JSON)"** wpisz tablicę znaczników (przykład powyżej).
-3. W polu **„Treść lekcji"** (Tiptap) dodaj nagłówki lub sekcje z identyfikatorami
-   HTML pasującymi do `anchor`, np.:
-   ```html
-   <h2 id="pierwsze-warstwy">Pierwsze warstwy</h2>
-   ```
-4. Zapisz lekcję.
+1. Open `/admin/chapters` → pick a chapter → click a lesson.
+2. In **"Znaczniki czasu (JSON)"**, enter the array shown above.
+3. In the lesson content editor, add headings/sections with matching HTML
+   `id`s, e.g. `<h2 id="pierwsze-warstwy">Pierwsze warstwy</h2>`.
+4. Save the lesson.
 
-### Działanie po stronie kursanta
+### Student-facing behavior
 
-- **Kliknięcie znacznika czasu** w liście pod wideo → odtwarzacz skacze do danej sekundy
-  i treść lekcji przewija się do kotwicy `anchor`.
-- **Przewijanie wideo** → co sekundę sprawdzany jest aktualny czas; gdy przekroczy
-  próg kolejnego znacznika, treść lekcji automatycznie przewija się do odpowiedniej sekcji
-  (a aktywny znacznik jest podświetlony).
+- Clicking a timestamp in the list under the video seeks the player to that
+  second and scrolls the lesson content to the matching anchor.
+- While the video plays, the current time is checked; crossing a timestamp
+  threshold auto-scrolls the lesson content to the matching section and
+  highlights the active timestamp.
 
-### Przykład kompletnego layoutu lekcji
+---
 
+## Popularity ranking
+
+Posts (`?sort=popular`, the default) and top-level comments are ranked with a
+**Wilson score lower bound** on the upvote/downvote ratio, blended with a
+small activity bonus and a time-decay factor so that older content doesn't
+permanently dominate the feed:
+
+```ts
+function wilsonScore(up: number, down: number): number {
+  const n = up + down;
+  if (n === 0) return 0;
+  const z = 1.96; // 95% confidence
+  const p = up / n;
+  return (p + (z * z) / (2 * n) - z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n)) / (1 + (z * z) / n);
+}
+
+function postScore(up: number, down: number, commentCount: number, createdAt: Date): number {
+  const ageHours = (Date.now() - createdAt.getTime()) / 3_600_000;
+  const activityBonus = Math.log1p(commentCount) * 0.15;
+  const decayFactor = 1 / Math.pow(ageHours + 2, 0.8);
+  return (wilsonScore(up, down) + activityBonus) * decayFactor;
+}
 ```
-┌─────────────────────────────────────────────┐
-│              Odtwarzacz wideo                │
-├──────────────────┬──────────────────────────┤
-│  Znaczniki czasu │  Treść lekcji            │
-│  0:00 Wstęp     │  <h2 id="wstep">Wstęp    │
-│  0:45 Warstwy ◀ │  ...                      │
-│  2:00 Kalibracja│  <h2 id="warstwy">...     │
-└──────────────────┴──────────────────────────┘
-```
 
-Strzałka `◀` oznacza aktualnie aktywny znacznik (podświetlony na podstawie
-pozycji wideo).
+`?sort=new` falls back to plain chronological, cursor-based pagination —
+popularity sort uses page-number pagination instead, since the ranking order
+shifts as votes/comments come in.

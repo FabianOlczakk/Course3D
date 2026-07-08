@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Plus, Send, Mail, Trash2, X, AlertCircle, CheckCircle, Loader2, Clock } from "lucide-react";
+import { Plus, Send, Mail, Trash2, X, AlertCircle, CheckCircle, Loader2, Clock, RefreshCw } from "lucide-react";
 
 type RecipientType = "ALL" | "NEWSLETTER" | "SPECIFIC";
 type CampaignStatus = "DRAFT" | "SENDING" | "SENT" | "FAILED";
@@ -128,9 +128,21 @@ export function EmailCampaignManager() {
     await load();
   }
 
+  function handleResend(c: Campaign) {
+    setError(null);
+    setSuccessMsg(null);
+    setCurrentCampaignId(null); // resending always creates a new campaign, never edits the sent one
+    setSubject(c.subject);
+    setContent(c.content);
+    setRecipientType(c.recipientType);
+    setSpecificEmails((c.specificEmails ?? []).join("\n"));
+    setTestEmail("");
+    setComposing(true);
+  }
+
   if (composing) {
     return (
-      <div className="space-y-4 max-w-2xl">
+      <div className="mx-auto max-w-2xl space-y-4 p-6 md:p-8">
         <div className="flex items-center gap-3">
           <button onClick={() => { setComposing(false); resetCompose(); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">← Wróć</button>
           <h2 className="font-display text-lg font-semibold text-[var(--text-primary)]">Nowa kampania e-mail</h2>
@@ -188,10 +200,13 @@ export function EmailCampaignManager() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4 p-6 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-semibold text-[var(--text-primary)]">Email</h1>
+          <div className="flex items-center gap-3">
+            <Mail className="h-5 w-5 text-[var(--accent)]" />
+            <h1 className="font-display text-[20px] font-semibold text-[var(--text-primary)]">Email</h1>
+          </div>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">Wysyłaj kampanie e-mail do kursantów</p>
         </div>
         <button onClick={() => setComposing(true)} className="flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
@@ -235,11 +250,16 @@ export function EmailCampaignManager() {
                     {c.sentAt ? new Date(c.sentAt).toLocaleString("pl") : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {c.status !== "SENT" && (
-                      <button onClick={() => handleDelete(c.id)} className="rounded-md p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--bg-elevated)]" title="Usuń">
-                        <Trash2 className="h-4 w-4" />
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleResend(c)} className="rounded-md p-1.5 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--bg-elevated)]" title="Wyślij ponownie">
+                        <RefreshCw className="h-4 w-4" />
                       </button>
-                    )}
+                      {c.status !== "SENT" && (
+                        <button onClick={() => handleDelete(c.id)} className="rounded-md p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--bg-elevated)]" title="Usuń">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
