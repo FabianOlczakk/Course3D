@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Eye, EyeOff, Activity } from "lucide-react";
+import { Loader2, Eye, EyeOff, Activity, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PrivacyFormProps {
   initialProgressPrivate: boolean;
   initialActivityPrivate: boolean;
+  initialNewsletterConsent: boolean;
 }
 
-export function PrivacyForm({ initialProgressPrivate, initialActivityPrivate }: PrivacyFormProps) {
+export function PrivacyForm({ initialProgressPrivate, initialActivityPrivate, initialNewsletterConsent }: PrivacyFormProps) {
   const [progressPrivate, setProgressPrivate] = useState(initialProgressPrivate);
   const [activityPrivate, setActivityPrivate] = useState(initialActivityPrivate);
+  const [newsletterConsent, setNewsletterConsent] = useState(initialNewsletterConsent);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function PrivacyForm({ initialProgressPrivate, initialActivityPrivate }: 
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progressPrivate, activityPrivate }),
+        body: JSON.stringify({ progressPrivate, activityPrivate, newsletterConsent }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Nie udało się zapisać."); return; }
@@ -86,6 +88,15 @@ export function PrivacyForm({ initialProgressPrivate, initialActivityPrivate }: 
           description={activityPrivate
             ? "Inni kursanci nie widzą czy jesteś online. Administratorzy zawsze widzą status."
             : "Twój status aktywności (Aktywny teraz) jest widoczny dla innych kursantów."}
+        />
+        <Toggle
+          value={newsletterConsent}
+          onChange={setNewsletterConsent}
+          icon={<Mail className="h-5 w-5" />}
+          title="Newsletter"
+          description={newsletterConsent
+            ? "Otrzymujesz wiadomości e-mail z aktualizacjami i ogłoszeniami kursu."
+            : "Wypisałeś się z newslettera. Nadal będziesz otrzymywać e-maile systemowe (reset hasła itp.)."}
         />
       </div>
 

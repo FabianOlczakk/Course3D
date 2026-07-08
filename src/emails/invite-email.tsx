@@ -58,6 +58,9 @@ export function InviteEmail({ inviteUrl }: InviteEmailProps) {
             wiadomości, zignoruj ją.
           </Text>
           <Text style={footer}>— Interaktywny Kurs Druku 3D</Text>
+          <Text style={unsubscribe}>
+            <a href={`${APP_URL}/profile`} style={{ color: "#94a3b8" }}>Wypisz się z newslettera</a> · <a href={APP_URL} style={{ color: "#94a3b8" }}>kurs.magbase.pl</a>
+          </Text>
         </Container>
       </Body>
     </Html>
@@ -113,4 +116,11 @@ const footer: React.CSSProperties = {
   fontSize: "12px",
   color: "#94a3b8",
   marginTop: "16px",
+};
+
+const unsubscribe: React.CSSProperties = {
+  fontSize: "11px",
+  color: "#94a3b8",
+  marginTop: "8px",
+  textAlign: "center",
 };

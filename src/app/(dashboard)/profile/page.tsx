@@ -11,7 +11,7 @@ export default async function ProfilePage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { username: true, avatarUrl: true, email: true, progressPrivate: true, activityPrivate: true },
+    select: { username: true, avatarUrl: true, email: true, progressPrivate: true, activityPrivate: true, newsletterConsent: true },
   });
 
   if (!user) redirect("/login");
@@ -31,7 +31,7 @@ export default async function ProfilePage() {
         email={user.email}
       />
       <ChangePasswordForm />
-      <PrivacyForm initialProgressPrivate={user.progressPrivate ?? false} initialActivityPrivate={user.activityPrivate ?? false} />
+      <PrivacyForm initialProgressPrivate={user.progressPrivate ?? false} initialActivityPrivate={user.activityPrivate ?? false} initialNewsletterConsent={user.newsletterConsent ?? true} />
     </div>
   );
 }

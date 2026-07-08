@@ -8,6 +8,7 @@ const patchSchema = z.object({
   avatarUrl: z.string().max(3_000_000).nullable().optional(),
   progressPrivate: z.boolean().optional(),
   activityPrivate: z.boolean().optional(),
+  newsletterConsent: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -36,6 +37,7 @@ export async function PATCH(req: Request) {
   if (parsed.data.avatarUrl !== undefined) data.avatarUrl = parsed.data.avatarUrl;
   if (parsed.data.progressPrivate !== undefined) data.progressPrivate = parsed.data.progressPrivate;
   if (parsed.data.activityPrivate !== undefined) data.activityPrivate = parsed.data.activityPrivate;
+  if (parsed.data.newsletterConsent !== undefined) data.newsletterConsent = parsed.data.newsletterConsent;
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Brak zmian." }, { status: 400 });
