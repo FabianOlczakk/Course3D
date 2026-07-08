@@ -378,7 +378,7 @@ export function Sidebar({
             draggable={false}
           />
           <span className="truncate font-display text-[13.5px] font-semibold text-[var(--text-primary)]">
-            Interaktywny kurs 3D
+            Interaktywny kurs druku 3D
           </span>
         </Link>
         {onMobileClose && (

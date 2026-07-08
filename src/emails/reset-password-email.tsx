@@ -36,7 +36,7 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
               style={{ display: "inline-block", verticalAlign: "middle" }}
             />
             <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: "10px", fontSize: "18px", fontWeight: 600, color: "#0f172a" }}>
-              Interaktywny kurs 3D
+              Interaktywny kurs druku 3D
             </span>
           </Section>
           <Text style={heading}>Reset hasła</Text>

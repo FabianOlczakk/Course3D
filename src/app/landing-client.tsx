@@ -267,7 +267,7 @@ export function LandingClient() {
           <a href="#top" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <img src="/logo.png" alt="Interaktywny Kurs Druku 3D" style={{ height: 36, width: "auto" }} draggable={false} />
             <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17, color: "#fff" }}>
-              Interaktywny kurs 3D
+              Interaktywny kurs druku 3D
             </span>
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>

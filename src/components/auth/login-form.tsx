@@ -38,7 +38,7 @@ export function LoginForm() {
             draggable={false}
           />
           <span className="font-display text-lg font-semibold text-[var(--text-primary)]">
-            Interaktywny kurs 3D
+            Interaktywny kurs druku 3D
           </span>
         </div>
         <CardDescription>
