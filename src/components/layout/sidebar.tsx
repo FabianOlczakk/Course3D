@@ -370,13 +370,16 @@ export function Sidebar({
     <>
       {/* HEADER — branding bez ikony (wysokość = topbar, aby border się równał) */}
       <div className="flex h-14 items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-[18px]">
-        <Link href="/dashboard" onClick={onMobileClose} className="min-w-0">
+        <Link href="/dashboard" onClick={onMobileClose} className="flex min-w-0 items-center gap-2">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="Interaktywny Kurs Druku 3D"
-            className="h-7 w-auto max-w-[160px] object-contain"
+            className="h-7 w-auto shrink-0 object-contain"
             draggable={false}
           />
+          <span className="truncate font-display text-[13.5px] font-semibold text-[var(--text-primary)]">
+            Interaktywny kurs 3D
+          </span>
         </Link>
         {onMobileClose && (
           <button

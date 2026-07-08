@@ -35,18 +35,25 @@ function useCountdown(target: Date) {
 
 const SG = "var(--font-space-grotesk), system-ui, sans-serif";
 
-// ── Scroll-linked Frame Sequence (stays in place, scrubs with page scroll) ──
+// ── Scroll-linked Frame Sequence ─────────────────────────────────────────────
+// Pinned in the middle of the viewport (position: sticky) for the length of a
+// tall scroll track; page scroll only advances past this section once every
+// frame has been scrubbed through, so the animation always finishes centered
+// before normal scrolling continues.
 function ScrollLinkedFrameSequence({
   startFrame = 8,
   endFrame = 74,
   basePath = "/sequence",
+  trackVh = 280,
 }: {
   startFrame?: number;
   endFrame?: number;
   basePath?: string;
+  trackVh?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const frameCount = endFrame - startFrame + 1;
@@ -71,12 +78,13 @@ function ScrollLinkedFrameSequence({
     imagesRef.current = images;
   }, [startFrame, endFrame, basePath, frameCount]);
 
-  // Rysowanie klatki na podstawie pozycji scrolla
+  // Rysowanie klatki na podstawie postępu przewijania długiego toru (nie samej pozycji elementu)
   useEffect(() => {
     if (!imagesLoaded) return;
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+    const wrapper = wrapperRef.current;
+    const sticky = stickyRef.current;
+    if (!canvas || !wrapper || !sticky) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -102,22 +110,22 @@ function ScrollLinkedFrameSequence({
     }
 
     function render() {
-      if (!container || !canvas) return;
-      const rect = container.getBoundingClientRect();
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      // progres: 0 gdy kontener wchodzi od dołu ekranu, 1 gdy wychodzi górą
-      const progress = Math.min(
-        Math.max((viewportHeight - rect.top) / (viewportHeight + rect.height), 0),
-        1
-      );
+      const scrollableDistance = wrapper.offsetHeight - viewportHeight;
+      const scrolled = -rect.top;
+      const progress = scrollableDistance > 0
+        ? Math.min(Math.max(scrolled / scrollableDistance, 0), 1)
+        : 0;
       const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
       drawFrame(frameIndex);
     }
 
     function resize() {
-      if (!canvas || !container) return;
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+      if (!canvas || !sticky) return;
+      canvas.width = sticky.clientWidth;
+      canvas.height = sticky.clientHeight;
       render();
     }
 
@@ -132,13 +140,20 @@ function ScrollLinkedFrameSequence({
   }, [imagesLoaded, frameCount]);
 
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
-      {!imagesLoaded && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#3a3a3a", fontSize: 14 }}>
-          Ładowanie animacji…
+    <div ref={wrapperRef} style={{ position: "relative", height: `${trackVh}vh` }}>
+      <div
+        ref={stickyRef}
+        style={{ position: "sticky", top: 0, height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <div style={{ width: "min(760px, 90vw)", height: "min(64vh, 480px)", border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden", background: "#141414", position: "relative" }}>
+          <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+          {!imagesLoaded && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#3a3a3a", fontSize: 14 }}>
+              Ładowanie animacji…
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -270,8 +285,11 @@ export function LandingClient() {
       {/* ── NAV ─────────────────────────────────────────────────────────── */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(22,22,22,0.95)", backdropFilter: "blur(8px)", borderBottom: "2px solid #000" }}>
         <div style={{ ...s.maxW, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <a href="#top" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-            <img src="/logo.png" alt="Interaktywny Kurs Druku 3D" style={{ height: 36, width: "auto" }} draggable={false} />
+          <a href="#top" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <img src="/logo.svg" alt="Interaktywny Kurs Druku 3D" style={{ height: 36, width: "auto" }} draggable={false} />
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 17, color: "#fff" }}>
+              Interaktywny kurs 3D
+            </span>
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {[["#co-dostajesz", "Co dostajesz"], ["#platforma", "Platforma"], ["#o-mnie", "O mnie"], ["#cennik", "Cennik"], ["#firmy", "Dla firm"], ["#faq", "FAQ"]].map(([href, label]) => (
@@ -466,33 +484,27 @@ export function LandingClient() {
               <p style={{ fontSize: 17, fontWeight: 500, margin: 0, lineHeight: 1.5, color: "#8a8a8a" }}>Nowoczesna platforma edukacyjna z narzędziami, które realnie wspierają naukę — lekcje, quizy, społeczność i postępy w jednym panelu.</p>
             </div>
           </FadeUp>
-          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 26, marginTop: 40, alignItems: "center" }}>
-            <FadeUp>
-              <div style={{ width: "100%", height: 340, border: "2px solid #000", borderRadius: 16, boxShadow: "8px 8px 0 #000", overflow: "hidden", background: "#141414" }}>
-                <ScrollLinkedFrameSequence startFrame={8} endFrame={74} basePath="/sequence" />
-              </div>
-            </FadeUp>
-            <FadeUp delay={0.1}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {[
-                  { color: "#9d6bff", icon: "M5 3l14 9-14 9V3Z", title: "Lekcje wideo z timestampami", desc: "Przeskakuj do konkretnych fragmentów i ucz się we własnym tempie." },
-                  { color: "#3ecf8e", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Quizy i śledzenie postępów", desc: "Sprawdzaj wiedzę i obserwuj drogę do certyfikatu." },
-                  { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum, wiki i wiadomości", desc: "Społeczność, baza wiedzy i bezpośredni kontakt z prowadzącymi." },
-                ].map((item) => (
-                  <div key={item.title} style={{ display: "flex", gap: 13, alignItems: "flex-start", background: "#1e1e1e", border: "2px solid #000", borderRadius: 12, padding: 16 }}>
-                    <div style={{ display: "grid", placeItems: "center", width: 38, height: 38, flex: "none", background: item.color, border: "2px solid #000", borderRadius: 9, color: "#161616" }}>
-                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
-                    </div>
-                    <div>
-                      <div style={{ fontFamily: SG, fontWeight: 600, fontSize: 15, color: "#ededed" }}>{item.title}</div>
-                      <p style={{ margin: "3px 0 0", fontSize: 13, color: "#8a8a8a", lineHeight: 1.45 }}>{item.desc}</p>
-                    </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 40 }}>
+            {[
+              { color: "#9d6bff", icon: "M5 3l14 9-14 9V3Z", title: "Lekcje wideo z timestampami", desc: "Przeskakuj do konkretnych fragmentów i ucz się we własnym tempie." },
+              { color: "#3ecf8e", icon: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", title: "Quizy i śledzenie postępów", desc: "Sprawdzaj wiedzę i obserwuj drogę do certyfikatu." },
+              { color: "#5b8def", icon: "M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5Z", title: "Forum, wiki i wiadomości", desc: "Społeczność, baza wiedzy i bezpośredni kontakt z prowadzącymi." },
+            ].map((item, i) => (
+              <FadeUp key={item.title} delay={i * 0.08}>
+                <div style={{ display: "flex", gap: 13, alignItems: "flex-start", background: "#1e1e1e", border: "2px solid #000", borderRadius: 12, padding: 16, height: "100%" }}>
+                  <div style={{ display: "grid", placeItems: "center", width: 38, height: 38, flex: "none", background: item.color, border: "2px solid #000", borderRadius: 9, color: "#161616" }}>
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
                   </div>
-                ))}
-              </div>
-            </FadeUp>
+                  <div>
+                    <div style={{ fontFamily: SG, fontWeight: 600, fontSize: 15, color: "#ededed" }}>{item.title}</div>
+                    <p style={{ margin: "3px 0 0", fontSize: 13, color: "#8a8a8a", lineHeight: 1.45 }}>{item.desc}</p>
+                  </div>
+                </div>
+              </FadeUp>
+            ))}
           </div>
         </div>
+        <ScrollLinkedFrameSequence startFrame={8} endFrame={74} basePath="/sequence" />
       </section>
 
       {/* ── ABOUT ME ────────────────────────────────────────────────────── */}

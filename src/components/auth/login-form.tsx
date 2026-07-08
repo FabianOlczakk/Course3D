@@ -30,13 +30,16 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader className="space-y-3 text-center">
-        <div className="flex justify-center">
+        <div className="flex items-center justify-center gap-2.5">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="Interaktywny Kurs Druku 3D"
             className="h-10 w-auto"
             draggable={false}
           />
+          <span className="font-display text-lg font-semibold text-[var(--text-primary)]">
+            Interaktywny kurs 3D
+          </span>
         </div>
         <CardDescription>
           Zaloguj się do platformy

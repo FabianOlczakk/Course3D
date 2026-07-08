@@ -29,11 +29,15 @@ export function ResetPasswordEmail({ resetUrl }: ResetPasswordEmailProps) {
         <Container style={container}>
           <Section style={{ textAlign: "center", marginBottom: "24px" }}>
             <Img
-              src={`${APP_URL}/logo.png`}
+              src={`${APP_URL}/logo.svg`}
               alt="Interaktywny Kurs Druku 3D"
-              width="280"
-              height="auto"
+              width="48"
+              height="48"
+              style={{ display: "inline-block", verticalAlign: "middle" }}
             />
+            <span style={{ display: "inline-block", verticalAlign: "middle", marginLeft: "10px", fontSize: "18px", fontWeight: 600, color: "#0f172a" }}>
+              Interaktywny kurs 3D
+            </span>
           </Section>
           <Text style={heading}>Reset hasła</Text>
           <Text style={paragraph}>

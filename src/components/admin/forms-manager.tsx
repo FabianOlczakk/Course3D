@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Eye, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { StyledSelect } from "@/components/ui/styled-select";
 
 type QuestionType = "TEXT" | "TEXTAREA" | "NUMBER" | "CHECKBOX" | "RADIO";
 type FormVisibility = "ALL" | "ACTIVE" | "NEW";
@@ -100,9 +101,15 @@ export function FormsManager() {
         <div className="space-y-1"><label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Opis (opcjonalny)</label><textarea value={description} onChange={e => setDescription(e.target.value)} className="input w-full min-h-[72px] resize-y" placeholder="Krótki opis formularza..." /></div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1"><label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Widoczność</label>
-            <select value={visibility} onChange={e => setVisibility(e.target.value as FormVisibility)} className="input w-full">
-              <option value="ALL">Wszyscy zalogowani</option><option value="ACTIVE">Aktywni (przed datą)</option><option value="NEW">Nowi (po dacie)</option>
-            </select>
+            <StyledSelect
+              value={visibility}
+              onChange={(v) => setVisibility(v as FormVisibility)}
+              options={[
+                { value: "ALL", label: "Wszyscy zalogowani" },
+                { value: "ACTIVE", label: "Aktywni (przed datą)" },
+                { value: "NEW", label: "Nowi (po dacie)" },
+              ]}
+            />
           </div>
           <div className="space-y-1"><label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">Można pominąć</label>
             <button type="button" onClick={() => setAllowSkip(v => !v)} className={`input w-full text-left text-sm font-medium ${allowSkip ? "text-[var(--accent-soft)]" : "text-[var(--text-muted)]"}`}>{allowSkip ? "Tak — przycisk Pomiń widoczny" : "Nie — obowiązkowy"}</button>
@@ -122,9 +129,12 @@ export function FormsManager() {
               <button onClick={() => removeQuestion(idx)} className="shrink-0 text-[var(--text-muted)] hover:text-red-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <select value={q.type} onChange={e => { const t = e.target.value as QuestionType; updateQuestion(idx, { type: t, options: ["CHECKBOX","RADIO"].includes(t) ? [""] : undefined }); }} className="input text-sm">
-                {Object.entries(Q_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+              <StyledSelect
+                value={q.type}
+                onChange={(t) => updateQuestion(idx, { type: t as QuestionType, options: ["CHECKBOX", "RADIO"].includes(t) ? [""] : undefined })}
+                options={Object.entries(Q_LABELS).map(([v, l]) => ({ value: v, label: l }))}
+                className="w-56"
+              />
               <button type="button" onClick={() => updateQuestion(idx, { required: !q.required })} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${q.required ? "bg-[var(--accent-glow)] text-[var(--accent-soft)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>{q.required ? "Wymagane" : "Opcjonalne"}</button>
             </div>
             {(q.type === "CHECKBOX" || q.type === "RADIO") && (
