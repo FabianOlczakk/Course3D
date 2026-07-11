@@ -83,7 +83,7 @@ export interface Citation {
  * artykułu Wiki, pobiera jej treść, żeby model mógł od razu odpowiadać
  * na pytania o "tę lekcję" bez zgadywania, o co chodzi.
  */
-export async function getPageContext(pathname: string | undefined): Promise<string | null> {
+export async function getPageContext(pathname: string | null | undefined): Promise<string | null> {
   if (!pathname) return null;
 
   const lessonMatch = pathname.match(/^\/kurs\/([^/]+)/);

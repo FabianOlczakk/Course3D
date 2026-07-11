@@ -10,7 +10,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 const bodySchema = z.object({
   conversationId: z.string().optional(),
   message: z.string().min(1).max(8000),
-  page: z.string().max(500).optional(),
+  page: z.string().max(500).nullable().optional(),
 });
 
 const MAX_TOOL_ITERATIONS = 6;
