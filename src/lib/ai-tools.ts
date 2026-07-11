@@ -75,7 +75,14 @@ export interface Citation {
   type: "wiki" | "lesson" | "post";
   title: string;
   url: string;
-  excerpt: string;
+  /** Wiki: nazwa kategorii artykułu. */
+  category?: string | null;
+  /** Lekcja: nazwa rozdziału (modułu), do którego lekcja należy. */
+  chapterTitle?: string | null;
+  /** Post: nazwa kategorii (tag), autor i data publikacji. */
+  tag?: string | null;
+  author?: string | null;
+  createdAt?: string | null;
 }
 
 /**
@@ -200,15 +207,20 @@ export async function executeAiTool(
         ],
       },
       take: 5,
-      select: { title: true, slug: true, content: true },
+      select: { title: true, slug: true, content: true, category: true },
     });
     const results = articles.map((a) => {
       const plain = stripHtml(a.content);
-      const idx = plain.toLowerCase().indexOf(query.toLowerCase());
-      const excerpt = idx >= 0 ? plain.slice(Math.max(0, idx - 80), idx + 200) : plain.slice(0, 200);
-      const citation: Citation = { type: "wiki", title: a.title, url: `/wiki/${a.slug}`, excerpt: excerpt.trim() };
+      const citation: Citation = {
+        type: "wiki",
+        title: a.title,
+        url: `/wiki/${a.slug}`,
+        category: a.category,
+      };
       addCitation(citation);
-      return citation;
+      // Zwracamy modelowi krótki fragment treści (do syntezy odpowiedzi),
+      // ale NIE trafia on do widgetu-cytatu pokazywanego użytkownikowi.
+      return { title: a.title, category: a.category, url: citation.url, snippet: plain.slice(0, 300) };
     });
     return JSON.stringify({ results });
   }
@@ -223,17 +235,17 @@ export async function executeAiTool(
         ],
       },
       take: 5,
-      select: { id: true, title: true, description: true },
+      select: { id: true, title: true, description: true, chapter: { select: { title: true } } },
     });
     const results = lessons.map((l) => {
       const citation: Citation = {
         type: "lesson",
         title: l.title,
         url: `/kurs/${l.id}`,
-        excerpt: l.description ?? "",
+        chapterTitle: l.chapter.title,
       };
       addCitation(citation);
-      return { id: l.id, title: l.title, description: l.description, url: citation.url };
+      return { id: l.id, title: l.title, chapter: l.chapter.title, description: l.description, url: citation.url };
     });
     return JSON.stringify({ results });
   }
@@ -243,12 +255,12 @@ export async function executeAiTool(
     if (!lessonId) return JSON.stringify({ error: "Brak lessonId." });
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
-      select: { id: true, title: true, description: true, contentJson: true },
+      select: { id: true, title: true, description: true, contentJson: true, chapter: { select: { title: true } } },
     });
     if (!lesson) return JSON.stringify({ error: "Nie znaleziono lekcji." });
     const text = lesson.contentJson ? tiptapToText(lesson.contentJson).replace(/\s+/g, " ").trim() : "";
-    addCitation({ type: "lesson", title: lesson.title, url: `/kurs/${lesson.id}`, excerpt: lesson.description ?? "" });
-    return JSON.stringify({ title: lesson.title, content: text.slice(0, 6000) });
+    addCitation({ type: "lesson", title: lesson.title, url: `/kurs/${lesson.id}`, chapterTitle: lesson.chapter.title });
+    return JSON.stringify({ title: lesson.title, chapter: lesson.chapter.title, content: text.slice(0, 6000) });
   }
 
   if (name === "search_community_posts") {
@@ -257,19 +269,28 @@ export async function executeAiTool(
       where: { content: { contains: query, mode: "insensitive" } },
       take: 5,
       orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, content: true },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        author: { select: { username: true, email: true } },
+        category: { select: { name: true } },
+      },
     });
     const results = posts.map((p) => {
-      const idx = p.content.toLowerCase().indexOf(query.toLowerCase());
-      const excerpt = idx >= 0 ? p.content.slice(Math.max(0, idx - 80), idx + 200) : p.content.slice(0, 200);
+      const title = p.title ?? p.content.slice(0, 60);
+      const author = p.author.username ?? p.author.email;
       const citation: Citation = {
         type: "post",
-        title: p.title ?? p.content.slice(0, 60),
+        title,
         url: `/spolecznosc/${p.id}`,
-        excerpt: excerpt.trim(),
+        tag: p.category?.name ?? null,
+        author,
+        createdAt: p.createdAt.toISOString(),
       };
       addCitation(citation);
-      return citation;
+      return { title, author, category: p.category?.name ?? null, createdAt: citation.createdAt, snippet: p.content.slice(0, 300), url: citation.url };
     });
     return JSON.stringify({ results });
   }

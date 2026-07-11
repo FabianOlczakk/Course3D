@@ -12,7 +12,11 @@ interface Citation {
   type: "wiki" | "lesson" | "post";
   title: string;
   url: string;
-  excerpt: string;
+  category?: string | null;
+  chapterTitle?: string | null;
+  tag?: string | null;
+  author?: string | null;
+  createdAt?: string | null;
 }
 
 interface ChatMessage {
@@ -50,10 +54,17 @@ export function AiPanel() {
     if (!open) return;
     (async () => {
       try {
-        const res = await fetch("/api/ai/conversations");
-        if (res.ok) {
-          const d = await res.json();
+        const [convRes, tokensRes] = await Promise.all([
+          fetch("/api/ai/conversations"),
+          fetch("/api/ai/tokens"),
+        ]);
+        if (convRes.ok) {
+          const d = await convRes.json();
           setConversations(d.conversations ?? []);
+        }
+        if (tokensRes.ok) {
+          const d = await tokensRes.json();
+          setTokensRemaining(d.tokensRemaining ?? 0);
         }
       } catch {
         /* ignore */
@@ -243,7 +254,19 @@ export function AiPanel() {
                                 <span className="block font-medium text-[var(--text-primary)]">
                                   {CITATION_LABEL[c.type]}: {c.title}
                                 </span>
-                                {c.excerpt && <span className="line-clamp-2 text-[var(--text-muted)]">{c.excerpt}</span>}
+                                {c.type === "wiki" && c.category && (
+                                  <span className="text-[var(--text-muted)]">{c.category}</span>
+                                )}
+                                {c.type === "lesson" && c.chapterTitle && (
+                                  <span className="text-[var(--text-muted)]">{c.chapterTitle}</span>
+                                )}
+                                {c.type === "post" && (
+                                  <span className="text-[var(--text-muted)]">
+                                    {[c.tag, c.author, c.createdAt ? new Date(c.createdAt).toLocaleDateString("pl") : null]
+                                      .filter(Boolean)
+                                      .join(" · ")}
+                                  </span>
+                                )}
                               </span>
                             </a>
                           );

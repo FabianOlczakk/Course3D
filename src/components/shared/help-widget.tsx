@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { HelpCircle, X, Send, Loader2, CheckCircle2, Bug, LifeBuoy, Lightbulb, MoreHorizontal } from "lucide-react";
+import { useAiPanel } from "@/components/ai/ai-panel-context";
 
 type TicketType = "HELP" | "BUG" | "FEATURE" | "OTHER";
 
@@ -35,6 +36,8 @@ const TYPES: { key: TicketType; label: string; icon: React.ReactNode; desc: stri
 
 export function HelpWidget() {
   const pathname = usePathname();
+  const { open: aiOpen } = useAiPanel();
+  const sideOffset = aiOpen ? 380 + 24 : 24; // przesuń w lewo o szerokość otwartego panelu AI
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<TicketType>("HELP");
   const [message, setMessage] = useState("");
@@ -88,7 +91,8 @@ export function HelpWidget() {
         type="button"
         aria-label="Pomoc"
         onClick={open ? close : openWidget}
-        className={`fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-all ${
+        style={{ right: sideOffset }}
+        className={`fixed bottom-6 z-50 flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition-[right,background-color] duration-200 ${
           open
             ? "bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             : "bg-[var(--accent)] text-white hover:opacity-90"
@@ -99,7 +103,10 @@ export function HelpWidget() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 w-[340px] overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-2xl">
+        <div
+          style={{ right: sideOffset }}
+          className="fixed bottom-20 z-50 w-[340px] overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-2xl transition-[right] duration-200"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3">
             <span className="font-display text-[14px] font-semibold text-[var(--text-primary)]">
