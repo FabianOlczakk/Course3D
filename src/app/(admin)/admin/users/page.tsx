@@ -19,6 +19,7 @@ export default async function AdminUsersPage() {
       lastActiveAt: true,
       emailVerified: true,
       inviteToken: true,
+      aiTokens: true,
     },
   });
 

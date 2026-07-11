@@ -128,6 +128,9 @@ model User {
   formResponses     FormResponse[]
   emailCampaigns    EmailCampaign[] @relation("CreatedEmailCampaigns")
   newsletterConsent Boolean         @default(true)
+
+  // Asystent AI — pula tokenów ustawiana przez admina w /admin/users
+  aiTokens Int @default(50000)
 }
 
 model Account {

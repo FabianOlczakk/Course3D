@@ -8,6 +8,7 @@ const patchSchema = z.object({
   username: z.string().min(3).nullable().optional(),
   email: z.string().email("Nieprawidłowy adres e-mail.").optional(),
   avatarUrl: z.string().nullable().optional(),
+  aiTokens: z.number().int().min(0).max(100_000_000).optional(),
 });
 
 export async function PATCH(
@@ -52,7 +53,7 @@ export async function PATCH(
     const user = await prisma.user.update({
       where: { id: params.id },
       data,
-      select: { id: true, role: true, username: true, email: true, avatarUrl: true },
+      select: { id: true, role: true, username: true, email: true, avatarUrl: true, aiTokens: true },
     });
     return NextResponse.json({ user });
   } catch (e) {

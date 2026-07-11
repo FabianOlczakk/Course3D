@@ -80,6 +80,30 @@ Polish and is deployed at [kurs.magbase.pl](https://kurs.magbase.pl).
 - `/profil/[userId]` — avatar, online status, course progress, recent posts
 - Admin actions on another user's profile: change role, force password reset
 
+### AI assistant (`/ai`)
+- A chat UI (`src/components/ai/ai-chat.tsx`) backed by `POST /api/ai/chat`, which calls Claude
+  (`@anthropic-ai/sdk`, model in `src/lib/anthropic.ts`) with a hardened system prompt
+  (`src/lib/ai-system-prompt.ts`) that keeps the assistant on-topic (3D printing / the course)
+  and resistant to prompt injection / role-override attempts from the chat itself.
+- **Read-only, narrowly-scoped tools instead of raw DB access.** The model does *not* get a SQL
+  or "query the whole database" tool. `src/lib/ai-tools.ts` defines four Prisma-backed tools —
+  `search_wiki`, `search_lessons`, `get_lesson_content`, `search_community_posts` — that only ever
+  touch public course content (Wiki articles, lessons, forum posts). The `User` table, private
+  messages, support tickets and every other admin-only model are simply not reachable from any
+  tool. This matters because a chat model's tool calls can be influenced by attacker-crafted text
+  in the conversation (prompt injection); the mitigation is to make the blast radius of any tool
+  call bounded by construction, not to rely on the model "behaving" per the system prompt alone.
+- Each tool call's results are collected as **citations** (title + URL + excerpt) and returned to
+  the client alongside the assistant's text reply; the chat UI renders them as clickable "widget"
+  cards linking straight to the source lesson/wiki article/post — e.g. asking about "wet filament"
+  surfaces a link to the Wiki article or lesson that already explains it.
+- **Per-user token budget.** `User.aiTokens` (default 50 000) is decremented by the actual
+  `input_tokens + output_tokens` reported by the Anthropic API for every request (including any
+  tool-use round trips). Admins set/adjust it per user from `/admin/users` → edit user → "Tokeny
+  AI". Once a user's balance hits 0, `/api/ai/chat` returns 403 and the chat UI disables the input.
+- Requires `ANTHROPIC_API_KEY` (see [Environment variables](#environment-variables)); without it
+  the endpoint returns 503 rather than silently failing.
+
 ---
 
 ## Tech stack
@@ -191,6 +215,7 @@ See `.env.example` for a ready-to-copy template. Reference:
 | `NEXT_PUBLIC_APP_URL`     | Public URL used in invite/reset links and email templates             |
 | `RESEND_API_KEY`          | Resend API key (invites, password resets, campaigns)                 |
 | `RESEND_FROM_EMAIL`       | Sender address for outgoing email                                     |
+| `ANTHROPIC_API_KEY`       | Claude API key powering the `/ai` assistant; without it `/api/ai/chat` returns 503 |
 | `DEPLOY_SCRIPT`           | Optional — absolute path to a deploy script the admin developer panel can trigger |
 | `PM2_OUT_LOG` / `PM2_ERR_LOG` | Optional — absolute paths to PM2 stdout/stderr logs shown in the developer panel |
 | `APP_LOG_DIR`             | Optional — directory for application log files (defaults to `./logs`) |
@@ -213,10 +238,11 @@ Older one-off manual SQL scripts (applied directly against Supabase before the
 project settled on `prisma db push`) live in `prisma/sql-archive/` — kept for
 historical reference only, not part of the build or deploy process.
 
-`prisma/migrations-forms-email.sql` is a manual, idempotent SQL equivalent of
-the Forms/Email-campaign schema additions, for environments that prefer
-running a plain SQL script over `prisma db push`. Run it once against the
-production database, then it can be moved into `sql-archive/`.
+`prisma/migrations-forms-email.sql` and `prisma/migrations-ai-chat.sql` are
+manual, idempotent SQL equivalents of the Forms/Email-campaign and AI-assistant
+schema additions, for environments that prefer running a plain SQL script over
+`prisma db push`. Run each once against the production database, then it can
+be moved into `sql-archive/`.
 
 ---
 

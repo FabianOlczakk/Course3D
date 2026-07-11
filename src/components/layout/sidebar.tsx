@@ -22,6 +22,7 @@ import {
   FileText,
   Star,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -398,6 +399,7 @@ export function Sidebar({
         {groupLabel("Platforma")}
         <div className="space-y-[1px]">
           {linkButton("pulpit", "Pulpit", Home, "/dashboard")}
+          {linkButton("ai", "AI", Sparkles, "/ai")}
           {linkButton("spol", "Społeczność", MessageCircle, "/spolecznosc")}
 
           {/* Ogłoszenia — pełna strona */}

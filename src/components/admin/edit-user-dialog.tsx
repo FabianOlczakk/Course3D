@@ -36,6 +36,7 @@ export function EditUserDialog({
   const [email, setEmail] = useState(user.email);
   const [role, setRole] = useState<string>(user.role);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarUrl);
+  const [aiTokens, setAiTokens] = useState<string>(String(user.aiTokens));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resetInfo, setResetInfo] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export function EditUserDialog({
         email,
         role,
         avatarUrl,
+        aiTokens: Math.max(0, Number(aiTokens) || 0),
       }),
     });
     const data = await res.json();
@@ -137,6 +139,20 @@ export function EditUserDialog({
                 </Button>
               )}
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-ai-tokens">Tokeny AI</Label>
+            <Input
+              id="edit-ai-tokens"
+              type="number"
+              min={0}
+              value={aiTokens}
+              onChange={(e) => setAiTokens(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Pula tokenów zużywanych przy rozmowie z asystentem AI. Po wyczerpaniu użytkownik nie może wysyłać
+              nowych wiadomości.
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Rola</Label>

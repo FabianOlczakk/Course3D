@@ -9,4 +9,5 @@ export interface AdminUser {
   createdAt: string;
   lastActiveAt: string | null;
   pending: boolean;
+  aiTokens: number;
 }
