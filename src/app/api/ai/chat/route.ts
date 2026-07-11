@@ -8,7 +8,7 @@ import { AI_TOOLS, executeAiTool, getPlatformIndex, getPageContext, type Citatio
 import type Anthropic from "@anthropic-ai/sdk";
 
 const bodySchema = z.object({
-  conversationId: z.string().optional(),
+  conversationId: z.string().nullable().optional(),
   message: z.string().min(1).max(8000),
   page: z.string().max(500).nullable().optional(),
 });
