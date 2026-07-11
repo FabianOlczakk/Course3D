@@ -80,11 +80,14 @@ Polish and is deployed at [kurs.magbase.pl](https://kurs.magbase.pl).
 - `/profil/[userId]` — avatar, online status, course progress, recent posts
 - Admin actions on another user's profile: change role, force password reset
 
-### AI assistant (`/ai`)
-- A chat UI (`src/components/ai/ai-chat.tsx`) backed by `POST /api/ai/chat`, which calls Claude
-  (`@anthropic-ai/sdk`, model in `src/lib/anthropic.ts`) with a hardened system prompt
-  (`src/lib/ai-system-prompt.ts`) that keeps the assistant on-topic (3D printing / the course)
-  and resistant to prompt injection / role-override attempts from the chat itself.
+### AI assistant
+- A collapsible right-hand panel (`src/components/ai/ai-panel.tsx`, VS Code Copilot-style —
+  toggled from the Sparkles icon in the topbar, global state in `ai-panel-context.tsx`) rather than
+  a dedicated page, so it's reachable from any screen without losing your place. Backed by
+  `POST /api/ai/chat`, which calls Claude (`@anthropic-ai/sdk`, model in `src/lib/anthropic.ts`)
+  with a hardened system prompt (`src/lib/ai-system-prompt.ts`) that keeps the assistant on-topic
+  (3D printing / the course) and resistant to prompt injection / role-override attempts from the
+  chat itself.
 - **Read-only, narrowly-scoped tools instead of raw DB access.** The model does *not* get a SQL
   or "query the whole database" tool. `src/lib/ai-tools.ts` defines four Prisma-backed tools —
   `search_wiki`, `search_lessons`, `get_lesson_content`, `search_community_posts` — that only ever
@@ -93,16 +96,31 @@ Polish and is deployed at [kurs.magbase.pl](https://kurs.magbase.pl).
   tool. This matters because a chat model's tool calls can be influenced by attacker-crafted text
   in the conversation (prompt injection); the mitigation is to make the blast radius of any tool
   call bounded by construction, not to rely on the model "behaving" per the system prompt alone.
+- **Platform index in the system prompt.** `getPlatformIndex()` fetches just the titles of every
+  published Wiki article and lesson (grouped by chapter) — cheap in tokens — so the model knows
+  what exists on the platform and can pick the right search terms instead of guessing blindly.
+- **Current-page context.** If the user is chatting from a lesson (`/kurs/[id]`) or Wiki article
+  (`/wiki/[slug]`) page, `getPageContext()` fetches that page's full content and injects it into
+  the system prompt, so the assistant can answer questions about "this lesson" directly without a
+  tool round trip.
 - Each tool call's results are collected as **citations** (title + URL + excerpt) and returned to
-  the client alongside the assistant's text reply; the chat UI renders them as clickable "widget"
-  cards linking straight to the source lesson/wiki article/post — e.g. asking about "wet filament"
-  surfaces a link to the Wiki article or lesson that already explains it.
+  the client alongside the assistant's Markdown reply; the panel renders the reply with
+  `react-markdown` and the citations as clickable cards (opening in a new tab) linking straight to
+  the source lesson/wiki article/post — e.g. asking about "wet filament" surfaces a link to the
+  Wiki article or lesson that already explains it. The system prompt explicitly forbids pasting
+  raw HTML/verbatim excerpts — the model must summarize in its own words.
+- **Persistent, per-user conversations.** Chats are stored in `AiConversation`/`AiMessage` and
+  survive closing the panel/browser — the history icon in the panel lists past conversations
+  (auto-titled from the first message), lets you switch between them or delete one, and "+" starts
+  a new chat. Managed via `/api/ai/conversations` (list/create) and `/api/ai/conversations/[id]`
+  (fetch/delete), each scoped to `session.user.id`.
 - **Per-user token budget.** `User.aiTokens` (default 50 000) is decremented by the actual
   `input_tokens + output_tokens` reported by the Anthropic API for every request (including any
   tool-use round trips). Admins set/adjust it per user from `/admin/users` → edit user → "Tokeny
-  AI". Once a user's balance hits 0, `/api/ai/chat` returns 403 and the chat UI disables the input.
+  AI". Once a user's balance hits 0, `/api/ai/chat` returns 403 and the panel disables its input.
 - Requires `ANTHROPIC_API_KEY` (see [Environment variables](#environment-variables)); without it
-  the endpoint returns 503 rather than silently failing.
+  the endpoint returns 503 rather than silently failing. Defaults to Claude Haiku (cheapest tier)
+  to keep per-message cost low for a course FAQ assistant.
 
 ---
 
@@ -215,7 +233,7 @@ See `.env.example` for a ready-to-copy template. Reference:
 | `NEXT_PUBLIC_APP_URL`     | Public URL used in invite/reset links and email templates             |
 | `RESEND_API_KEY`          | Resend API key (invites, password resets, campaigns)                 |
 | `RESEND_FROM_EMAIL`       | Sender address for outgoing email                                     |
-| `ANTHROPIC_API_KEY`       | Claude API key powering the `/ai` assistant; without it `/api/ai/chat` returns 503 |
+| `ANTHROPIC_API_KEY`       | Claude API key powering the AI assistant panel; without it `/api/ai/chat` returns 503 |
 | `DEPLOY_SCRIPT`           | Optional — absolute path to a deploy script the admin developer panel can trigger |
 | `PM2_OUT_LOG` / `PM2_ERR_LOG` | Optional — absolute paths to PM2 stdout/stderr logs shown in the developer panel |
 | `APP_LOG_DIR`             | Optional — directory for application log files (defaults to `./logs`) |

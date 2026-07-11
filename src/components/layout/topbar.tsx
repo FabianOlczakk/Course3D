@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare, Sun, Moon, Monitor } from "lucide-react";
+import { Users2, Menu, Search, X, BookOpen, FileText, Loader2, MessageSquare, Sun, Moon, Monitor, Sparkles } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { useTheme, type Theme } from "@/components/theme-provider";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { useAiPanel } from "@/components/ai/ai-panel-context";
 
 interface SearchResult {
   type: "lesson" | "post" | "wiki";
@@ -247,6 +248,21 @@ function ThemeSwitcher() {
   );
 }
 
+function AiToggleButton() {
+  const { open, toggle } = useAiPanel();
+  return (
+    <button
+      type="button"
+      aria-label="Asystent AI"
+      onClick={toggle}
+      className={open ? "glow-icon-btn bg-[var(--accent-glow)] text-[var(--accent-soft)]" : "glow-icon-btn"}
+      title="Asystent AI"
+    >
+      <Sparkles className="h-4 w-4" />
+    </button>
+  );
+}
+
 interface TopbarProps {
   username: string | null;
   email: string;
@@ -289,6 +305,7 @@ export function Topbar({
 
       {/* Prawa strona: switcher motywu + plakietka roli */}
       <div className="absolute right-4 flex items-center gap-2 sm:right-6">
+        <AiToggleButton />
         <NotificationBell />
         <ThemeSwitcher />
         <span

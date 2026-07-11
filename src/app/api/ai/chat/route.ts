@@ -4,22 +4,17 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { anthropic, AI_MODEL } from "@/lib/anthropic";
 import { AI_SYSTEM_PROMPT } from "@/lib/ai-system-prompt";
-import { AI_TOOLS, executeAiTool, type Citation } from "@/lib/ai-tools";
+import { AI_TOOLS, executeAiTool, getPlatformIndex, getPageContext, type Citation } from "@/lib/ai-tools";
 import type Anthropic from "@anthropic-ai/sdk";
 
 const bodySchema = z.object({
-  messages: z
-    .array(
-      z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(8000),
-      })
-    )
-    .min(1)
-    .max(40),
+  conversationId: z.string().optional(),
+  message: z.string().min(1).max(8000),
+  page: z.string().max(500).optional(),
 });
 
 const MAX_TOOL_ITERATIONS = 6;
+const MAX_HISTORY_MESSAGES = 40;
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -46,17 +41,49 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.errors[0]?.message ?? "Błąd walidacji." }, { status: 400 });
   }
 
-  const messages: Anthropic.MessageParam[] = parsed.data.messages.map((m) => ({ role: m.role, content: m.content }));
+  let conversationId = parsed.data.conversationId;
+  if (conversationId) {
+    const conv = await prisma.aiConversation.findUnique({ where: { id: conversationId }, select: { userId: true } });
+    if (!conv || conv.userId !== session.user.id) {
+      return NextResponse.json({ error: "Nie znaleziono rozmowy." }, { status: 404 });
+    }
+  } else {
+    const conv = await prisma.aiConversation.create({ data: { userId: session.user.id } });
+    conversationId = conv.id;
+  }
+
+  const history = await prisma.aiMessage.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: "asc" },
+    take: MAX_HISTORY_MESSAGES,
+    select: { role: true, content: true },
+  });
+
+  await prisma.aiMessage.create({
+    data: { conversationId, role: "user", content: parsed.data.message },
+  });
+
+  const messages: Anthropic.MessageParam[] = [
+    ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+    { role: "user", content: parsed.data.message },
+  ];
+
   const citations: Citation[] = [];
   let totalTokensUsed = 0;
   let finalText = "";
 
   try {
+    const [platformIndex, pageContext] = await Promise.all([
+      getPlatformIndex(),
+      getPageContext(parsed.data.page),
+    ]);
+    const system = [AI_SYSTEM_PROMPT, platformIndex, pageContext].filter(Boolean).join("\n\n");
+
     for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
       const response = await anthropic.messages.create({
         model: AI_MODEL,
         max_tokens: 1024,
-        system: AI_SYSTEM_PROMPT,
+        system,
         tools: AI_TOOLS,
         messages,
       });
@@ -71,7 +98,6 @@ export async function POST(req: Request) {
         break;
       }
 
-      // Model chce użyć narzędzi — wykonaj je i dołóż wyniki do konwersacji.
       messages.push({ role: "assistant", content: response.content });
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const block of response.content) {
@@ -97,9 +123,22 @@ export async function POST(req: Request) {
     finalText = "Przepraszam, nie udało mi się wygenerować odpowiedzi. Spróbuj sformułować pytanie inaczej.";
   }
 
+  await prisma.aiMessage.create({
+    data: { conversationId, role: "assistant", content: finalText, citations: citations as unknown as object },
+  });
+
+  // Auto-tytuł rozmowy na podstawie pierwszej wiadomości użytkownika
+  if (history.length === 0) {
+    const title = parsed.data.message.slice(0, 60).trim() || "Nowa rozmowa";
+    await prisma.aiConversation.update({ where: { id: conversationId }, data: { title } });
+  } else {
+    await prisma.aiConversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } });
+  }
+
   const updated = await prisma.user.findUnique({ where: { id: session.user.id }, select: { aiTokens: true } });
 
   return NextResponse.json({
+    conversationId,
     message: finalText,
     citations,
     tokensUsed: totalTokensUsed,

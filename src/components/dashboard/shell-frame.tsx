@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { HelpWidget } from "@/components/shared/help-widget";
 import { PendingFormsModal } from "@/components/shared/pending-forms-modal";
+import { AiPanel } from "@/components/ai/ai-panel";
+import { AiPanelProvider } from "@/components/ai/ai-panel-context";
 import type { SidebarChapter } from "@/components/chapters/chapter-list";
 import type { Role } from "@prisma/client";
 
@@ -31,31 +33,34 @@ export function ShellFrame({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        userId={userId}
-        username={username}
-        email={email}
-        role={role}
-        avatarUrl={avatarUrl}
-        chapters={chapters}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar
+    <AiPanelProvider>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar
+          userId={userId}
           username={username}
           email={email}
           role={role}
           avatarUrl={avatarUrl}
-          onMenuClick={() => setMobileOpen(true)}
+          chapters={chapters}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
         />
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto w-full max-w-[1200px]">{children}</div>
-        </main>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar
+            username={username}
+            email={email}
+            role={role}
+            avatarUrl={avatarUrl}
+            onMenuClick={() => setMobileOpen(true)}
+          />
+          <main className="flex-1 overflow-auto">
+            <div className="mx-auto w-full max-w-[1200px]">{children}</div>
+          </main>
+        </div>
+        <AiPanel />
+        <HelpWidget />
+        <PendingFormsModal />
       </div>
-      <HelpWidget />
-      <PendingFormsModal />
-    </div>
+    </AiPanelProvider>
   );
 }

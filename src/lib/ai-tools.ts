@@ -21,11 +21,104 @@ export function tiptapToText(node: unknown): string {
   return "";
 }
 
+/** Usuwa znaczniki HTML i dekoduje najczęstsze encje — artykuły Wiki są edytowane jako HTML. */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Krótki, tani-w-tokenach "spis treści" platformy — same tytuły (bez
+ * pełnej treści), dołączany do system promptu, żeby model wiedział co
+ * w ogóle istnieje i mógł trafnie dobrać zapytania do search_wiki /
+ * search_lessons zamiast zgadywać słowa kluczowe na ślepo.
+ */
+export async function getPlatformIndex(): Promise<string> {
+  const [wiki, chapters] = await Promise.all([
+    prisma.wikiArticle.findMany({
+      where: { published: true },
+      orderBy: { title: "asc" },
+      select: { title: true, category: true },
+      take: 300,
+    }),
+    prisma.chapter.findMany({
+      orderBy: { order: "asc" },
+      select: { title: true, lessons: { orderBy: { order: "asc" }, select: { title: true } } },
+    }),
+  ]);
+
+  const wikiList = wiki.map((w) => `- ${w.title}${w.category ? ` (${w.category})` : ""}`).join("\n");
+  const lessonList = chapters
+    .map((c) => `${c.title}:\n` + c.lessons.map((l) => `  - ${l.title}`).join("\n"))
+    .join("\n");
+
+  return [
+    "SPIS TREŚCI PLATFORMY (same tytuły — użyj search_wiki/search_lessons, aby pobrać treść):",
+    "",
+    "Artykuły Wiki:",
+    wikiList || "(brak)",
+    "",
+    "Lekcje kursu (wg rozdziałów):",
+    lessonList || "(brak)",
+  ].join("\n");
+}
+
 export interface Citation {
   type: "wiki" | "lesson" | "post";
   title: string;
   url: string;
   excerpt: string;
+}
+
+/**
+ * Jeśli użytkownik pisze do asystenta ze strony konkretnej lekcji lub
+ * artykułu Wiki, pobiera jej treść, żeby model mógł od razu odpowiadać
+ * na pytania o "tę lekcję" bez zgadywania, o co chodzi.
+ */
+export async function getPageContext(pathname: string | undefined): Promise<string | null> {
+  if (!pathname) return null;
+
+  const lessonMatch = pathname.match(/^\/kurs\/([^/]+)/);
+  if (lessonMatch) {
+    const lesson = await prisma.lesson.findUnique({
+      where: { id: lessonMatch[1] },
+      select: { title: true, description: true, contentJson: true },
+    });
+    if (!lesson) return null;
+    const text = lesson.contentJson ? tiptapToText(lesson.contentJson).replace(/\s+/g, " ").trim() : "";
+    return [
+      `KONTEKST BIEŻĄCEJ STRONY: użytkownik jest teraz na stronie lekcji „${lesson.title}".`,
+      lesson.description ? `Opis: ${lesson.description}` : "",
+      text ? `Treść lekcji: ${text.slice(0, 4000)}` : "",
+      "Jeśli pytanie dotyczy tej lekcji, odpowiadaj na podstawie powyższej treści bez konieczności wywoływania narzędzi.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  const wikiMatch = pathname.match(/^\/wiki\/([^/]+)/);
+  if (wikiMatch) {
+    const article = await prisma.wikiArticle.findUnique({
+      where: { slug: wikiMatch[1] },
+      select: { title: true, content: true, published: true },
+    });
+    if (!article || !article.published) return null;
+    return [
+      `KONTEKST BIEŻĄCEJ STRONY: użytkownik czyta teraz artykuł Wiki „${article.title}".`,
+      `Treść: ${stripHtml(article.content).slice(0, 4000)}`,
+      "Jeśli pytanie dotyczy tego artykułu, odpowiadaj na podstawie powyższej treści bez konieczności wywoływania narzędzi.",
+    ].join("\n");
+  }
+
+  return null;
 }
 
 export const AI_TOOLS: Anthropic.Tool[] = [
@@ -110,8 +203,9 @@ export async function executeAiTool(
       select: { title: true, slug: true, content: true },
     });
     const results = articles.map((a) => {
-      const idx = a.content.toLowerCase().indexOf(query.toLowerCase());
-      const excerpt = idx >= 0 ? a.content.slice(Math.max(0, idx - 80), idx + 200) : a.content.slice(0, 200);
+      const plain = stripHtml(a.content);
+      const idx = plain.toLowerCase().indexOf(query.toLowerCase());
+      const excerpt = idx >= 0 ? plain.slice(Math.max(0, idx - 80), idx + 200) : plain.slice(0, 200);
       const citation: Citation = { type: "wiki", title: a.title, url: `/wiki/${a.slug}`, excerpt: excerpt.trim() };
       addCitation(citation);
       return citation;
