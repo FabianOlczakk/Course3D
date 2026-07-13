@@ -687,7 +687,7 @@ export function Sidebar({
         </button>
 
         {profileMenu && (
-          <div className="absolute bottom-[52px] right-[11px] z-50 w-[180px] overflow-hidden rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-xl">
+          <div className="glass-panel absolute bottom-[52px] right-[11px] z-50 w-[180px] overflow-hidden rounded-[10px] border border-[var(--glass-border)] shadow-xl">
             <Link
               href={`/profil/${userId}`}
               onClick={() => {
@@ -727,7 +727,7 @@ export function Sidebar({
     <>
       <aside
         style={{ width }}
-        className="relative hidden shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-card)] md:flex"
+        className="glass-panel relative hidden shrink-0 flex-col border-r border-[var(--glass-border)] md:flex"
       >
         {content}
         {/* Uchwyt do zmiany szerokości (przeciąganie myszą) */}
@@ -745,7 +745,7 @@ export function Sidebar({
             onClick={onMobileClose}
             aria-hidden
           />
-          <aside className="relative z-10 flex h-full w-[248px] max-w-[80vw] flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-card)]">
+          <aside className="glass-panel relative z-10 flex h-full w-[248px] max-w-[80vw] flex-col border-r border-[var(--glass-border)]">
             {content}
           </aside>
         </div>

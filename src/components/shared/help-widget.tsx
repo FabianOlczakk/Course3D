@@ -105,7 +105,7 @@ export function HelpWidget() {
       {open && (
         <div
           style={{ right: sideOffset }}
-          className="fixed bottom-20 z-50 w-[340px] overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-2xl transition-[right] duration-200"
+          className="glass-panel fixed bottom-20 z-50 w-[340px] overflow-hidden rounded-[14px] border border-[var(--glass-border)] shadow-2xl transition-[right] duration-200"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3">

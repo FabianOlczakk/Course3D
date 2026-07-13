@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getLearnerStats } from "@/lib/stats";
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const name = session?.user?.username || "Kursancie";
   const meId = session?.user?.id ?? "";
 
-  const [unreadMessages, recentPostsRaw, chapters, completedRows, stats] =
+  const [unreadMessages, recentPostsRaw, chapters, progressRows, stats, notesCount, me] =
     await Promise.all([
       prisma.message.findMany({
         where: { receiverId: meId, readAt: null },
@@ -59,13 +59,24 @@ export default async function DashboardPage() {
         },
       }),
       prisma.lessonProgress.findMany({
-        where: { userId: meId, completed: true },
-        select: { lessonId: true },
+        where: { userId: meId },
+        select: { lessonId: true, completed: true, rating: true },
       }),
       getLearnerStats(meId),
+      prisma.lessonNote.count({ where: { userId: meId } }),
+      prisma.user.findUnique({ where: { id: meId }, select: { aiTokens: true } }),
     ]);
 
-  const completedSet = new Set(completedRows.map((r) => r.lessonId));
+  const completedSet = new Set(progressRows.filter((r) => r.completed).map((r) => r.lessonId));
+  // Własne oceny lekcji (1-5 gwiazdek) — do średniej per moduł i ogólnej
+  const ratingByLesson = new Map(
+    progressRows.filter((r) => r.rating != null).map((r) => [r.lessonId, r.rating as number])
+  );
+  const allMyRatings = [...ratingByLesson.values()];
+  const myAvgRating =
+    allMyRatings.length > 0
+      ? allMyRatings.reduce((s, r) => s + r, 0) / allMyRatings.length
+      : null;
 
   const recentPosts = recentPostsRaw.slice(0, 3);
 
@@ -114,16 +125,25 @@ export default async function DashboardPage() {
   const overallPct =
     stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  // Postęp per rozdział
+  // Postęp per rozdział + własna średnia ocena modułu (z ocen lekcji 1-5)
   const modules = chapters.map((c, i) => {
     const total = c.lessons.length;
     const done = c.lessons.filter((l) => completedSet.has(l.id)).length;
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     const full = total > 0 && done === total;
+    const moduleRatings = c.lessons
+      .map((l) => ratingByLesson.get(l.id))
+      .filter((r): r is number => r != null);
+    const myRating =
+      moduleRatings.length > 0
+        ? moduleRatings.reduce((s, r) => s + r, 0) / moduleRatings.length
+        : null;
     return {
       n: String(i + 1).padStart(2, "0"),
       title: c.title,
       pct,
+      myRating,
+      ratedCount: moduleRatings.length,
       color: full ? "#3ecf8e" : pct > 0 ? "#9d6bff" : "#3a3a3a",
     };
   });
@@ -152,7 +172,7 @@ export default async function DashboardPage() {
       {/* Układ: lewa kolumna treści + prawy rail „Twój postęp" */}
       <div className="mt-5 grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-[1fr_320px]">
        <div className="flex min-w-0 flex-col gap-[18px]">
-        <div className="flex overflow-hidden rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+        <div className="glow-card flex overflow-hidden">
         <div className="flex-1 p-[24px_26px]">
           <span className="inline-block rounded-[5px] bg-[#9d6bff1a] px-[9px] py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--accent-soft)]">
             {currentLessonId
@@ -189,13 +209,19 @@ export default async function DashboardPage() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
         <StatCard label="Ukończone lekcje" value={`${stats.completed}`} suffix={`/ ${stats.total}`} />
         <StatCard label="Passa nauki" value={`${stats.streak}`} suffix="dni" />
         <StatCard
           label="Pozycja w grupie"
           value={`#${stats.rank}`}
           suffix={`z ${stats.rankTotal}`}
+        />
+        <StatCard label="Twoje notatki" value={`${notesCount}`} suffix={notesCount === 1 ? "notatka" : "notatek"} />
+        <StatCard
+          label="Tokeny AI"
+          value={(me?.aiTokens ?? 0) > 999 ? `${Math.round((me?.aiTokens ?? 0) / 1000)}k` : `${me?.aiTokens ?? 0}`}
+          suffix="pozostało"
         />
       </div>
 
@@ -319,6 +345,15 @@ export default async function DashboardPage() {
                    <span className="flex-1 truncate text-[12.5px] font-medium text-[var(--text-primary)]">
                      {m.title}
                    </span>
+                   {m.myRating != null && (
+                     <span
+                       className="flex items-center gap-[3px] text-[11px] font-semibold text-[#e0b44a]"
+                       title={`Twoja ocena modułu (średnia z ${m.ratedCount} ocenionych lekcji)`}
+                     >
+                       <Star className="h-[11px] w-[11px] fill-current" />
+                       {m.myRating.toFixed(1)}
+                     </span>
+                   )}
                    <span className="text-[11px] font-semibold" style={{ color: m.color }}>
                      {m.pct}%
                    </span>
@@ -333,6 +368,15 @@ export default async function DashboardPage() {
              ))
            )}
          </div>
+         {myAvgRating != null && (
+           <div className="mt-2 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-[12px]">
+             <span className="text-[var(--text-muted)]">Twoja średnia ocena kursu</span>
+             <span className="flex items-center gap-1 font-semibold text-[#e0b44a]">
+               <Star className="h-3 w-3 fill-current" />
+               {myAvgRating.toFixed(1)} / 5
+             </span>
+           </div>
+         )}
        </Card>
       </div>
     </div>
@@ -349,7 +393,7 @@ function StatCard({
   suffix?: string;
 }) {
   return (
-    <div className="rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-[16px_18px]">
+    <div className="glow-card p-[16px_18px]">
       <div className="text-[12px] font-medium text-[var(--text-muted)]">{label}</div>
       <div className="mt-[6px] font-display text-[23px] font-semibold text-[var(--text-primary)]">
         {value}{" "}
@@ -370,7 +414,7 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-[16px_18px] ${className ?? ""}`}
+      className={`glow-card p-[16px_18px] ${className ?? ""}`}
     >
       {children}
     </div>

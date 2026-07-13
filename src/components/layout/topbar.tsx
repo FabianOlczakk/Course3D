@@ -289,7 +289,7 @@ export function Topbar({
   }, []);
 
   return (
-    <header className="relative flex h-14 items-center justify-center border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-6">
+    <header className="glass-panel relative z-40 flex h-14 items-center justify-center border-b border-[var(--glass-border)] px-6">
       {/* Hamburger (mobile) */}
       <button
         type="button"
