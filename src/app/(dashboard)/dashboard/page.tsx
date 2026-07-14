@@ -8,6 +8,7 @@ import { timeAgo } from "@/lib/format-time";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DashboardMessagesButton } from "@/components/dashboard/dashboard-widgets";
 import { AnnouncementsWidget } from "@/components/dashboard/announcements-widget";
+import { DashboardAiCard } from "@/components/dashboard/dashboard-ai-card";
 
 export const metadata: Metadata = {
   title: "Pulpit — Kurs druku 3D",
@@ -66,6 +67,57 @@ export default async function DashboardPage() {
       prisma.lessonNote.count({ where: { userId: meId } }),
       prisma.user.findUnique({ where: { id: meId }, select: { aiTokens: true } }),
     ]);
+
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+  const [latestWiki, myNotes, weekPostsRaw, onlineUsers] = await Promise.all([
+    prisma.wikiArticle.findMany({
+      where: { published: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, title: true, slug: true, category: true, createdAt: true },
+    }),
+    prisma.lessonNote.findMany({
+      where: { userId: meId },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        content: true,
+        updatedAt: true,
+        lesson: { select: { id: true, title: true } },
+      },
+    }),
+    prisma.post.findMany({
+      where: { createdAt: { gte: weekAgo } },
+      take: 30,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        votes: { select: { value: true } },
+        _count: { select: { comments: true } },
+        author: { select: { username: true, email: true } },
+      },
+    }),
+    prisma.user.findMany({
+      where: {
+        lastActiveAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+        activityPrivate: false,
+      },
+      orderBy: { lastActiveAt: "desc" },
+      take: 10,
+      select: { id: true, username: true, email: true, avatarUrl: true },
+    }),
+  ]);
+
+  // Najpopularniejsze posty tygodnia — po saldzie głosów, potem liczbie komentarzy
+  const topWeekPosts = weekPostsRaw
+    .map((p) => ({
+      ...p,
+      score: p.votes.reduce((s, v) => s + (v.value === "UP" ? 1 : -1), 0),
+    }))
+    .sort((a, b) => b.score - a.score || b._count.comments - a._count.comments)
+    .slice(0, 3);
 
   const completedSet = new Set(progressRows.filter((r) => r.completed).map((r) => r.lessonId));
   // Własne oceny lekcji (1-5 gwiazdek) — do średniej per moduł i ogólnej
@@ -272,6 +324,140 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Nowości na Wiki + Twoje notatki */}
+      <div className="grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-2">
+        <Card className="h-full">
+          <CardHeader title="Nowości na Wiki">
+            <Link href="/wiki" className="text-[12.5px] font-semibold text-[var(--accent-soft)]">
+              Wiki
+            </Link>
+          </CardHeader>
+          {latestWiki.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Brak artykułów.</p>
+          ) : (
+            latestWiki.map((w) => (
+              <Link
+                key={w.id}
+                href={`/wiki/${w.slug}`}
+                className="flex items-center gap-[10px] border-b border-[var(--border-subtle)] py-[9px] last:border-0"
+              >
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--text-primary)]">
+                  {w.title}
+                </span>
+                {w.category && (
+                  <span className="shrink-0 rounded-[4px] bg-[#5b8def1a] px-[6px] py-[1px] text-[10px] font-semibold text-[#a8c4ff]">
+                    {w.category}
+                  </span>
+                )}
+                <span className="shrink-0 text-[11px] text-[var(--text-muted)]">{timeAgo(w.createdAt)}</span>
+              </Link>
+            ))
+          )}
+        </Card>
+
+        <Card className="h-full">
+          <CardHeader title="Twoje notatki">
+            <span className="text-[12.5px] text-[var(--text-muted)]">{notesCount} łącznie</span>
+          </CardHeader>
+          {myNotes.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[var(--text-muted)]">
+              Nie masz jeszcze notatek — możesz je dodawać pod każdą lekcją.
+            </p>
+          ) : (
+            myNotes.map((n) => (
+              <Link
+                key={n.id}
+                href={`/kurs/${n.lesson.id}`}
+                className="block border-b border-[var(--border-subtle)] py-[9px] last:border-0"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[var(--accent-soft)]">
+                    {n.lesson.title}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-[var(--text-muted)]">{timeAgo(n.updatedAt)}</span>
+                </div>
+                <p className="mt-[3px] line-clamp-2 text-[12.5px] text-[var(--text-secondary)]">{n.content}</p>
+              </Link>
+            ))
+          )}
+        </Card>
+      </div>
+
+      {/* Popularne w tym tygodniu + Aktywni teraz */}
+      <div className="grid grid-cols-1 items-stretch gap-[18px] lg:grid-cols-2">
+        <Card className="h-full">
+          <CardHeader title="Popularne w tym tygodniu">
+            <Link href="/spolecznosc" className="text-[12.5px] font-semibold text-[var(--accent-soft)]">
+              Forum
+            </Link>
+          </CardHeader>
+          {topWeekPosts.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Brak postów z ostatniego tygodnia.</p>
+          ) : (
+            topWeekPosts.map((p, i) => (
+              <Link
+                key={p.id}
+                href={`/spolecznosc/${p.id}`}
+                className="flex items-center gap-[11px] border-b border-[var(--border-subtle)] py-[9px] last:border-0"
+              >
+                <span className="w-5 shrink-0 font-display text-[13px] font-bold text-[var(--text-muted)]">
+                  {i + 1}.
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-medium text-[var(--text-primary)]">
+                    {p.title || p.content}
+                  </div>
+                  <div className="mt-[2px] text-[11px] text-[var(--text-muted)]">
+                    {p.author.username || p.author.email} · {p._count.comments} odpowiedzi
+                  </div>
+                </div>
+                <span
+                  className={`shrink-0 rounded-[4px] px-[6px] py-[1px] text-[11px] font-bold ${
+                    p.score >= 0 ? "bg-[#3ecf8e1a] text-[#3ecf8e]" : "bg-[#d9536a1a] text-[#d9536a]"
+                  }`}
+                >
+                  {p.score >= 0 ? "+" : ""}{p.score}
+                </span>
+              </Link>
+            ))
+          )}
+        </Card>
+
+        <Card className="h-full">
+          <CardHeader title="Aktywni teraz">
+            <span className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+              <span className="h-[7px] w-[7px] rounded-full bg-[var(--green)]" />
+              {onlineUsers.length} online
+            </span>
+          </CardHeader>
+          {onlineUsers.length === 0 ? (
+            <p className="py-2 text-[12.5px] text-[var(--text-muted)]">Nikt nie jest teraz aktywny.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2 py-1">
+              {onlineUsers.map((u) => {
+                const label = u.username || u.email;
+                return (
+                  <Link
+                    key={u.id}
+                    href={`/profil/${u.id}`}
+                    title={label}
+                    className="flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--bg-elevated)]/60 py-1 pl-1 pr-3 transition-colors hover:border-[var(--accent)]/50"
+                  >
+                    <span className="relative">
+                      <AvatarCircle url={u.avatarUrl} label={label} size={26} />
+                      <span className="absolute -bottom-[1px] -right-[1px] h-[9px] w-[9px] rounded-full border-2 border-[var(--bg-card)] bg-[var(--green)]" />
+                    </span>
+                    <span className="max-w-[110px] truncate text-[12px] font-medium text-[var(--text-primary)]">
+                      {label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
+
       {/* Aktywność społeczności (pełna szerokość) */}
       <div>
         <Card>
@@ -322,8 +508,13 @@ export default async function DashboardPage() {
       </div>
        </div>
 
-       {/* PRAWY RAIL — Twój postęp (rozciąga się na całą wysokość kolumny) */}
-       <Card className="flex h-full flex-col overflow-hidden">
+       {/* PRAWY RAIL — Twój postęp + Asystent AI.
+           Na lg+ zawartość raila jest pozycjonowana absolutnie, więc nie
+           wpływa na wysokość rzędu siatki — rail kończy się dokładnie na
+           równi z lewą kolumną, a lista modułów przewija się w środku. */}
+       <div className="relative min-h-[420px]">
+        <div className="flex flex-col gap-[18px] lg:absolute lg:inset-0">
+       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
          <CardHeader title="Twój postęp">
            <Link
              href={currentLessonId ? `/kurs/${currentLessonId}` : "/dashboard"}
@@ -378,6 +569,10 @@ export default async function DashboardPage() {
            </div>
          )}
        </Card>
+
+       <DashboardAiCard />
+        </div>
+       </div>
       </div>
     </div>
   );
